@@ -7,7 +7,7 @@ function transformations = tailcone_constraint(parameters, param_names, der_para
 
     xPos = 0;
     yPos = 0;
-    zPos = 0;
+    zPos = 0.01;
 
     xQuat = 1;
     yQuat = 0;

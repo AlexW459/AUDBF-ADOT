@@ -153,8 +153,7 @@ function [derived_parameters, derived_param_names] = calculate_derived_params(..
     wing_motor_scale = 1-(1-wing_scale/wing_base_scale)*(motor_width/(wing_length-wing_base_length));
     
     %Finds the wing sweep across the motor
-    wing_motor_sweep = (motor_width/wing_length)*wing_sweep+...
-        wing_root_chord*(wing_base_scale-wing_base_scale*wing_motor_scale);
+    wing_motor_sweep = (motor_width/wing_length);
 
     
     motor_pod_length = max([wing_root_chord*wing_base_scale, ...

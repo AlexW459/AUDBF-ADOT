@@ -217,7 +217,7 @@ classdef assembly < handle
         function construct_profiles(obj)
             %Constructs profiles
             profiles = obj.part_profiles;
-            parfor i = 1:size(obj.profile_constructors, 2)
+            for i = 1:size(obj.profile_constructors, 2)
                 current_constructor = obj.profile_constructors{i};
                 profiles{i} = current_constructor(obj.aircraft_parameters, ...
                     obj.parameter_names, obj.derived_parameters, obj.derived_param_names);
@@ -240,7 +240,7 @@ classdef assembly < handle
             
 
             %Constructs parts by extruding profiels
-            parfor i = 1:obj.num_parts
+            for i = 1:obj.num_parts
                  current_constructor = obj.extrusion_constructors{i};
 
                  current_density = obj.material_table{obj.material_indices(i), 2};
@@ -377,7 +377,7 @@ classdef assembly < handle
 
             tic
 
-            parfor i = 1:size(obj.transformed_parts, 1)
+            for i = 1:size(obj.transformed_parts, 1)
                 surface_values(:, :, :, i) = obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z);
             end
 

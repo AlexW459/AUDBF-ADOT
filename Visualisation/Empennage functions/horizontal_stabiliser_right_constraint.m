@@ -9,7 +9,7 @@ function transformations = horizontal_stabiliser_right_constraint(parameters, pa
 
     horizontal_stabiliser_chord = der_params(find(strcmp(der_param_names, "horizontal_stabiliser_chord")));
 
-    xPos = 0.5*horizontal_stabiliser_full_width;
+    xPos = 0.5*horizontal_stabiliser_full_width+0.005;
     yPos = 0;
     zPos = -0.5*horizontal_stabiliser_chord;
 
