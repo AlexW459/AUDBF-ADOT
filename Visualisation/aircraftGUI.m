@@ -8,13 +8,12 @@ clear;
 clc;
 close all force;
 
-addpath('distmesh-master')
-addpath('Empenage functions')
+addpath('Discrete data')
+addpath('Empennage functions')
 addpath('Fuselage functions')
 addpath('Nosecone functions')
 addpath('Tail functions')
 addpath('Wing functions')
-addpath('yFoil_classes')
 
 
 %Sets the list of materials and their densities

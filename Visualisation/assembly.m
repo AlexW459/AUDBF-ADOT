@@ -387,13 +387,7 @@ classdef assembly < handle
 
             patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
 
-            normals = cross(node_coords(face_nodes(:, 1), :)-node_coords(face_nodes(:, 2), :),...
-                node_coords(face_nodes(:, 2), :)-node_coords(face_nodes(:, 3), :), 2);
-            normals = normals./sqrt(normals(:, 1).^2 + normals(:, 2).^2 + normals(:, 3).^2);
-
-
-
-
+            writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
 
             FH = @(p) ones(size(p,1),1);
 
