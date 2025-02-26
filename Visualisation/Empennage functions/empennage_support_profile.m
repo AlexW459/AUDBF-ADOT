@@ -24,6 +24,6 @@ function output_profile = empennage_support_profile(parameters, param_names, der
 
     % plot(B_upper(:, 1), B_upper(:, 2), 'r-');
 
-    output_profile = profile(B_upper, B_lower, -1, plastic_thickness, mesh_resolution*16);
+    output_profile = profile(B_upper, B_lower, -1, plastic_thickness, mesh_resolution*30);
 
 end

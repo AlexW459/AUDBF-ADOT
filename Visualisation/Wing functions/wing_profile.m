@@ -15,7 +15,7 @@ function airfoil_profile = wing_profile(parameters, param_names, der_params, der
     mesh_resolution = parameters(find(strcmp(param_names, "mesh_resolution")));
 
     %num_points must be an even number
-    num_points = 10;
+    num_points = 16;
 
     [airfoil_upper, airfoil_lower] = generate_NACA_airfoil(wing_airfoil_max_camber, ...
         wing_airfoil_max_camber_pos, wing_airfoil_max_thickness, ...
@@ -25,7 +25,7 @@ function airfoil_profile = wing_profile(parameters, param_names, der_params, der
     % hold on;
     % plot(airfoil_lower(:, 1), airfoil_lower(:, 2),'ko');
     % hold off;
-
+    % 
 
     %Now generate an airfoil base profile:
     airfoil_profile = profile(airfoil_upper, airfoil_lower,...

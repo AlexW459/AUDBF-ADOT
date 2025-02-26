@@ -12,7 +12,7 @@ function computed_values = nosecone_constraint(parameters, param_names, der_para
 
     xPos = 0;
     yPos = 0;
-    zPos = fuselage_length-0.01;
+    zPos = fuselage_length-0.005;
 
     xQuat = 1;
     yQuat = 0;

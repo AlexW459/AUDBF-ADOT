@@ -11,9 +11,12 @@ function transformations = motor_pod_left_constraint(parameters, param_names, ..
     base_segment_sweep = der_params(find(strcmp(der_param_names, "wing_base_sweep")));
     
     base_segment_scale = der_params(find(strcmp(der_param_names, "wing_base_scale")));
+
+    wing_root_chord = der_params(find(strcmp(der_param_names, "wing_root_chord")));
+    
     
 
-    xPos = 0;
+    xPos = -base_segment_sweep-0.5*wing_root_chord*(1-base_segment_scale);
     yPos = 0;
     zPos = wing_base_length+motor_width*0.5;
 

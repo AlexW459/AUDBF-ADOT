@@ -87,12 +87,12 @@ classdef profile
 
             obj.vertices2coords = [upper_vertices; lower_vertices];
 
-            % x_values = linspace(min_x-0.1, max_x+0.1, ceil(20*resolution*(max_x-min_x)));
-            % plot(coords_upper(:, 1), coords_upper(:, 2),'ko', x_values, polyval(obj.poly_upper, x_values),'r-');
-            % hold on;
-            % plot(coords_lower(:, 1), coords_lower(:, 2),'ko', x_values, polyval(obj.poly_lower, x_values),'r-');
-            % hold off;
-            % axis equal;
+            x_values = linspace(min_x-0.1, max_x+0.1, ceil(20*resolution*(max_x-min_x)));
+            plot(coords_upper(:, 1), coords_upper(:, 2),'ko', x_values, polyval(obj.poly_upper, x_values),'r-');
+            hold on;
+            plot(coords_lower(:, 1), coords_lower(:, 2),'ko', x_values, polyval(obj.poly_lower, x_values),'r-');
+            hold off;
+            axis equal;
 
 
             obj.centroid = [(max(obj.vertices2coords(1:end-1, 1))+min(obj.vertices2coords(1:end-1, 1)))/2,...
@@ -145,34 +145,48 @@ classdef profile
             rot_mat = [0, -1; 1, 0]; % 90 degree rotation
 
             perp_vectors = zeros(size(obj.vertices2coords, 1), 2); % initialises matrix for perpendicular 
-                                                   % vectors at each node
-            perp_vectors(1, :) = (rot_mat*(obj.vertices2coords(end, :) - obj.vertices2coords(2, :))')';
+            inset_vectors = zeros(size(obj.vertices2coords, 1), 2);
+            %                                        % vectors at each node
+            % perp_vectors(1, :) = (rot_mat*(obj.vertices2coords(end, :) - obj.vertices2coords(2, :))')';
+            % 
+            % perp_vectors(1, :) = perp_vectors(1, :)/norm(perp_vectors(1, :));
 
-            perp_vectors(1, :) = perp_vectors(1, :)/norm(perp_vectors(1, :));
+            perp_vectors(end, :) = (rot_mat*(obj.vertices2coords(end, :) - obj.vertices2coords(1, :))')';
 
-            for i = 2:size(obj.vertices2coords, 1)-1
-               
-                %If statement accounts for a very specific problem mostly
-                %occuring in airfoils where if the join between the upper
-                %half of the profile is too sharp, the inset end up
-                %pointing outside of the profile, and so even when the
-                %error is detected by later code and the inset is reversed
-                %but not reversed fully, the point is still slightly
-                %outside the bounds of the profile
-                if i == floor(size(obj.vertices2coords, 1)/2) || i == ceil(size(obj.vertices2coords, 1)/2)
-                    perp_vectors(i, :) = (rot_mat*(obj.vertices2coords(i-2, :) - obj.vertices2coords(i+2, :))')';
-                else
-                    perp_vectors(i, :) = (rot_mat*(obj.vertices2coords(i-1, :) - obj.vertices2coords(i+1, :))')';
-                end
+            perp_vectors(1:end-1, :) = (rot_mat*(obj.vertices2coords(1:end-1, :)' - obj.vertices2coords(2:end, :)'))';
 
-                perp_vectors(i, :) = perp_vectors(i, :)/norm(perp_vectors(i, :));
+            perp_vectors = perp_vectors./sqrt(sum(perp_vectors.^2,2));
+            
+            inset_vectors(1, :) = 0.5*(perp_vectors(end, :) + perp_vectors(1, :));
+            inset_vectors(2:end, :) = 0.5*(perp_vectors(1:end-1, :) + perp_vectors(2:end, :));
+            inset_vectors = inset_vectors./sqrt(sum(inset_vectors.^2,2));
 
-            end
 
-            perp_vectors(end, :) = (rot_mat*(obj.vertices2coords(end-1, :) - obj.vertices2coords(1, :))')';
-            perp_vectors(end, :) = perp_vectors(end, :)/norm(perp_vectors(end, :));
 
-            obj.inset_vertices2coords = obj.vertices2coords + perp_vectors*obj.inset;
+
+            % for i = 2:size(obj.vertices2coords, 1)-1
+            % 
+            %     %If statement accounts for a very specific problem mostly
+            %     %occuring in airfoils where if the join between the upper
+            %     %half of the profile is too sharp, the inset end up
+            %     %pointing outside of the profile, and so even when the
+            %     %error is detected by later code and the inset is reversed
+            %     %but not reversed fully, the point is still slightly
+            %     %outside the bounds of the profile
+            %     if i == floor(size(obj.vertices2coords, 1)/2) || i == ceil(size(obj.vertices2coords, 1)/2)
+            %         perp_vectors(i, :) = (rot_mat*(obj.vertices2coords(i-2, :) - obj.vertices2coords(i+2, :))')';
+            %     else
+            %         perp_vectors(i, :) = (rot_mat*(obj.vertices2coords(i-1, :) - obj.vertices2coords(i+1, :))')';
+            %     end
+            % 
+            %     perp_vectors(i, :) = perp_vectors(i, :)/norm(perp_vectors(i, :));
+            % 
+            % end
+
+            % perp_vectors(end, :) = (rot_mat*(obj.vertices2coords(end-1, :) - obj.vertices2coords(1, :))')';
+            % perp_vectors(end, :) = perp_vectors(end, :)/norm(perp_vectors(end, :));
+
+            obj.inset_vertices2coords = obj.vertices2coords + inset_vectors*obj.inset;
 
 
             for i = 1:size(obj.inset_vertices2coords, 1)
@@ -195,7 +209,7 @@ classdef profile
                     if (dist < obj.inset || inside <= 0) && j ~= i
                         
                         obj.inset_vertices2coords(i, :) = obj.inset_vertices2coords(i, :) -...
-                        perp_vectors(i, :)*(obj.inset-10^(-4.5));
+                        inset_vectors(i, :)*(obj.inset-10^(-4.5));
 
                         break;
                     end
@@ -206,8 +220,8 @@ classdef profile
             obj.polygon = polyshape({obj.vertices2coords(:, 1), obj.inset_vertices2coords(:, 1)},...
                 {obj.vertices2coords(:, 2), obj.inset_vertices2coords(:, 2)});
 
-            %plot(obj.polygon);
-            % axis equal;
+            plot(obj.polygon);
+            axis equal;
 
             %Finds triangulation from points
             obj.triangles = triangulation(obj.polygon);

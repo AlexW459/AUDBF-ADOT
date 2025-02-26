@@ -27,6 +27,6 @@ function output_profile = motor_pod_profile(parameters, param_names, der_params,
 
 
 
-    output_profile = profile(B_upper, B_lower, -1, plastic_thickness, mesh_resolution*4);
+    output_profile = profile(B_upper, B_lower, -1, plastic_thickness, mesh_resolution*8);
 
 end

@@ -5,6 +5,7 @@
 
 
 clear;
+clear global;
 clc;
 close all force;
 
@@ -87,13 +88,13 @@ aircraft.addPart(@extrude_wing_tip_left, "wing_tip_left", "motor_pod_left", @win
 
 aircraft.addPart(@extrude_wing_tip_right, "wing_tip_right", "motor_pod_right", @wing_tip_right_constraint, ASA);
 
-aircraft.addPart(@extrude_empennage_support, "empennage_boom_right", "motor_pod_right", @empennage_support_constraint, ASA);
+aircraft.addPart(@extrude_empennage_support, "empennage_support_right", "motor_pod_right", @empennage_support_constraint, ASA);
 
-aircraft.addPart(@extrude_empennage_support, "empennage_boom_left", "motor_pod_left", @empennage_support_constraint, ASA);
+aircraft.addPart(@extrude_empennage_support, "empennage_support_left", "motor_pod_left", @empennage_support_constraint, ASA);
 
-aircraft.addPart(@extrude_empennage_rod, "empennage_rod_left", "motor_pod_left", @empennage_rod_constraint, ASA);
+aircraft.addPart(@extrude_empennage_rod, "empennage_rod_left", "empennage_support_left", @empennage_rod_constraint, ASA);
 
-aircraft.addPart(@extrude_empennage_rod, "empennage_rod_right", "motor_pod_right", @empennage_rod_constraint, ASA);
+aircraft.addPart(@extrude_empennage_rod, "empennage_rod_right", "empennage_support_right", @empennage_rod_constraint, ASA);
 
 
 aircraft.addPart(@extrude_horizontal_stabiliser, "horizontal_stabiliser_right", "empennage_rod_right", ...
@@ -143,13 +144,13 @@ function add_ui_to_window(aircraft_object)
                       0.1, 0.5; %fuselage height
                       0.1, 0.5; %fuselage param 1
                       0.1, 0.5; %fuselage param 2
-                      0.5, 2; %fuselage length
+                      0.5, 1.5; %fuselage length
                       0.005, 0.3; %plastic thickness
                       0.2, 0.6; %nosecone length
                       0.2, 0.9; %nosecone tip scale
                       -0.15, 0.15; %nosecone offset
                       0, 0; %wing airfoil index
-                      0.4, 2; %wing length
+                      0.4, 1; %wing length
                       0, 1; %wing vertical position
                       0, 1; %wing horizontal position
                       0.03, 0.2; %wing root thickness

@@ -364,8 +364,8 @@ classdef assembly < handle
         end
 
         function generate_surface(obj)
-            bounding_box = [-1.1,-1,-1;1.1,1,1];
-            interval = 0.02;
+            bounding_box = [-1.1,-1,-1;2,1,1];
+            interval = 0.03;
 
 
             [X,Y,Z] = meshgrid(bounding_box(1, 1):interval:bounding_box(2, 1), ...
@@ -383,19 +383,21 @@ classdef assembly < handle
 
             surface_points = min(surface_values, [], 4);
 
-            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.001);
+            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.01);
 
-            patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
+            %patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
 
             writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
 
-            FH = @(p) ones(size(p,1),1);
-
-            %isosurface(X, Y, Z, SDF(X, Y, Z), 0);
+            % xlim([-1, 1]);
+            % ylim([-1, 1]);
+            % zlim([-1, 1]);
 
             %[p, t] = distmeshsurface( SDF, FH, 0.02, bounding_box);
 
             toc
+
+            
 
         end
 

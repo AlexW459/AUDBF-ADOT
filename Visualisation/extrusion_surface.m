@@ -160,6 +160,7 @@ classdef extrusion_surface
 
             dir = obj.base_profile.translate_direction;
 
+
             X = (X-(obj.sweep./obj.extrusion_length).*...
                 (dir*Z-obj.x_sample(1)))./polyval(obj.poly_scale, dir*Z);
 
@@ -171,13 +172,13 @@ classdef extrusion_surface
             profileLower = polyval(poly_lower, X)-Y;
 
 
-            beginFace = dir.*(-Z+dir.*obj.x_sample(1));
-            endFace = dir.*(-dir.*obj.x_sample(end)+Z);
+            beginFace = dir.*(dir.*obj.x_sample(1)-Z);
+            endFace = dir.*(Z-dir.*obj.x_sample(end));
 
             eqVals = max(cat(4, profileUpper, profileLower, beginFace, endFace), [], 4);
 
 
-            % isosurface(Xi, Yi, Zi, eqVals, 0);
+            % isosurface(Xi, Yi, Zi, eqVals, 0.01);
             % hold off;
 
             % xlabel('x');

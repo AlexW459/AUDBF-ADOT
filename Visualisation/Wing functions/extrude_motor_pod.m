@@ -17,7 +17,6 @@ function [motor_pod, pivot_point] = extrude_motor_pod(profiles, profile_names, .
 
     motor_pod_length = der_params(find(strcmp(der_param_names, "motor_pod_length")));
 
-    motor_length = der_params(find(strcmp(der_param_names, "motor_length")));
 
     motor_mass = der_params(find(strcmp(der_param_names, "motor_mass")));
 
@@ -28,8 +27,9 @@ function [motor_pod, pivot_point] = extrude_motor_pod(profiles, profile_names, .
                     0.5*1.5*pod_width, -0.5*1.5*pod_width];
 
     motor_pod = extrusion(pod_profile, x_sample, side_profile, 0, density, ...
-        motor_mass, [-0.5*motor_length, 0, 0]);
+        motor_mass, [0, 0, 0]);
 
     pivot_point = [0, 0, 0];
+
 
 end
