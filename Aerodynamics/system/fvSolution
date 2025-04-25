@@ -58,6 +58,12 @@ potentialFlow
     PhiRefValue 0;
 }
 
+RAS
+{
+    turbulence      on;
+    RASModel        kOmegaSST;
+}
+
 relaxationFactors
 {
     p               0.3;
