@@ -385,7 +385,7 @@ classdef assembly < handle
 
             [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.01);
 
-            %patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
+            patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
 
             writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
 

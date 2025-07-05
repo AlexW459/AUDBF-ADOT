@@ -32,8 +32,8 @@ classdef extrusion_surface
             obj.x_sample = extrude_marks;
 
             %Find the y-size of the base profile:
-            y_extent_base_profile = max(outer_profile.vertices2coords(:,2))-...
-                                    min(outer_profile.vertices2coords(:,2));
+            y_extent_base_profile = max(outer_profile.vertex_coords(:,2))-...
+                                    min(outer_profile.vertex_coords(:,2));
 
             %Find the scaling factor for the first profile:
             initial_scale_factor       = (side_profile_matrix(1,1)-side_profile_matrix(1,2))/y_extent_base_profile;
@@ -80,11 +80,10 @@ classdef extrusion_surface
 
             obj.poly_scale = vander(scale_amounts(:, 1)')\scale_amounts(:, 2);
 
-            %cla;
+            
             
 
             %y_scale = polyval(obj.poly_scale, x_val);
-
             % plot(x_val, y_scale);
             % axis equal;
 
@@ -97,7 +96,6 @@ classdef extrusion_surface
             Xi = X;
             Yi = Y;
             Zi = Z;
-
 
             for i = size(obj.transformations, 1):-1:1
 
@@ -142,21 +140,7 @@ classdef extrusion_surface
                 end
             end
 
-            poly_upper = obj.base_profile.poly_upper;
-            poly_lower = obj.base_profile.poly_lower;
 
-
-            % x_val = linspace(-0.5, 0.5, 10);
-            % 
-            % upper_vertices = [x_val', polyval(poly_upper, x_val)'];
-            % 
-            % lower_vertices = [flip(x_val, 2)', polyval(poly_lower, flip(x_val, 2))'];
-            % 
-            % plot(upper_vertices(:, 1), upper_vertices(:, 2),'r-');
-            % hold on;
-            % plot(lower_vertices(:, 1), lower_vertices(:, 2),'r-');
-            % hold off;
-            % axis equal;
 
             dir = obj.base_profile.translate_direction;
 
@@ -168,23 +152,21 @@ classdef extrusion_surface
                 polyval(obj.poly_scale, dir.*Z);
 
 
-            profileUpper = -polyval(poly_upper, X)+Y;
-            profileLower = polyval(poly_lower, X)-Y;
-
+            %Calculate SDF of profile
+            profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y);
 
             beginFace = dir.*(dir.*obj.x_sample(1)-Z);
             endFace = dir.*(Z-dir.*obj.x_sample(end));
 
-            eqVals = max(cat(4, profileUpper, profileLower, beginFace, endFace), [], 4);
+            eqVals = max(cat(4, profileSDF, beginFace, endFace), [], 4);
 
 
-            % isosurface(Xi, Yi, Zi, eqVals, 0.01);
-            % hold off;
+            %isosurface(Xi, Yi, Zi, eqVals, 0.01);
 
             % xlabel('x');
             % ylabel('y');
             % zlabel('z');
-
+            % 
             % xlim([-0.5,1]);
             % ylim([-0.75,0.75]);
             % zlim([-0.75,0.75]);

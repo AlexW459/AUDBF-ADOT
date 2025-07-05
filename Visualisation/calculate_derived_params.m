@@ -64,12 +64,12 @@ function [derived_parameters, derived_param_names] = calculate_derived_params(..
     wing_airfoil_max_camber_pos = airfoil_table{wing_airfoil_index, 3};
     wing_airfoil_max_thickness = airfoil_table{wing_airfoil_index, 4};
 
-    [wing_airfoil_upper, ~] = generate_NACA_airfoil(wing_airfoil_max_camber, ...
+    wing_airfoil_points = generate_NACA_airfoil(wing_airfoil_max_camber, ...
         wing_airfoil_max_camber_pos, wing_airfoil_max_thickness, ...
         wing_root_thickness, 20);
 
     %Gets initial chord of wing
-    wing_root_chord = max(wing_airfoil_upper(:, 1)) - min(wing_airfoil_upper(:, 1));
+    wing_root_chord = max(wing_airfoil_points(:, 1)) - min(wing_airfoil_points(:, 1));
 
     
     horizontal_stabiliser_airfoil_index = ...
@@ -80,12 +80,12 @@ function [derived_parameters, derived_param_names] = calculate_derived_params(..
     horizontal_stabiliser_airfoil_max_thickness = airfoil_table{horizontal_stabiliser_airfoil_index, 4};
 
     %Generates the airfoil based on parameters
-    [horizontal_stabiliser_upper, ~] = generate_NACA_airfoil(horizontal_stabiliser_airfoil_max_camber, ...
+    horizontal_stabiliser_points = generate_NACA_airfoil(horizontal_stabiliser_airfoil_max_camber, ...
         horizontal_stabiliser_airfoil_max_camber_pos, horizontal_stabiliser_airfoil_max_thickness, ...
         horizontal_stabiliser_thickness, 20);
 
     %Finds chord of horizontal stabiliser
-    horizontal_stabiliser_chord = max(horizontal_stabiliser_upper(:, 1)) - min(horizontal_stabiliser_upper(:, 1));
+    horizontal_stabiliser_chord = max(horizontal_stabiliser_points(:, 1)) - min(horizontal_stabiliser_points(:, 1));
 
 
     %Repeats for the vertical stabiliser
@@ -95,11 +95,11 @@ function [derived_parameters, derived_param_names] = calculate_derived_params(..
     vertical_stabiliser_airfoil_max_camber_pos = airfoil_table{vertical_stabiliser_airfoil_index, 3};
     vertical_stabiliser_airfoil_max_thickness = airfoil_table{vertical_stabiliser_airfoil_index, 4};
 
-    [vertical_stabiliser_upper, ~] = generate_NACA_airfoil(vertical_stabiliser_airfoil_max_camber, ...
+    vertical_stabiliser_points = generate_NACA_airfoil(vertical_stabiliser_airfoil_max_camber, ...
         vertical_stabiliser_airfoil_max_camber_pos, vertical_stabiliser_airfoil_max_thickness, ...
         vertical_stabiliser_thickness, mesh_resolution);
 
-    vertical_stabiliser_chord = max(vertical_stabiliser_upper(:, 1)) - min(vertical_stabiliser_upper(:, 1));
+    vertical_stabiliser_chord = max(vertical_stabiliser_points(:, 1)) - min(vertical_stabiliser_points(:, 1));
 
     %Finds the length of the rods that the stabilisers attach to
     empennage_rod_length = max([horizontal_stabiliser_chord, vertical_stabiliser_chord]);

@@ -70,8 +70,8 @@ classdef extrusion
             num_profiles = size(extrude_marks, 2);
 
             %Find the y-size of the base profile:
-            y_extent_base_profile = max(base_profile.vertices2coords(:,2))-...
-                                    min(base_profile.vertices2coords(:,2));
+            y_extent_base_profile = max(base_profile.vertex_coords(:,2))-...
+                                    min(base_profile.vertex_coords(:,2));
 
             %Total length of extrusion
             extrusion_length = extrude_marks(end)-extrude_marks(1);

@@ -12,6 +12,7 @@ function airfoil_profile = horizontal_stabiliser_profile(parameters, param_names
         der_params(find(strcmp(der_param_names, "horizontal_stabiliser_airfoil_max_camber_pos")));
     stabiliser_airfoil_max_thickness = ...
         der_params(find(strcmp(der_param_names, "horizontal_stabiliser_airfoil_max_thickness")));
+    stabiliser_root_chord = der_params(find(strcmp(der_param_names, "horizontal_stabiliser_chord")));
 
 
     stabiliser_thickness = parameters(find(strcmp(param_names, "horizontal_stabiliser_thickness")));
@@ -20,22 +21,17 @@ function airfoil_profile = horizontal_stabiliser_profile(parameters, param_names
 
     mesh_resolution = parameters(find(strcmp(param_names, "mesh_resolution")));
 
-    num_points = 11;
+    num_points = ceil(mesh_resolution*stabiliser_root_chord);
 
-    [airfoil_upper, airfoil_lower] = generate_NACA_airfoil(stabiliser_airfoil_max_camber, ...
+    airfoil_points = generate_NACA_airfoil(stabiliser_airfoil_max_camber, ...
         stabiliser_airfoil_max_camber_pos, stabiliser_airfoil_max_thickness, ...
         stabiliser_thickness, num_points);
 
-    % plot(airfoil_upper(:, 1), airfoil_upper(:, 2), 'r-', ...
-    % airfoil_upper(:, 1), airfoil_upper(:, 2), 'r-');
+    % plot(airfoil_points(:, 1), airfoil_points(:, 2), 'r-');
     % hold on;
-    % 
-    % plot(airfoil_lower(:, 1), airfoil_lower(:, 2), 'r-', ...
-    %    airfoil_lower(:, 1), airfoil_lower(:, 2), 'r-');
-    % hold off;
+
    
     %Now generate a fuselage base profile:
-    airfoil_profile = profile(airfoil_upper, airfoil_lower, 1, plastic_thickness, mesh_resolution);
-
+    airfoil_profile = profile(airfoil_points, 1, plastic_thickness);
 
 end

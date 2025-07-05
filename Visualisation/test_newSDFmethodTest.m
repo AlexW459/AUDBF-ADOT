@@ -18,8 +18,6 @@ x2 = [points(2:end, 1); points(1, 1)];
 y2 = [points(2:end, 2); points(1, 2)];
 
 
-distances = [];
-
 %Find parameters of implicit equation of side of polygon
 a1 = y2-y1;
 b1 = x1 - x2;

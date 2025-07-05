@@ -11,7 +11,7 @@ function output_profile = empennage_support_profile(parameters, param_names, der
 
     mesh_resolution = parameters(find(strcmp(param_names, "mesh_resolution")));
 
-    num_points = 8;
+    num_points = ceil(mesh_resolution*0.5*support_thickness*pi*4);
 
     max_degrees = 180;
 
@@ -22,8 +22,10 @@ function output_profile = empennage_support_profile(parameters, param_names, der
     B_upper = [-0.5*support_thickness*cosd(t), 0.5*support_thickness*sind(t)];
     B_lower = [0.5*support_thickness*cosd(t), -0.5*support_thickness*sind(t)];
 
-    % plot(B_upper(:, 1), B_upper(:, 2), 'r-');
+    B = [B_upper(1:end-1, :); B_lower(1:end-1, :)];
 
-    output_profile = profile(B_upper, B_lower, -1, plastic_thickness, mesh_resolution*30);
+    %plot(B(:, 1), B(:, 2));
+
+    output_profile = profile(B, -1, plastic_thickness);
 
 end
