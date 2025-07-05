@@ -87,12 +87,12 @@ classdef profile
 
             obj.vertices2coords = [upper_vertices; lower_vertices];
 
-            x_values = linspace(min_x-0.1, max_x+0.1, ceil(20*resolution*(max_x-min_x)));
-            plot(coords_upper(:, 1), coords_upper(:, 2),'ko', x_values, polyval(obj.poly_upper, x_values),'r-');
-            hold on;
-            plot(coords_lower(:, 1), coords_lower(:, 2),'ko', x_values, polyval(obj.poly_lower, x_values),'r-');
-            hold off;
-            axis equal;
+            % x_values = linspace(min_x-0.1, max_x+0.1, ceil(20*resolution*(max_x-min_x)));
+            % plot(coords_upper(:, 1), coords_upper(:, 2),'ko', x_values, polyval(obj.poly_upper, x_values),'r-');
+            % hold on;
+            % plot(coords_lower(:, 1), coords_lower(:, 2),'ko', x_values, polyval(obj.poly_lower, x_values),'r-');
+            % hold off;
+            % axis equal;
 
 
             obj.centroid = [(max(obj.vertices2coords(1:end-1, 1))+min(obj.vertices2coords(1:end-1, 1)))/2,...
@@ -217,11 +217,11 @@ classdef profile
             end
 
             
-            obj.polygon = polyshape({obj.vertices2coords(:, 1), obj.inset_vertices2coords(:, 1)},...
-                {obj.vertices2coords(:, 2), obj.inset_vertices2coords(:, 2)});
-
-            plot(obj.polygon);
-            axis equal;
+            % obj.polygon = polyshape({obj.vertices2coords(:, 1), obj.inset_vertices2coords(:, 1)},...
+            %     {obj.vertices2coords(:, 2), obj.inset_vertices2coords(:, 2)});
+            % 
+            % plot(obj.polygon);
+            % axis equal;
 
             %Finds triangulation from points
             obj.triangles = triangulation(obj.polygon);
