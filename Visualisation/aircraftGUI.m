@@ -12,8 +12,6 @@ close all force;
 addpath('Discrete data')
 addpath('Empennage functions')
 addpath('Fuselage functions')
-addpath('Nosecone functions')
-addpath('Tail functions')
 addpath('Wing functions')
 
 
@@ -72,9 +70,6 @@ aircraft = assembly(@extrude_fuselage, @fuselage_constraint, "fuselage", ...
     ASA, profile_function_list, profile_name_list, variable_list, variable_name_list, ...
     @calculate_derived_params, material_table, motor_table, battery_table, airfoil_table);
 
-aircraft.addPart(@extrude_nosecone, "nosecone", "fuselage", @nosecone_constraint, ASA);
-
-aircraft.addPart(@extrude_tailcone, "tailcone", "fuselage", @tailcone_constraint, ASA);
 
 aircraft.addPart(@extrude_wing_base_right, "wing_base_right", "fuselage", @wing_base_right_constraint, ASA);
 

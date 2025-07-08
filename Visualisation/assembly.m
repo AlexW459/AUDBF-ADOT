@@ -378,7 +378,8 @@ classdef assembly < handle
             tic
 
             for i = 1:size(obj.transformed_parts, 1)
-                surface_values(:, :, :, i) = obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z);
+                disp(i);
+                surface_values(:, :, :, i) = obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z, interval);
             end
 
             surface_points = min(surface_values, [], 4);
