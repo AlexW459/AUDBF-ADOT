@@ -26,7 +26,7 @@ classdef extrusion_surface
 
     
       
-        function obj = extrusion_surface(base_profile, extrude_marks, side_profile_matrix, sweep, resolution)
+        function obj = extrusion_surface(base_profile, extrude_marks, side_profile_matrix, sweep)
             outer_profile = base_profile.change_inset([]);
 
             obj.x_sample = extrude_marks;
@@ -52,13 +52,7 @@ classdef extrusion_surface
 
             obj.sweep = sweep;
 
-
-            %Finds implicit curve of surface
-
-            %Finds polynomials fit to extrude marks
-
             y_positions = [extrude_marks', mean(side_profile_matrix, 2)];
-
 
             scale_amounts = (side_profile_matrix(:, 1) - ...
                 side_profile_matrix(:, 2))/y_extent_base_profile;
@@ -68,25 +62,6 @@ classdef extrusion_surface
 
             obj.y_pos_points = y_positions;
             obj.scale_points = scale_amounts;
-
-
-            %obj.poly_y_pos = vander(y_positions(:, 1)')\y_positions(:, 2);
-            
-            % x_val = linspace(-0.5, 1.5, 50);
-            % y_pos = y_pos_table(round((x_val+2)/4*size(y_pos_table, 2))+1);
-            % 
-            % plot(x_val, y_pos, 'r-', y_positions(:, 1), y_positions(:, 2),'ko', y_positions(1, 1):interval:y_positions(end, 1), y_pos_table(prevZeros+1:end-follZeros), '-b');
-            % axis equal;
-
-            %obj.poly_scale = vander(scale_amounts(:, 1)')\scale_amounts(:, 2);
-
-            
-            
-
-            %y_scale = polyval(obj.poly_scale, x_val);
-            % plot(x_val, y_scale);
-            % axis equal;
-
 
         end
 
@@ -145,28 +120,25 @@ classdef extrusion_surface
             intEndZ = max(Z, [], "all");
 
 
+            zSize = size(Z);
+
             y_pos_table = linearInterp(obj.y_pos_points, intStartZ, interval, intEndZ);
             y_scale_table = linearInterp(obj.scale_points, intStartZ, interval, intEndZ);
 
             
 
-            zSize1 = size(Z, 1);
-            zSize2 = size(Z, 2);
-            zSize3 = size(Z, 3);
-
-
             zIndices = reshape(floor((Z-intStartZ)./(intEndZ-intStartZ)...
-                *(size(y_pos_table, 2)-1))+1, [1, zSize1*zSize2*zSize3]);
+                *(size(y_pos_table, 2)-1))+1, [1, zSize(1)*zSize(2)*zSize(3)]);
 
-            if(min(zIndices, [], "all") <= 0)
-                disp(min(zIndices, [], "all"));
-                x = 0;
-            end
+            % if(min(zIndices, [], "all") <= 0)
+            %     disp(min(zIndices, [], "all"));
+            %     x = 0;
+            % end
 
-            y_pos_vals = reshape(y_pos_table(zIndices), [zSize1, zSize2, zSize3]);
+            y_pos_vals = reshape(y_pos_table(zIndices), [zSize(1), zSize(2), zSize(3)]);
 
 
-            y_scale_vals = reshape(y_scale_table(zIndices), [zSize1, zSize2, zSize3]);
+            y_scale_vals = reshape(y_scale_table(zIndices), [zSize(1), zSize(2), zSize(3)]);
 
 
             X = (X-(obj.sweep./obj.extrusion_length).*...
@@ -175,7 +147,7 @@ classdef extrusion_surface
             Y = (Y-y_pos_vals)./y_scale_vals;
 
             %Calculate SDF of profile
-            profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y);
+            profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y, interval);
 
             beginFace = obj.x_sample(1)-Z;
             endFace = Z-obj.x_sample(end);
@@ -183,15 +155,15 @@ classdef extrusion_surface
             eqVals = max(cat(4, profileSDF, beginFace, endFace), [], 4);
 
 
-            isosurface(Xi, Yi, Zi, eqVals, 0.01);
-
-            xlabel('x');
-            ylabel('y');
-            zlabel('z');
-
-            xlim([-0.5,1.5]);
-            ylim([-0.75,0.75]);
-            zlim([-0.75,0.75]);
+            % isosurface(Xi, Yi, Zi, eqVals, 0.01);
+            % 
+            % xlabel('x');
+            % ylabel('y');
+            % zlabel('z');
+            % 
+            % xlim([-0.5,1.5]);
+            % ylim([-0.75,0.75]);
+            % zlim([-0.75,0.75]);
 
 
        end

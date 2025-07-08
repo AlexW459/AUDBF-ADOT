@@ -233,7 +233,7 @@ classdef extrusion
             num_triangles = size(find(obj.ext_facets2nodes(:, 3)), 1);
             obj.ext_facets2nodes = obj.ext_facets2nodes(1:num_triangles, :);
 
-            obj.surface_mesh = extrusion_surface(base_profile, extrude_marks, side_profile_matrix, sweep, 20);
+            obj.surface_mesh = extrusion_surface(base_profile, extrude_marks, side_profile_matrix, sweep);
             
         end
 
