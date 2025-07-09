@@ -34,7 +34,7 @@ function output_profile = fuselage_profile(parameters, param_names, der_params, 
 
     %plot(B(:, 1), B(:, 2));
 
-    output_profile = profile(B, 1, plastic_thickness);
+    output_profile = profile(B, plastic_thickness);
 
 
 end

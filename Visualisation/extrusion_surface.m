@@ -149,8 +149,8 @@ classdef extrusion_surface
             %Calculate SDF of profile
             profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y, interval);
 
-            beginFace = obj.x_sample(1)-Z;
-            endFace = Z-obj.x_sample(end);
+            beginFace = min(obj.x_sample)-Z;
+            endFace = Z-max(obj.x_sample);
 
             eqVals = max(cat(4, profileSDF, beginFace, endFace), [], 4);
 

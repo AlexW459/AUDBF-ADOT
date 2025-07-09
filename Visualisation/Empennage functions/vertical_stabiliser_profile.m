@@ -26,6 +26,6 @@ function airfoil_profile = vertical_stabiliser_profile(parameters, param_names, 
         stabiliser_thickness, num_points);
 
 
-    airfoil_profile = profile(airfoil_points, 1, plastic_thickness);
+    airfoil_profile = profile(airfoil_points, plastic_thickness);
 
 end

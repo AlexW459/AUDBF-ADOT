@@ -276,6 +276,7 @@ classdef assembly < handle
             obj.part_rotations = zeros(obj.num_parts, 4);
             
             for i = 1:obj.num_parts
+                disp(i)
 
                 %Produces vector of 7 elements defining necessary
                 %translations and rotations
@@ -379,17 +380,17 @@ classdef assembly < handle
 
             for i = 1:size(obj.transformed_parts, 1)
                 disp(i);
-                surface_values(:, :, :, i) = ...
-                    obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z, interval);
+                %surface_values(:, :, :, i) = ...
+                 %   obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z, interval);
             end
 
-            surface_points = min(surface_values, [], 4);
+            %surface_points = min(surface_values, [], 4);
 
-            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.01);
+            %[face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);
 
-            patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
+            %patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
 
-            writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
+            %writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
 
             % xlim([-1, 1]);
             % ylim([-1, 1]);

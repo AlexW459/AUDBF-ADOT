@@ -28,7 +28,6 @@ function airfoil_profile = wing_profile(parameters, param_names, der_params, der
     % 
 
     %Now generate an airfoil base profile:
-    airfoil_profile = profile(airfoil_points,...
-        1, plastic_thickness);
+    airfoil_profile = profile(airfoil_points, plastic_thickness);
 
 end

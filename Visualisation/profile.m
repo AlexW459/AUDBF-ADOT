@@ -9,7 +9,6 @@ classdef profile
 
     properties 
 
-        translate_direction = [];      %Determines whether the extrusion extrudes forwards or backwards. Equal to 1 or -1
         inset = [];
         vertex_coords = []; %The 2d coordinates of each vertex (outer).
         inset_vertex_coords = [];  %The 2d coordinates of each vertex (if there's inset).
@@ -26,7 +25,7 @@ classdef profile
     end
 
     methods
-        function obj = profile(profile_vertex_coords, direction, inset)
+        function obj = profile(profile_vertex_coords, inset)
             % constructor
             % vertex coords - n by 2 matrix, each row is point in 2d
             % space, each point being connected to the point before and
@@ -36,8 +35,7 @@ classdef profile
 
             obj.centroid = [(max(obj.vertex_coords(1:end-1, 1))+min(obj.vertex_coords(1:end-1, 1)))/2,...
                             (max(obj.vertex_coords(1:end-1, 2))+min(obj.vertex_coords(1:end-1, 2)))/2];
-            obj.translate_direction = direction;
-            
+
             obj.inset = inset;
 
             obj.nodes2coords = [obj.vertex_coords, zeros(size(obj.vertex_coords, 1), 1)];
@@ -149,9 +147,6 @@ classdef profile
 
         end
 
-        function obj = change_direction(obj, new_direction)
-            obj.translate_direction = new_direction;
-        end
 
         % sets the object to have new vertex location in 2D space equal 
         % to the old vertex location translated by translation
@@ -215,7 +210,7 @@ classdef profile
 
         function obj = translate(obj, translate_amount)
 
-            obj.nodes2coords = obj.nodes2coords + [0, 0, 1]*translate_amount*obj.translate_direction;
+            obj.nodes2coords = obj.nodes2coords + [0, 0, 1]*translate_amount;
 
         end
 

@@ -45,7 +45,6 @@ airfoil_units = {'', 'percentile', 'decile', 'percentile'};
 airfoil_table.Properties.VariableUnits = airfoil_units;
 
 
-
 aircraft_parameters = readtable("Initial_values.csv");
 
 variable_list = aircraft_parameters{1, :};
@@ -57,52 +56,37 @@ for i = 1:size(aircraft_parameters.Properties.VariableNames, 2)
 end
 
 
-
-
-
 profile_function_list = {@fuselage_profile, @wing_profile, @motor_pod_profile, ...
-    @empennage_support_profile, @horizontal_stabiliser_profile, @vertical_stabiliser_profile};
+    @empennage_boom_profile, @horizontal_stabiliser_profile, @vertical_stabiliser_profile};
 
 profile_name_list = ["fuselage_profile", "wing_profile", "motor_pod_profile", ...
-    "empennage_support_profile", "horizontal_stabiliser_profile", "vertical_stabiliser_profile"];
+    "empennage_boom_profile", "horizontal_stabiliser_profile", "vertical_stabiliser_profile"];
 
 aircraft = assembly(@extrude_fuselage, @fuselage_constraint, "fuselage", ...
     ASA, profile_function_list, profile_name_list, variable_list, variable_name_list, ...
     @calculate_derived_params, material_table, motor_table, battery_table, airfoil_table);
 
 
-aircraft.addPart(@extrude_wing_base_right, "wing_base_right", "fuselage", @wing_base_right_constraint, ASA);
+aircraft.addPart(@extrude_wing_right, "wing_right", "fuselage", @wing_right_constraint, ASA);
 
-aircraft.addPart(@extrude_wing_base_left, "wing_base_left", "fuselage", @wing_base_left_constraint, ASA);
+aircraft.addPart(@extrude_wing_left, "wing_left", "fuselage", @wing_left_constraint, ASA);
 
-aircraft.addPart(@extrude_motor_pod, "motor_pod_left", "wing_base_left",  @motor_pod_left_constraint, ASA);
+aircraft.addPart(@extrude_motor_pod, "motor_pod_left", "wing_left",  @motor_pod_left_constraint, ASA);
 
-aircraft.addPart(@extrude_motor_pod, "motor_pod_right", "wing_base_right", @motor_pod_right_constraint, ASA);
+aircraft.addPart(@extrude_motor_pod, "motor_pod_right", "wing_right", @motor_pod_right_constraint, ASA);
 
-aircraft.addPart(@extrude_wing_tip_left, "wing_tip_left", "motor_pod_left", @wing_tip_left_constraint, ASA);
+aircraft.addPart(@extrude_empennage_boom, "empennage_boom_right", "motor_pod_right", @empennage_boom_constraint, ASA);
 
-aircraft.addPart(@extrude_wing_tip_right, "wing_tip_right", "motor_pod_right", @wing_tip_right_constraint, ASA);
+aircraft.addPart(@extrude_empennage_boom, "empennage_boom_left", "motor_pod_left", @empennage_boom_constraint, ASA);
 
-aircraft.addPart(@extrude_empennage_support, "empennage_support_right", "motor_pod_right", @empennage_support_constraint, ASA);
+aircraft.addPart(@extrude_horizontal_stabiliser, "horizontal_stabiliser", "empennage_boom_right", ...
+    @horizontal_stabiliser_constraint, ASA);
 
-aircraft.addPart(@extrude_empennage_support, "empennage_support_left", "motor_pod_left", @empennage_support_constraint, ASA);
+aircraft.addPart(@extrude_vertical_stabiliser, "vertical_stabiliser_right", "empennage_boom_right",...
+    @vertical_stabiliser_constraint, ASA);
 
-aircraft.addPart(@extrude_empennage_rod, "empennage_rod_left", "empennage_support_left", @empennage_rod_constraint, ASA);
-
-aircraft.addPart(@extrude_empennage_rod, "empennage_rod_right", "empennage_support_right", @empennage_rod_constraint, ASA);
-
-
-aircraft.addPart(@extrude_horizontal_stabiliser, "horizontal_stabiliser_right", "empennage_rod_right", ...
-    @horizontal_stabiliser_right_constraint, PETG);
-
-aircraft.addPart(@extrude_horizontal_stabiliser, "horizontal_stabiliser_left", "empennage_rod_left", ...
-    @horizontal_stabiliser_left_constraint, PETG);
-
-aircraft.addPart(@extrude_vertical_stabiliser, "vertical_stabiliser_right", "empennage_rod_right",...
-    @vertical_stabiliser_right_constraint, PETG);
-
-aircraft.addPart(@extrude_vertical_stabiliser, "vertical_stabiliser_left", "empennage_rod_left",...
-    @vertical_stabiliser_left_constraint, PETG);
+aircraft.addPart(@extrude_vertical_stabiliser, "vertical_stabiliser_left", "empennage_boom_left",...
+    @vertical_stabiliser_constraint, ASA);
 
 
 
@@ -158,7 +142,7 @@ function add_ui_to_window(aircraft_object)
                       0, 0; %motor index
                       0.1, 0.8; %horizontal stabiliser width
                       0.05, 0.6; %empennage length
-                      0.02, 0.06; %empennage supports thickness
+                      0.02, 0.06; %empennage boom thickness
                       0.02, 0.08; %horizontal stabiliser thickness
                       0, 0; %horizontal stabiliser airfoil index
                       0.1, 0.6; %vertical stabiliser height

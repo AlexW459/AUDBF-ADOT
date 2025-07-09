@@ -91,7 +91,7 @@ classdef extrusion
                     segment_length = extrude_amount-extrude_marks(profile_index-1);
                 end
 
-                sweep_amount       = sweep * (segment_length/extrusion_length);   
+                sweep_amount       = abs(sweep * (segment_length/extrusion_length));   
                 
                 scale_factor       = (side_profile_matrix(profile_index,1)-...
                     side_profile_matrix(profile_index,2))/y_extent_base_profile;

@@ -31,6 +31,6 @@ function output_profile = motor_pod_profile(parameters, param_names, der_params,
     % plot(B(:, 1), B(:, 2));
     % axis equal;
 
-    output_profile = profile(B, -1, plastic_thickness);
+    output_profile = profile(B, plastic_thickness);
 
 end

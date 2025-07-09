@@ -31,7 +31,7 @@ function airfoil_profile = horizontal_stabiliser_profile(parameters, param_names
     % hold on;
 
    
-    %Now generate a fuselage base profile:
-    airfoil_profile = profile(airfoil_points, 1, plastic_thickness);
+    %Now generate a wing profile:
+    airfoil_profile = profile(airfoil_points, plastic_thickness);
 
 end
