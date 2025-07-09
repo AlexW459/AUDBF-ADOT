@@ -276,7 +276,6 @@ classdef assembly < handle
             obj.part_rotations = zeros(obj.num_parts, 4);
             
             for i = 1:obj.num_parts
-                disp(i)
 
                 %Produces vector of 7 elements defining necessary
                 %translations and rotations
@@ -366,7 +365,7 @@ classdef assembly < handle
 
         function generate_surface(obj)
             bounding_box = [-1.1,-1,-1;2,1,1];
-            interval = 0.03;
+            interval = 0.04;
 
 
             [X,Y,Z] = meshgrid(bounding_box(1, 1):interval:bounding_box(2, 1), ...
@@ -380,21 +379,21 @@ classdef assembly < handle
 
             for i = 1:size(obj.transformed_parts, 1)
                 disp(i);
-                %surface_values(:, :, :, i) = ...
-                 %   obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z, interval);
+                surface_values(:, :, :, i) = ...
+                   obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z, interval);
             end
 
-            %surface_points = min(surface_values, [], 4);
+            surface_points = min(surface_values, [], 4);
 
-            %[face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);
+            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.01);
 
-            %patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
+            patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
 
-            %writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
+            writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
 
-            % xlim([-1, 1]);
-            % ylim([-1, 1]);
-            % zlim([-1, 1]);
+            xlim([-1, 1]);
+            ylim([-1, 1]);
+            zlim([-1, 1]);
 
             %[p, t] = distmeshsurface( SDF, FH, 0.02, bounding_box);
 

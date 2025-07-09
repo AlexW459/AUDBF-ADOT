@@ -149,13 +149,15 @@ classdef extrusion_surface
             %Calculate SDF of profile
             profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y, interval);
 
-            beginFace = min(obj.x_sample)-Z;
-            endFace = Z-max(obj.x_sample);
+            beginFace = min(obj.x_sample, [], 2)-Z;
+            endFace = Z-max(obj.x_sample, [], 2);
 
             eqVals = max(cat(4, profileSDF, beginFace, endFace), [], 4);
 
 
-            % isosurface(Xi, Yi, Zi, eqVals, 0.01);
+            % [face_nodes, node_coords] = isosurface(Xi, Yi, Zi, eqVals, 0.01);
+            % 
+            % patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
             % 
             % xlabel('x');
             % ylabel('y');
