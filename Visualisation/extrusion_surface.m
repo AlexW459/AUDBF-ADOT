@@ -121,7 +121,6 @@ classdef extrusion_surface
             yPosVals = linearInterp(obj.y_pos_points, interval, Z);
             yScaleVals = linearInterp(obj.scale_points, interval, Z);
 
-
             X = (X-(obj.sweep./obj.extrusion_length).*...
                 (Z-obj.x_sample(1)))./yScaleVals;
 
