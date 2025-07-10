@@ -116,35 +116,16 @@ classdef extrusion_surface
             end
 
 
-            intStartZ = min(Z, [],"all");
-            intEndZ = max(Z, [], "all");
-
-
-            zSize = size(Z);
-
-            y_pos_table = linearInterp(obj.y_pos_points, intStartZ, interval, intEndZ);
-            y_scale_table = linearInterp(obj.scale_points, intStartZ, interval, intEndZ);
-
-            
-
-            zIndices = reshape(floor((Z-intStartZ)./(intEndZ-intStartZ)...
-                *(size(y_pos_table, 2)-1))+1, [1, zSize(1)*zSize(2)*zSize(3)]);
-
-            % if(min(zIndices, [], "all") <= 0)
-            %     disp(min(zIndices, [], "all"));
-            %     x = 0;
-            % end
-
-            y_pos_vals = reshape(y_pos_table(zIndices), [zSize(1), zSize(2), zSize(3)]);
-
-
-            y_scale_vals = reshape(y_scale_table(zIndices), [zSize(1), zSize(2), zSize(3)]);
+            %Precalculated table of values for scaling and vertical
+            %translations along extrusion
+            yPosVals = linearInterp(obj.y_pos_points, interval, Z);
+            yScaleVals = linearInterp(obj.scale_points, interval, Z);
 
 
             X = (X-(obj.sweep./obj.extrusion_length).*...
-                (Z-obj.x_sample(1)))./y_scale_vals;
+                (Z-obj.x_sample(1)))./yScaleVals;
 
-            Y = (Y-y_pos_vals)./y_scale_vals;
+            Y = (Y-yPosVals)./yScaleVals;
 
             %Calculate SDF of profile
             profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y, interval);

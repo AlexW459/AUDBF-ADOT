@@ -365,7 +365,7 @@ classdef assembly < handle
 
         function generate_surface(obj)
             bounding_box = [-1.1,-1,-1;2,1,1];
-            interval = 0.04;
+            interval = 0.03;
 
 
             [X,Y,Z] = meshgrid(bounding_box(1, 1):interval:bounding_box(2, 1), ...
@@ -385,7 +385,7 @@ classdef assembly < handle
 
             surface_points = min(surface_values, [], 4);
 
-            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.01);
+            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);
 
             patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
 
