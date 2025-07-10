@@ -4,9 +4,7 @@
 %empenage rods
 
 function output_profile = empennage_boom_profile(parameters, param_names, der_params, der_param_names)
-    boom_thickness = ...
-        parameters(find(strcmp(param_names, "empennage_boom_thickness")));
-
+    boom_thickness = 0.04;
     plastic_thickness = parameters(find(strcmp(param_names, "plastic_thickness")));
 
     mesh_resolution = parameters(find(strcmp(param_names, "mesh_resolution")));

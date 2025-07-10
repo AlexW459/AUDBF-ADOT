@@ -6,8 +6,7 @@ function [empennage_boom, pivot_point] = extrude_empennage_boom(profiles, ...
     profile_names, parameters, param_names, der_params, der_param_names, density)
     circular_profile = profiles{find(strcmp(profile_names, "empennage_boom_profile"))};
 
-    boom_width = ...
-        parameters(find(strcmp(param_names, "empennage_boom_thickness")));
+    boom_width = 0.04;
     boom_length = der_params(find(strcmp(der_param_names, "empennage_boom_length")));
 
     rod_width = ...

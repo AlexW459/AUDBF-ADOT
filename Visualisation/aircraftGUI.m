@@ -24,7 +24,6 @@ PETG = 2;
 GAROLITE = 1;
 ASA = 3;
 
-
 %Sets the list of motors to choose from
 motor_table_file = "Motor_Selection.csv";
 motor_table = readtable(motor_table_file);
@@ -142,7 +141,6 @@ function add_ui_to_window(aircraft_object)
                       0, 0; %motor index
                       0.1, 0.8; %horizontal stabiliser width
                       0.05, 0.6; %empennage length
-                      0.02, 0.06; %empennage boom thickness
                       0.02, 0.08; %horizontal stabiliser thickness
                       0, 0; %horizontal stabiliser airfoil index
                       0.1, 0.6; %vertical stabiliser height
