@@ -9,12 +9,9 @@ classdef profile
 
     properties 
 
-        translate_direction = [];      %Determines whether the extrusion extrudes forwards or backwards. Equal to 1 or -1
         inset = [];
-        vertices2coords = []; %The 2d coordinates of each vertex (outer).
-        poly_upper = [];      %The coefficients of the polynomial approximating the upper half of the profile
-        poly_lower = [];      %The coefficients of the polynomial approximating the upper half of the profile
-        inset_vertices2coords = [];  %The 2d coordinates of each vertex (if there's inset).
+        vertex_coords = []; %The 2d coordinates of each vertex (outer).
+        inset_vertex_coords = [];  %The 2d coordinates of each vertex (if there's inset).
         nodes2coords = [];    %The 3d coordinates of each node (a 3d vertex).
         polygon = [];         %MATLAB polyshape object representing the shape to be extruded
         centroid = [];        % centroid of the shape, saved as a set of coordinates
@@ -28,89 +25,29 @@ classdef profile
     end
 
     methods
-        function obj = profile(coords_upper, coords_lower, direction, inset, resolution)
+        function obj = profile(profile_vertex_coords, inset)
             % constructor
-            % vertices2coords - n by 2 matrix, each row is point in 2d
+            % vertex coords - n by 2 matrix, each row is point in 2d
             % space, each point being connected to the point before and
             % after in the matrix
 
-            % plot(coords_upper(:, 1), coords_upper(:, 2),'r-');
-            % hold on;
-            % plot(coords_lower(:, 1), coords_lower(:, 2),'r-');
-            % hold off;
+            obj.vertex_coords = profile_vertex_coords;
 
-            obj.poly_upper = vander(coords_upper(:, 1))\coords_upper(:, 2);
-            obj.poly_lower = vander(coords_lower(:, 1))\coords_lower(:, 2);
+            obj.centroid = [(max(obj.vertex_coords(1:end-1, 1))+min(obj.vertex_coords(1:end-1, 1)))/2,...
+                            (max(obj.vertex_coords(1:end-1, 2))+min(obj.vertex_coords(1:end-1, 2)))/2];
 
-            %Removes leading coefficients that are effectively rounding
-            %errors
-            coeff_zero = 0;
-            for i = 1:size(obj.poly_upper, 1)
-                if(abs(obj.poly_upper(i)) < 10^(-8))
-                    coeff_zero = coeff_zero + 1;
-                else
-                    break;
-                end
-            end
-            obj.poly_upper = obj.poly_upper(coeff_zero+1:end);
-
-
-            coeff_zero = 0;
-            for i = 1:size(obj.poly_lower, 1)
-                if(abs(obj.poly_lower(i)) < 10^(-8))
-                    coeff_zero = coeff_zero + 1;
-                else
-                    break;
-                end
-            end
-            obj.poly_lower = obj.poly_lower(coeff_zero+1:end);
-
-            
-            % if (obj.poly_lower(1) < 0)
-            %     obj.poly_lower = (-1)*obj.poly_lower;
-            % end
-            % 
-            % if (obj.poly_upper(1) > 0)
-            %     obj.poly_upper = (-1)*obj.poly_upper;
-            % end
-
-
-            min_x = min([coords_upper(1:end-1, 1);coords_lower(1:end-1, 1) ])+0.001;
-            max_x = max([coords_upper(1:end-1, 1);coords_lower(1:end-1, 1) ])-0.001;
-
-            x_val = linspace(min_x, max_x, ceil(2*resolution*(max_x-min_x)));
-
-            upper_vertices = [x_val', polyval(obj.poly_upper, x_val)'];
-
-            lower_vertices = [flip(x_val, 2)', polyval(obj.poly_lower, flip(x_val, 2))'];
-
-
-            obj.vertices2coords = [upper_vertices; lower_vertices];
-
-            % x_values = linspace(min_x-0.1, max_x+0.1, ceil(20*resolution*(max_x-min_x)));
-            % plot(coords_upper(:, 1), coords_upper(:, 2),'ko', x_values, polyval(obj.poly_upper, x_values),'r-');
-            % hold on;
-            % plot(coords_lower(:, 1), coords_lower(:, 2),'ko', x_values, polyval(obj.poly_lower, x_values),'r-');
-            % hold off;
-            % axis equal;
-
-
-            obj.centroid = [(max(obj.vertices2coords(1:end-1, 1))+min(obj.vertices2coords(1:end-1, 1)))/2,...
-                            (max(obj.vertices2coords(1:end-1, 2))+min(obj.vertices2coords(1:end-1, 2)))/2];
-            obj.translate_direction = direction;
-            
             obj.inset = inset;
 
-            obj.nodes2coords = [obj.vertices2coords, zeros(size(obj.vertices2coords, 1), 1)];
+            obj.nodes2coords = [obj.vertex_coords, zeros(size(obj.vertex_coords, 1), 1)];
 
             obj = obj.generate_inset();
 
-            % plot(obj.vertices2coords(:, 1), obj.vertices2coords(:, 2), ...
-            %     obj.inset_vertices2coords(:, 1), obj.inset_vertices2coords(:, 2));
+            % plot(obj.vertex_coords(:, 1), obj.vertex_coords(:, 2), ...
+            %     obj.inset_vertex_coords(:, 1), obj.inset_vertex_coords(:, 2));
             % axis equal;
 
 
-            num_outer_points = size(obj.vertices2coords, 1);
+            num_outer_points = size(obj.vertex_coords, 1);
             obj.outer_adjacency_matrix = [zeros(num_outer_points-1, 1), eye(num_outer_points-1); 
                                           zeros(1, num_outer_points)];
             obj.outer_adjacency_matrix(1, num_outer_points) = 1;
@@ -124,9 +61,9 @@ classdef profile
 
         function obj = generate_inset(obj)
             if(isempty(obj.inset))
-                obj.inset_vertices2coords = [];
+                obj.inset_vertex_coords = [];
 
-                obj.polygon = polyshape(obj.vertices2coords(:, 1),obj.vertices2coords(:, 2));
+                obj.polygon = polyshape(obj.vertex_coords(:, 1),obj.vertex_coords(:, 2));
                 %Finds triangulation from points
                 obj.triangles = triangulation(obj.polygon);
 
@@ -144,58 +81,36 @@ classdef profile
 
             rot_mat = [0, -1; 1, 0]; % 90 degree rotation
 
-            perp_vectors = zeros(size(obj.vertices2coords, 1), 2); % initialises matrix for perpendicular 
-                                                   % vectors at each node
-            perp_vectors(1, :) = (rot_mat*(obj.vertices2coords(end, :) - obj.vertices2coords(2, :))')';
+            perp_vectors = zeros(size(obj.vertex_coords, 1), 2); % initialises matrix for perpendicular 
+            inset_vectors = zeros(size(obj.vertex_coords, 1), 2);
 
-            perp_vectors(1, :) = perp_vectors(1, :)/norm(perp_vectors(1, :));
+            perp_vectors(end, :) = (rot_mat*(obj.vertex_coords(end, :) - obj.vertex_coords(1, :))')';
 
-            for i = 2:size(obj.vertices2coords, 1)-1
-               
-                %If statement accounts for a very specific problem mostly
-                %occuring in airfoils where if the join between the upper
-                %half of the profile is too sharp, the inset end up
-                %pointing outside of the profile, and so even when the
-                %error is detected by later code and the inset is reversed
-                %but not reversed fully, the point is still slightly
-                %outside the bounds of the profile
-                if i == floor(size(obj.vertices2coords, 1)/2) || i == ceil(size(obj.vertices2coords, 1)/2)
-                    perp_vectors(i, :) = (rot_mat*(obj.vertices2coords(i-2, :) - obj.vertices2coords(i+2, :))')';
-                else
-                    perp_vectors(i, :) = (rot_mat*(obj.vertices2coords(i-1, :) - obj.vertices2coords(i+1, :))')';
-                end
+            perp_vectors(1:end-1, :) = (rot_mat*(obj.vertex_coords(1:end-1, :)' - obj.vertex_coords(2:end, :)'))';
 
-                perp_vectors(i, :) = perp_vectors(i, :)/norm(perp_vectors(i, :));
-
-            end
-
-            perp_vectors(end, :) = (rot_mat*(obj.vertices2coords(end-1, :) - obj.vertices2coords(1, :))')';
-            perp_vectors(end, :) = perp_vectors(end, :)/norm(perp_vectors(end, :));
-
-            obj.inset_vertices2coords = obj.vertices2coords + perp_vectors*obj.inset;
+            perp_vectors = perp_vectors./sqrt(sum(perp_vectors.^2,2));
+            
+            inset_vectors(1, :) = 0.5*(perp_vectors(end, :) + perp_vectors(1, :));
+            inset_vectors(2:end, :) = 0.5*(perp_vectors(1:end-1, :) + perp_vectors(2:end, :));
+            inset_vectors = inset_vectors./sqrt(sum(inset_vectors.^2,2));
 
 
-            for i = 1:size(obj.inset_vertices2coords, 1)
-                for j = 1:size(obj.vertices2coords, 1)
-                    diff = obj.vertices2coords(j, :) - obj.inset_vertices2coords(i, :);
+            obj.inset_vertex_coords = obj.vertex_coords + inset_vectors*obj.inset;
+
+
+            for i = 1:size(obj.inset_vertex_coords, 1)
+                for j = 1:size(obj.vertex_coords, 1)
+                    diff = obj.vertex_coords(j, :) - obj.inset_vertex_coords(i, :);
                     dist = norm(diff);
-
-                    %Checks if the point is inside the profile after
-                    %applying a 
-                    inside = max(polyval(obj.poly_upper, obj.inset_vertices2coords(i, 1))-...
-                        obj.inset_vertices2coords(i, 2), 0)*...
-                        max(obj.inset_vertices2coords(i, 2)-...
-                        polyval(obj.poly_lower, obj.inset_vertices2coords(i, 1)), 0);
-
 
                     %Checks whether an inner node is too close to an
                     %outer node, indicating an error
                     % makes the inset very small if the profile is too
                     % thin at that point
-                    if (dist < obj.inset || inside <= 0) && j ~= i
-                        
-                        obj.inset_vertices2coords(i, :) = obj.inset_vertices2coords(i, :) -...
-                        perp_vectors(i, :)*(obj.inset-10^(-4.5));
+                    if dist < obj.inset && j ~= i
+
+                        obj.inset_vertex_coords(i, :) = obj.inset_vertex_coords(i, :) -...
+                        inset_vectors(i, :)*(obj.inset-10^(-4.5));
 
                         break;
                     end
@@ -203,11 +118,11 @@ classdef profile
             end
 
             
-            obj.polygon = polyshape({obj.vertices2coords(:, 1), obj.inset_vertices2coords(:, 1)},...
-                {obj.vertices2coords(:, 2), obj.inset_vertices2coords(:, 2)});
-
-            %plot(obj.polygon);
-            % axis equal;
+            obj.polygon = polyshape({obj.vertex_coords(:, 1), obj.inset_vertex_coords(:, 1)},...
+                {obj.vertex_coords(:, 2), obj.inset_vertex_coords(:, 2)});
+            % 
+            % plot(obj.polygon);
+            axis equal;
 
             %Finds triangulation from points
             obj.triangles = triangulation(obj.polygon);
@@ -232,9 +147,6 @@ classdef profile
 
         end
 
-        function obj = change_direction(obj, new_direction)
-            obj.translate_direction = new_direction;
-        end
 
         % sets the object to have new vertex location in 2D space equal 
         % to the old vertex location translated by translation
@@ -242,19 +154,19 @@ classdef profile
         % translated by
         function obj = translate_planar(obj, translation)
 
-            obj.vertices2coords = obj.vertices2coords + translation;
+            obj.vertex_coords = obj.vertex_coords + translation;
 
             if(~isempty(obj.inset))
-                obj.inset_vertices2coords = obj.inset_vertices2coords + translation;
-                obj.polygon = polyshape({obj.vertices2coords(:, 1), obj.inset_vertices2coords(:, 1)},...
-                {obj.vertices2coords(:, 2), obj.inset_vertices2coords(:, 2)});
+                obj.inset_vertex_coords = obj.inset_vertex_coords + translation;
+                obj.polygon = polyshape({obj.vertex_coords(:, 1), obj.inset_vertex_coords(:, 1)},...
+                {obj.vertex_coords(:, 2), obj.inset_vertex_coords(:, 2)});
             else
-                obj.polygon = polyshape(obj.vertices2coords(:, 1), obj.vertices2coords(:, 2));
+                obj.polygon = polyshape(obj.vertex_coords(:, 1), obj.vertex_coords(:, 2));
             end
 
             %Recalculates centroid
-            obj.centroid = [(max(obj.vertices2coords(:, 1))+min(obj.vertices2coords(:, 1)))/2,...
-                            (max(obj.vertices2coords(:, 2))+min(obj.vertices2coords(:, 2)))/2];
+            obj.centroid = [(max(obj.vertex_coords(:, 1))+min(obj.vertex_coords(:, 1)))/2,...
+                            (max(obj.vertex_coords(:, 2))+min(obj.vertex_coords(:, 2)))/2];
 
             %Finds triangulation from points
             obj.triangles = triangulation(obj.polygon);
@@ -268,17 +180,17 @@ classdef profile
             % origin of the coordinate system
             % scale_factor - the factor to scale the shape by about the
             % origin of the coordinate system
-            temp_vertices = obj.vertices2coords - obj.centroid;
+            temp_vertices = obj.vertex_coords - obj.centroid;
             temp_vertices = temp_vertices*scale_factor;
-            obj.vertices2coords = temp_vertices + obj.centroid;
+            obj.vertex_coords = temp_vertices + obj.centroid;
 
             obj = obj.generate_inset();
         end
 
 
         function obj = rotate_planar(obj, angle)
-            temp_vertices = obj.vertices2coords - obj.centroid;
-            temp_inset_vertices = obj.inset_vertices2coords - obj.centroid;
+            temp_vertices = obj.vertex_coords - obj.centroid;
+            temp_inset_vertices = obj.inset_vertex_coords - obj.centroid;
 
             rotation_matrix = [cosd(angle), -sind(angle);
                                sind(angle), cosd(angle)];
@@ -289,8 +201,8 @@ classdef profile
             temp_inset_vertices = temp_inset_vertices.*repmat(rotation_matrix, ...
                 [1, size(temp_inset_vertices, 1)]);
 
-            obj.vertices2coords = temp_vertices + obj.centroid;
-            obj.inset_vertices2coords = temp_inset_vertices + obj.centroid;
+            obj.vertex_coords = temp_vertices + obj.centroid;
+            obj.inset_vertex_coords = temp_inset_vertices + obj.centroid;
 
             obj.nodes2coords = [obj.triangles.Points, obj.nodes2coords(1, 3)*ones(size(obj.triangles.Points, 1), 1)];
         end
@@ -298,7 +210,7 @@ classdef profile
 
         function obj = translate(obj, translate_amount)
 
-            obj.nodes2coords = obj.nodes2coords + [0, 0, 1]*translate_amount*obj.translate_direction;
+            obj.nodes2coords = obj.nodes2coords + [0, 0, 1]*translate_amount;
 
         end
 

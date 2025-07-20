@@ -70,8 +70,8 @@ classdef extrusion
             num_profiles = size(extrude_marks, 2);
 
             %Find the y-size of the base profile:
-            y_extent_base_profile = max(base_profile.vertices2coords(:,2))-...
-                                    min(base_profile.vertices2coords(:,2));
+            y_extent_base_profile = max(base_profile.vertex_coords(:,2))-...
+                                    min(base_profile.vertex_coords(:,2));
 
             %Total length of extrusion
             extrusion_length = extrude_marks(end)-extrude_marks(1);
@@ -91,7 +91,7 @@ classdef extrusion
                     segment_length = extrude_amount-extrude_marks(profile_index-1);
                 end
 
-                sweep_amount       = sweep * (segment_length/extrusion_length);   
+                sweep_amount       = abs(sweep * (segment_length/extrusion_length));   
                 
                 scale_factor       = (side_profile_matrix(profile_index,1)-...
                     side_profile_matrix(profile_index,2))/y_extent_base_profile;
@@ -233,7 +233,7 @@ classdef extrusion
             num_triangles = size(find(obj.ext_facets2nodes(:, 3)), 1);
             obj.ext_facets2nodes = obj.ext_facets2nodes(1:num_triangles, :);
 
-            obj.surface_mesh = extrusion_surface(base_profile, extrude_marks, side_profile_matrix, sweep, 20);
+            obj.surface_mesh = extrusion_surface(base_profile, extrude_marks, side_profile_matrix, sweep);
             
         end
 

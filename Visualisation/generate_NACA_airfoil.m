@@ -4,7 +4,8 @@
 %set of parameters, places results into a .mat file with the given name of
 %the airfoil
 
-function [upper_points, lower_points] = generate_NACA_airfoil(max_camber_percent, max_camber_pos_decile, max_thickness_percent, airfoil_height, num_points)
+function airfoil_points = generate_NACA_airfoil(max_camber_percent, max_camber_pos_decile, ...
+    max_thickness_percent, airfoil_height, num_points)
     max_camber = max_camber_percent/100;
     max_camber_pos = max_camber_pos_decile/10;
     max_thickness = max_thickness_percent/100;
@@ -21,7 +22,6 @@ function [upper_points, lower_points] = generate_NACA_airfoil(max_camber_percent
     x_values = [x_values_1, x_values_2(2:end)];
 
     x_size = size(x_values, 2);
-
 
     camber_line = zeros(x_size, 1);
 
@@ -59,33 +59,28 @@ function [upper_points, lower_points] = generate_NACA_airfoil(max_camber_percent
         upper_points(x_num, 1) = x_pos - thickness * sin(theta);
         upper_points(x_num, 2) = y_pos + thickness * cos(theta);
     
-                    %Adds lower point
-        lower_points(x_size-x_num+1, 1) = x_pos + thickness*sin(theta);
-        lower_points(x_size-x_num+1, 2) = y_pos - thickness*cos(theta);
+        %Adds lower point
+        lower_points(x_num, 1) = x_pos + thickness*sin(theta);
+        lower_points(x_num, 2) = y_pos - thickness*cos(theta);
 
     end
 
-
+    %Combines points into single list
+    airfoil_points = [upper_points; flip(lower_points(2:end-1, :), 1)];
 
 
     %Centres the profile around (0, 0)
-    avg_y = (max(upper_points(:, 2)) + min(lower_points(:, 2)))/2;
+    avg_y = (max(airfoil_points(:, 2)) + min(airfoil_points(:, 2)))/2;
 
-    upper_points = upper_points - repmat([0.5, avg_y], [x_size, 1]);
-    lower_points = lower_points - repmat([0.5, avg_y], [x_size, 1]);
+    airfoil_points = airfoil_points - repmat([0.5, avg_y], [x_size*2-2, 1]);
 
-    airfoil_y_extent = max(upper_points(:, 2)) - min(lower_points(:, 2));
+    airfoil_y_extent = max(airfoil_points(:, 2)) - min(airfoil_points(:, 2));
 
     %Scales the airfoil correctly
-    upper_points = upper_points* (airfoil_height/airfoil_y_extent);
-
-    lower_points = lower_points* (airfoil_height/airfoil_y_extent);
+    airfoil_points = airfoil_points* (airfoil_height/airfoil_y_extent);
 
     
-    
-    % plot(upper_points(:, 1), upper_points(:, 2), 'r-')
+    % plot(airfoil_points(:, 1), airfoil_points(:, 2), 'r-')
     % hold on;
-    % plot(lower_points(:, 1), lower_points(:, 2), 'r-')
-    % hold off;
     
 end

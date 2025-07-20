@@ -217,7 +217,7 @@ classdef assembly < handle
         function construct_profiles(obj)
             %Constructs profiles
             profiles = obj.part_profiles;
-            parfor i = 1:size(obj.profile_constructors, 2)
+            for i = 1:size(obj.profile_constructors, 2)
                 current_constructor = obj.profile_constructors{i};
                 profiles{i} = current_constructor(obj.aircraft_parameters, ...
                     obj.parameter_names, obj.derived_parameters, obj.derived_param_names);
@@ -240,7 +240,7 @@ classdef assembly < handle
             
 
             %Constructs parts by extruding profiels
-            parfor i = 1:obj.num_parts
+            for i = 1:obj.num_parts
                  current_constructor = obj.extrusion_constructors{i};
 
                  current_density = obj.material_table{obj.material_indices(i), 2};
@@ -364,8 +364,8 @@ classdef assembly < handle
         end
 
         function generate_surface(obj)
-            bounding_box = [-1.1,-1,-1;1.1,1,1];
-            interval = 0.02;
+            bounding_box = [-1.1,-1,-1;2,1,1];
+            interval = 0.03;
 
 
             [X,Y,Z] = meshgrid(bounding_box(1, 1):interval:bounding_box(2, 1), ...
@@ -377,25 +377,29 @@ classdef assembly < handle
 
             tic
 
-            parfor i = 1:size(obj.transformed_parts, 1)
-                surface_values(:, :, :, i) = obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z);
+            for i = 1:size(obj.transformed_parts, 1)
+                disp(i);
+                surface_values(:, :, :, i) = ...
+                   obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z, interval);
             end
 
             surface_points = min(surface_values, [], 4);
 
-            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.001);
+            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);
 
             patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
 
             writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
 
-            FH = @(p) ones(size(p,1),1);
-
-            %isosurface(X, Y, Z, SDF(X, Y, Z), 0);
+            xlim([-1, 1]);
+            ylim([-1, 1]);
+            zlim([-1, 1]);
 
             %[p, t] = distmeshsurface( SDF, FH, 0.02, bounding_box);
 
             toc
+
+            
 
         end
 
