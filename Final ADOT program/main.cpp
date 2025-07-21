@@ -10,12 +10,14 @@ int main(){
 
     string planeModel = "MULEplaneModel";
 
+    //Gets maximum and minimun values of each parameter
     dataTable paramRanges = readCSV(planeModel + "/paramRanges.csv");
 
     vector<double> paramVals;
     paramVals.resize(paramRanges.columns.size());
     vector<string> paramNames;
 
+    //Finds random values of parameters within bounds
     for(int i = 0; i < (int)paramVals.size(); i++){
 
         double min = paramRanges.columns[i].second[0];
@@ -26,9 +28,9 @@ int main(){
         paramNames.push_back(paramRanges.columns[i].first);
     }
 
-    //glm::mat3 MOI;
-    //glm::vec3 COM;
-    //float mass;
+    glm::mat3 MOI;
+    glm::vec3 COM;
+    float mass;
 
     vector<function<profile*(vector<string>, vector<double>, double)>> profileFunctions = {fuselageProfile};
     function<void(vector<string>&, vector<double>&)> derivedParamsFunc = calcDerivedParams;
@@ -37,7 +39,7 @@ int main(){
 
     MULEaircraft.addPart("Fuselage", 1000, extrudeFuselage, 0);
 
-    //MULEaircraft.calculateVals(paramVals, 20, 20, mass, COM, MOI);
+    MULEaircraft.calculateVals(paramVals, 20, 20, mass, COM, MOI);
 
     MULEaircraft.plot(500, 500, paramVals, 20);
 

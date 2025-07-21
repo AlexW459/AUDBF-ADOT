@@ -67,6 +67,8 @@ int aircraft::findPart(string partName){
 void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, double surfMeshRes,
     float &mass, glm::vec3 &COM, glm::mat3 &MOI){
 
+        
+
     //Variables to store information about each extrusion
     vector<string> paramNames = parameterNames;
 
@@ -75,16 +77,20 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     //Combines params and derived params into single vectors
     
     //Gets profiles
-    profile* profiles = nullptr;
-    extrusionData* extrusions = nullptr;
+    int numProfiles = profileFunctions.size();
+    profile* profiles = new profile[numProfiles];
+    int numParts = partNames.size();
+    extrusionData* extrusions = new extrusionData[numParts];
+
     getExtrusionData(profiles, extrusions, paramValues, volMeshRes); 
-    
+
     
     //Gets extrusion information and finds relevant values
     glm::vec3 COMSoFar(0, 0, 0);
     float massSoFar;
     glm::mat3 MOISoFar(0);
-    int numParts = partNames.size();
+
+    glm::mat2x3 totalBoundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
 
     for(int i = 0; i < numParts; i++){
 
@@ -93,7 +99,9 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         glm::mat3 partMOI;
         float partVolume;
         int profileIndex = partProfiles[i];
-        findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI);
+        glm::mat2x3 boundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
+        findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI, boundingBox);
+
 
         //Apply part's own transformations
         partCOM = extrusions[i].rotation * partCOM;
@@ -101,6 +109,9 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
         
         float partMass = partVolume*partDensities[i];
+        //Multiplies MOI by common factor
+        MOI *= partMass;
+
         //Performs reverse operations on the MOI because these equations actually move the point
         //around which the part rotates, and so to move the part while continuing to rotate it around the 
         //origin
@@ -108,6 +119,12 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         partMOI = (glm::transpose(rotMat))*partMOI*rotMat;
         glm::mat3 transMat = constructRelationMatrix(-1.0f*extrusions[i].translation);
         partMOI = partMOI + partMass*transMat;
+
+        //Applies transformations to bounding box
+        boundingBox[0] = extrusions[i].rotation * boundingBox[0];
+        boundingBox[1] = extrusions[i].rotation * boundingBox[1];
+        boundingBox[0] = extrusions[i].translation + boundingBox[0];
+        boundingBox[1] = extrusions[i].translation + boundingBox[1];
 
         //Get transformations applied to part
         vector<int> parentIndices = findParents(i);
@@ -117,12 +134,28 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
             partCOM = extrusions[pIndex].rotation * partCOM;
             partCOM += extrusions[pIndex].translation;
 
-            glm::mat3 rotMat = glm::mat3_cast(extrusions[i].rotation);
+            glm::mat3 rotMat = glm::mat3_cast(extrusions[pIndex].rotation);
             partMOI = (glm::transpose(rotMat))*partMOI*rotMat;
-            glm::mat3 transMat = constructRelationMatrix(-1.0f*extrusions[i].translation);
+            glm::mat3 transMat = constructRelationMatrix(-1.0f*extrusions[pIndex].translation);
             partMOI = partMOI + partMass*transMat;
+
+            //Apply transformations to bounding box
+            boundingBox[0] = extrusions[pIndex].rotation * boundingBox[0];
+            boundingBox[1] = extrusions[pIndex].rotation * boundingBox[1];
+            boundingBox[0] = extrusions[pIndex].translation + boundingBox[0];
+            boundingBox[1] = extrusions[pIndex].translation + boundingBox[1];
+
         }
 
+        //Adjusts total bounding box if necessary
+        totalBoundingBox[0][0] = min(totalBoundingBox[0][0], boundingBox[0][0]);
+        totalBoundingBox[0][1] = min(totalBoundingBox[0][1], boundingBox[0][1]);
+        totalBoundingBox[0][2] = min(totalBoundingBox[0][2], boundingBox[0][2]);
+        totalBoundingBox[1][0] = max(totalBoundingBox[1][0], boundingBox[1][0]);
+        totalBoundingBox[1][1] = max(totalBoundingBox[1][1], boundingBox[1][1]);
+        totalBoundingBox[1][2] = max(totalBoundingBox[1][2], boundingBox[1][2]);
+        
+        
         //Adds to total COM
         COMSoFar += partCOM*partMass;
         //Adds to total mass
@@ -141,14 +174,23 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     delete[] extrusions;
 }
 
+//Gets relational matrix involved in translation of moment of inertia
+glm::mat3 aircraft::constructRelationMatrix(glm::vec3 r) const{
+    float dotP = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
+    glm::mat3 result = glm::mat3(dotP) - glm::outerProduct(r, r);
+    return result;
+}
+
 //Finds values of volumetric mesh
-void aircraft::findVolVals(const profile& partProfile, const extrusionData& extrusion, float& volume, glm::vec3& COM, glm::mat3& MOI) const{
+void aircraft::findVolVals(const profile& partProfile, const extrusionData& extrusion, float& volume, 
+    glm::vec3& COM, glm::mat3& MOI, glm::mat2x3& boundingBox) const{
     
     //Gets extrusion
     vector<glm::vec3> extrudePoints;
     char** adjMatrix = nullptr;
-    int numTetras = generateExtrusion(partProfile, extrusion, adjMatrix, extrudePoints);
+    int numTetras = generateExtrusion(partProfile, extrusion, adjMatrix, extrudePoints, boundingBox);
 
+    
 
     //Allocates an additional memory space due to how the tetrahedron searching code works
     //The vector in this space is unused
@@ -238,8 +280,8 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     volume = volumeSoFar;
     COM = COMSoFar /= volume;
 
-    //Multiplies by common factor
-    MOI = MOISoFar*volume*0.1f;
+    //Multiplies by common factor. Now equal to MOI/mass
+    MOI = MOISoFar*0.1f;
 
     //Frees memory
     delete[] tetraIndices;
@@ -253,11 +295,14 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
 }
 
 //Generates volumetric mesh
-int aircraft::generateExtrusion(const profile& partProfile, const extrusionData& extrusion, char**& adjMatrix, vector<glm::vec3>& points) const{
+int aircraft::generateExtrusion(const profile& partProfile, const extrusionData& extrusion, 
+    char**& adjMatrix, vector<glm::vec3>& points, glm::mat2x3& boundingBox) const{
 
     int numProfiles = extrusion.zSampleVals.size();
     int profileSize = partProfile.vertexCoords.size();
     int outerSize = profileSize;
+
+
 
     if(partProfile.inset){
         profileSize *= 2;
@@ -271,6 +316,10 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
     float extrusionBegin = *min_element(extrusion.zSampleVals.begin(), extrusion.zSampleVals.end());
     float extrusionEnd = *max_element(extrusion.zSampleVals.begin(), extrusion.zSampleVals.end());
     float extrusionLength = extrusionEnd - extrusionBegin;
+
+    boundingBox[0][2] = extrusionBegin;
+    boundingBox[1][2] = extrusionEnd;
+
 
     //Finds positions of profiles
     for(int i = 0; i < numProfiles; i++){
@@ -286,7 +335,16 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
             newPoint[0] += profileSweep;
             newPoints[j] = newPoint;
             points[profileBegin + j] = newPoint;
+
+            
+
+            //Updates bounding box
+            boundingBox[0][0] = min(boundingBox[0][0], newPoint[0]);
+            boundingBox[0][1] = min(boundingBox[0][1], newPoint[1]);
+            boundingBox[1][0] = max(boundingBox[1][0], newPoint[0]);
+            boundingBox[1][1] = max(boundingBox[1][1], newPoint[1]);
         }
+
 
         //Adds inset points
         vector<glm::vec2> insetPoints = partProfile.generateInset(newPoints);
@@ -400,7 +458,8 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
     for(int i = 0; i < numParts; i++){
         //Gets extrusion
         vector<glm::vec3> points;
-        generateExtrusion(profiles[partProfiles[i]], extrusions[i], adjMatrix, points);
+        glm::mat2x3 boundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
+        generateExtrusion(profiles[partProfiles[i]], extrusions[i], adjMatrix, points, boundingBox);
 
         adjMatrices[i] = adjMatrix;
 
@@ -434,9 +493,8 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
 
     }
 
-    //Plot meshes to screen
-    meshWindow window(SCREEN_WIDTH, SCREEN_WIDTH);
-    window.draw3D(totalPoints, adjMatrices, 1.0f);
+    meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
+    window.draw3D(totalPoints, adjMatrices, 3.0f);
 
     delete[] profiles;
     delete[] extrusions;
@@ -452,9 +510,3 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
 
 }
 
-//Gets relational matrix involved in translation of moment of inertia
-glm::mat3 aircraft::constructRelationMatrix(glm::vec3 r) const{
-    float dotP = r[0] * r[0] + r[1] * r[1] + r[2] * r[2];
-    glm::mat3 result = glm::mat3(dotP) - glm::outerProduct(r, r);
-    return result;
-}

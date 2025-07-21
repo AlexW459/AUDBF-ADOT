@@ -55,11 +55,18 @@ class aircraft{
 
     private:
         //Finds the variables associated with the volumetric mesh
-        void findVolVals(const profile& partProfile, const extrusionData& extrusion, float& mass, glm::vec3& COM, glm::mat3& MOI) const;
+        void findVolVals(const profile& partProfile, const extrusionData& extrusion, float& mass, glm::vec3& COM, 
+            glm::mat3& MOI, glm::mat2x3& boundingBox) const;
         
         void getExtrusionData(profile* profiles, extrusionData* extrusions, vector<double> paramValues, double volMeshRes) const;
-        int generateExtrusion(const profile& partProfile, const extrusionData& extrusion, char**& adjMatrix, vector<glm::vec3>& points) const;
+        int generateExtrusion(const profile& partProfile, const extrusionData& extrusion, char**& adjMatrix, 
+            vector<glm::vec3>& points, glm::mat2x3& boundingBox) const;
+        //Gets relational matrix used in translation of MOI. Returns relational matrix
         glm::mat3 constructRelationMatrix(glm::vec3 r) const;
+
+        //Gets SDF of a single part for a range of values with a specified resolution. Returns dimensions of SDF
+        glm::vec3 getSDFvals(const extrusionData& extrusions, const profile& partProfile, float***& SDF,
+            glm::mat2x3 boundingBox, double surfMeshRes) const;
 
         //Names of all of the parameters, in order for searching
         vector<string> parameterNames;

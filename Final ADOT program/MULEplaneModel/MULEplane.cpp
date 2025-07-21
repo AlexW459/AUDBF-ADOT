@@ -37,7 +37,7 @@ profile* fuselageProfile(vector<string> paramNames, vector<double> paramVals, do
                      + (3 * (1-tVal) * tVal*tVal) * p3 + tVal*tVal*tVal * p4);
     }
 
-    //bezPoints = {glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 1), glm::vec2(1,0)};
+    bezPoints = {glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(0.5, 1.5), glm::vec2(1, 1), glm::vec2(1,0)};
 
     profile outputProfile(bezPoints);
 
@@ -58,7 +58,8 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
     extrusion.sweep = 0.0f;
     extrusion.translation = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    extrusion.rotation = glm::quat(glm::vec3(-0.5f*M_PI, 0.0f, -0.5f*M_PI));
+    extrusion.rotation = glm::quat(glm::vec3(0.5f*M_PI, 0.0f, -0.5f*M_PI));
+    //extrusion.rotation = glm::quat(glm::vec3(0.0f, 0.0f, 0.0f));
     
 
     return extrusion;
