@@ -38,7 +38,7 @@ class aircraft{
     public:
         aircraft(vector<string> _paramNames, function<void(vector<string>&, vector<double>&)>
             _derivedParamsFunc, 
-            vector<function<profile*(vector<string>, vector<double>, double)>> _profileFunctions);
+            vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions);
 
         void addPart(string partName, float density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
@@ -58,8 +58,8 @@ class aircraft{
         void findVolVals(const profile& partProfile, const extrusionData& extrusion, float& mass, glm::vec3& COM, 
             glm::mat3& MOI, glm::mat2x3& boundingBox) const;
         
-        void getExtrusionData(profile* profiles, extrusionData* extrusions, vector<double> paramValues, double volMeshRes) const;
-        int generateExtrusion(const profile& partProfile, const extrusionData& extrusion, char**& adjMatrix, 
+        void getExtrusionData(vector<profile>& profiles, vector<extrusionData>& extrusions, vector<double> paramValues, double volMeshRes) const;
+        int generateExtrusion(const profile& partProfile, const extrusionData& extrusion, vector<char>& adjMatrix, 
             vector<glm::vec3>& points, glm::mat2x3& boundingBox) const;
         //Gets relational matrix used in translation of MOI. Returns relational matrix
         glm::mat3 constructRelationMatrix(glm::vec3 r) const;
@@ -73,7 +73,7 @@ class aircraft{
         //Function used to calculate derived values from parameters
         function<void(vector<string>&, vector<double>&)> derivedParamsFunc;
         //Functions used to produce profiles based on parameters
-        vector<function<profile*(vector<string>, vector<double>, double)>> profileFunctions;
+        vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions;
         //Functions used to produce extrusion information based on parameters
         vector<function<extrusionData(vector<string>, vector<double>, double)>> extrusionFunctions;
 

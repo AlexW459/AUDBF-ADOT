@@ -20,51 +20,50 @@ profile::profile(vector<glm::vec2>& _vertexCoords, double _inset){
 
     int totalVerts = numVerts*2;
     //Adds adjacencies to adjacency matrix
-    adjacencyMatrix = new char*[totalVerts];
+    adjacencyMatrix.resize(totalVerts*totalVerts);
 
     for(int i = 0; i < totalVerts; i++){
-        adjacencyMatrix[i] = new char[totalVerts];
-
         //Fill with zeroes initially
         for(int j = 0; j < totalVerts; j++){
-            adjacencyMatrix[i][j] = 0;
+            adjacencyMatrix[i*totalVerts + j] = 0;
         }
     }
 
     //Adds initial boundary connections to matrix
     for(int i = 0; i < numVerts-1; i++){
         //Outer points
-        adjacencyMatrix[i + 1][i] = 1;
-        adjacencyMatrix[i][i + 1] = 1;
+        adjacencyMatrix[(i + 1)*totalVerts + i] = 1;
+        adjacencyMatrix[i*totalVerts + (i + 1)] = 1;
 
         //Inset points
-        adjacencyMatrix[numVerts + i + 1][numVerts + i] = 1;
-        adjacencyMatrix[numVerts + i][numVerts + i + 1] = 1;
+        adjacencyMatrix[(numVerts + i + 1)*totalVerts + (numVerts + i)] = 1;
+        adjacencyMatrix[(numVerts + i)*totalVerts + (numVerts + i + 1)] = 1;
     }
+
     //End to start connection for outer points
-    adjacencyMatrix[numVerts - 1][0] = 1;
-    adjacencyMatrix[0][numVerts - 1] = 1;
+    adjacencyMatrix[(numVerts - 1)*totalVerts + 0] = 1;
+    adjacencyMatrix[(0*numVerts) + (numVerts - 1)] = 1;
     //Also for inset points
-    adjacencyMatrix[2 * numVerts - 1][numVerts] = 1;
-    adjacencyMatrix[numVerts][2 * numVerts - 1] = 1;
+    adjacencyMatrix[(2 * numVerts - 1)*totalVerts + numVerts] = 1;
+    adjacencyMatrix[numVerts*totalVerts + (2 * numVerts - 1)] = 1;
 
     //Connects each inset vertex to its corresponing outer vertex, 
     //as well as the next out vertex
     for(int i = 0; i < numVerts-1; i++){
-        adjacencyMatrix[i][numVerts+i] = 1;
-        adjacencyMatrix[numVerts+i][i] = 1;
+        adjacencyMatrix[i*totalVerts + (numVerts+i)] = 1;
+        adjacencyMatrix[(numVerts+i)*totalVerts + i] = 1;
 
-        adjacencyMatrix[i+1][numVerts+i] = 1;
-        adjacencyMatrix[numVerts+i][i+1] = 1;
+        adjacencyMatrix[(i+1)*totalVerts + (numVerts+i)] = 1;
+        adjacencyMatrix[(numVerts+i)*totalVerts + (i+1)] = 1;
     }
 
-    adjacencyMatrix[numVerts-1][2*numVerts-1] = 1;
-    adjacencyMatrix[2*numVerts-1][numVerts-1] = 1;
+    adjacencyMatrix[(numVerts-1)*totalVerts + (2*numVerts-1)] = 1;
+    adjacencyMatrix[(2*numVerts-1)*totalVerts + (numVerts-1)] = 1;
 
-    adjacencyMatrix[0][2*numVerts-1] = 1;
-    adjacencyMatrix[2*numVerts-1][0] = 1;
+    adjacencyMatrix[0*totalVerts + (2*numVerts-1)] = 1;
+    adjacencyMatrix[(2*numVerts-1)*totalVerts + 0] = 1;
 
-    numTriangles = 2*numVerts;
+    numTriangles = totalVerts;
 
 }
 
@@ -113,53 +112,26 @@ profile::profile(vector<glm::vec2>& _vertexCoords){
     int numVerts = vertexCoords.size();
 
     //Finds triangulation
-    adjacencyMatrix = new char*[numVerts];
-    for(int i = 0; i < numVerts; i++){
-        adjacencyMatrix[i] = new char[numVerts];
-    }
+    adjacencyMatrix.resize(numVerts*numVerts);
     numTriangles = triangulatePolygon(vertexCoords, adjacencyMatrix);
 
 }
 
-profile::profile(profile& Profile) : vertexCoords(Profile.vertexCoords), 
-insetCoords(Profile.insetCoords), inset(Profile.inset), numTriangles(Profile.numTriangles) {
-    
-    int numPoints = vertexCoords.size() + insetCoords.size();
-
-
-    adjacencyMatrix = new char*[numPoints];
-    for(int i = 0; i < numPoints; i++){
-        adjacencyMatrix[i] = new char[numPoints];
-        std::copy(Profile.adjacencyMatrix[i], Profile.adjacencyMatrix[i] + numPoints, adjacencyMatrix[i]);
-    }
-
-}
-
-profile profile::operator=(profile& Profile){
-    inset = Profile.inset;
-    vertexCoords = Profile.vertexCoords;
-    insetCoords = Profile.insetCoords;
-    numTriangles = Profile.numTriangles;
-    int numPoints = vertexCoords.size() + insetCoords.size();
-
-    adjacencyMatrix = new char*[numPoints];
-    for(int i = 0; i < numPoints; i++){
-        adjacencyMatrix[i] = new char[numPoints];
-        copy(Profile.adjacencyMatrix[i], Profile.adjacencyMatrix[i] + numPoints, adjacencyMatrix[i]);
-    }
-
-    return *this;
-}
 
 profile::profile(){};
 
-profile::~profile(){
-    //Frees memory
+profile& profile::operator=(profile& Profile){
 
-    for(int i = 0; i < (int)(vertexCoords.size()+insetCoords.size()); i++){
-        delete[] adjacencyMatrix[i];
-    }
-    delete[] adjacencyMatrix;
+    if (this == &Profile)
+        return *this;
+
+    vertexCoords = Profile.vertexCoords;
+    insetCoords = Profile.insetCoords;
+    adjacencyMatrix = Profile.adjacencyMatrix;
+    inset = Profile.inset;
+    numTriangles = Profile.numTriangles;
+
+    return *this;
 }
 
 void profile::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT){
@@ -181,30 +153,35 @@ bool profile::pointInTriangle(glm::vec2 point, glm::vec2 vert1, glm::vec2 vert2,
 }
 
 //Divides a polygon defined by its vertices (in clockwise order) into triangles, described by an adjacency matrix
-int profile::triangulatePolygon(vector<glm::vec2> vertexCoords, char** adjacencyMatrix) const{
+int profile::triangulatePolygon(vector<glm::vec2> vertexCoords, vector<char>& adjacencyMatrix) const{
 
     int numVerts = vertexCoords.size();
+    int adjSize = numVerts;
     //Stores indices of vertices even when some have been removed
     vector<int> vertexIndices;
+    vertexIndices.resize(numVerts);
 
 
-    //Allocate space for adjacency matrix
-    for(int i = 0; i < numVerts; i++){
+    for(int i = 0; i < adjSize; i++){
         //Fill with zeroes initially
-        for(int j = 0; j < numVerts; j++){
-            adjacencyMatrix[i][j] = 0;
+        for(int j = 0; j < adjSize; j++){
+            adjacencyMatrix[i*adjSize + j] = 0;
         }
         //Fill vector of indices
-        vertexIndices.push_back(i);
+        vertexIndices[i] = i;
     }
 
+    
+
     //Adds initial boundary connections to matrix
-    for(int i = 0; i < numVerts-1; i++){
-        adjacencyMatrix[i+1][i] = 1;
-        adjacencyMatrix[i][i+1] = 1;
+    for(int i = 0; i < adjSize-1; i++){
+        adjacencyMatrix[(i+1)*adjSize + i] = 1;
+        adjacencyMatrix[i*adjSize + (i+1)] = 1;
     }
-    adjacencyMatrix[numVerts-1][0] = 1;
-    adjacencyMatrix[0][numVerts-1] = 1;
+
+
+    adjacencyMatrix[(adjSize-1)*adjSize + 0] = 1;
+    adjacencyMatrix[0*adjSize + (adjSize-1)] = 1;
 
 
     //numTriangles starts as 1 to account for the final triangle at the end
@@ -271,8 +248,8 @@ int profile::triangulatePolygon(vector<glm::vec2> vertexCoords, char** adjacency
         int earIndex2 = vertexIndices[earFound[1]];
 
         //Add elements to adjacency matrix
-        adjacencyMatrix[earIndex1][earIndex2] = 1;
-        adjacencyMatrix[earIndex2][earIndex1] = 1;
+        adjacencyMatrix[earIndex1*adjSize + earIndex2] = 1;
+        adjacencyMatrix[earIndex2*adjSize + earIndex1] = 1;
 
         //Record that an ear has been found
         numTriangles++;
@@ -295,12 +272,12 @@ int profile::triangulatePolygon(vector<glm::vec2> vertexCoords, char** adjacency
     int vert1 = vertexIndices[0];
     int vert2 = vertexIndices[1];
     int vert3 = vertexIndices[2];
-    adjacencyMatrix[vert1][vert2] = 1;
-    adjacencyMatrix[vert1][vert3] = 1;
-    adjacencyMatrix[vert2][vert1] = 1;
-    adjacencyMatrix[vert2][vert3] = 1;
-    adjacencyMatrix[vert3][vert1] = 1;
-    adjacencyMatrix[vert3][vert2] = 1;
+    adjacencyMatrix[vert1*adjSize + vert2] = 1;
+    adjacencyMatrix[vert1*adjSize + vert3] = 1;
+    adjacencyMatrix[vert2*adjSize + vert1] = 1;
+    adjacencyMatrix[vert2*adjSize + vert3] = 1;
+    adjacencyMatrix[vert3*adjSize + vert1] = 1;
+    adjacencyMatrix[vert3*adjSize + vert2] = 1;
 
     //Return triangle count
     return numTriangles;

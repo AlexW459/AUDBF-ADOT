@@ -3,7 +3,7 @@
 
 aircraft::aircraft(vector<string> _paramNames, function<void(vector<string>&, vector<double>&)> 
     _derivedParamsFunc,
-    vector<function<profile*(vector<string>, vector<double>, double)>> _profileFunctions){
+    vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions){
     
     //Set class variables
     parameterNames = _paramNames;
@@ -78,9 +78,11 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     
     //Gets profiles
     int numProfiles = profileFunctions.size();
-    profile* profiles = new profile[numProfiles];
+    vector<profile> profiles;
+    profiles.resize(numProfiles);
     int numParts = partNames.size();
-    extrusionData* extrusions = new extrusionData[numParts];
+    vector<extrusionData> extrusions;
+    extrusions.resize(numParts);
 
     getExtrusionData(profiles, extrusions, paramValues, volMeshRes); 
 
@@ -101,7 +103,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         int profileIndex = partProfiles[i];
         glm::mat2x3 boundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
         findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI, boundingBox);
-
 
         //Apply part's own transformations
         partCOM = extrusions[i].rotation * partCOM;
@@ -170,8 +171,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     glm::mat3 transMat = constructRelationMatrix(COM);
     MOI = MOISoFar + massSoFar*transMat;
 
-    delete[] profiles;
-    delete[] extrusions;
 }
 
 //Gets relational matrix involved in translation of moment of inertia
@@ -187,14 +186,15 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     
     //Gets extrusion
     vector<glm::vec3> extrudePoints;
-    char** adjMatrix = nullptr;
+    vector<char> adjMatrix;
     int numTetras = generateExtrusion(partProfile, extrusion, adjMatrix, extrudePoints, boundingBox);
 
-    
 
-    //Allocates an additional memory space due to how the tetrahedron searching code works
+
+    //Allocates an additional element due to how the tetrahedron searching code works
     //The vector in this space is unused
-    glm::ivec4* tetraIndices = new glm::ivec4[numTetras+1];
+    vector<glm::ivec4> tetraIndices;
+    tetraIndices.resize(numTetras+1);
 
 
     //Find tetrahedrons in adjacency matrix
@@ -207,15 +207,15 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
         for(int c = r; c < adjSize; c++){
             //Check if there is an adjacency at the current location
             //#pragma omp simd
-            for(int p3 = c+1; p3 < adjSize*(int)adjMatrix[r][c]; p3++){
+            for(int p3 = c+1; p3 < adjSize*(int)adjMatrix[r*adjSize + c]; p3++){
                 //Checks if there are two edges that connect both to eachother
                 //and to opposite ends of the first edge that was found
                 //#pragma omp simd reduction(+:tetra)
-                for(int p4 = p3+1; p4 < adjSize*(int)adjMatrix[r][p3]*adjMatrix[p3][c]; p4++){
+                for(int p4 = p3+1; p4 < adjSize*(int)adjMatrix[r*adjSize + p3]*adjMatrix[p3*adjSize + c]; p4++){
                     glm::vec4 newTetra(r, c, p3, p4);
-                    int edgeFound3 = (int)adjMatrix[r][p4]*adjMatrix[p4][c]*adjMatrix[p4][p3];
                     tetraIndices[tetra] = newTetra;
-                    tetra += edgeFound3;
+                    //Only increments the index if ia tetrahedron was actually found
+                    tetra += (int)adjMatrix[r*adjSize + p4]*adjMatrix[p4*adjSize + c]*adjMatrix[p4*adjSize + p3];
                 }
             }
         }
@@ -223,12 +223,11 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
 
 
     //Use volumetric mesh to find relevant values
-    float* tetraVolumes = new float[numTetras];
+    vector<float> tetraVolumes;
+    tetraVolumes.resize(numTetras);
     float volumeSoFar = 0;
     glm::vec3 COMSoFar(0, 0, 0);
     glm::mat3 MOISoFar(0);
-    float* xyzSums = new float[3];
-    float* abcPrimes = new float[3];
     int ind1[3] = {1, 0, 0};
     int ind2[3] = {2, 2, 1};
 
@@ -254,10 +253,13 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
         COMSoFar = COMSoFar + tetraCOM*(tetraVolumes[i]);
         volumeSoFar += tetraVolumes[i];
 
-
+        float xyzSums[3];
+        float abcPrimes[3];
         //Calculates moment of inertia
         #pragma omp simd
         for(int j = 0; j < 3; j++){
+
+
             
             xyzSums[j] = v1[j]*v1[j] + v1[j]*v2[j] + v2[j]*v2[j] + v1[j]*v3[j] + v2[j]*v3[j] + 
                         v3[j]*v3[j] + v1[j]*v4[j] + v2[j]*v4[j] + v3[j]*v4[j] + v4[j]*v4[j];
@@ -283,25 +285,15 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     //Multiplies by common factor. Now equal to MOI/mass
     MOI = MOISoFar*0.1f;
 
-    //Frees memory
-    delete[] tetraIndices;
-    delete[] xyzSums;
-    delete[] abcPrimes;
-    delete[] tetraVolumes;
-    for(int i = 0; i < adjSize; i++){
-        delete[] adjMatrix[i];
-    }
-    delete[] adjMatrix;
 }
 
 //Generates volumetric mesh
 int aircraft::generateExtrusion(const profile& partProfile, const extrusionData& extrusion, 
-    char**& adjMatrix, vector<glm::vec3>& points, glm::mat2x3& boundingBox) const{
+    vector<char>& adjMatrix, vector<glm::vec3>& points, glm::mat2x3& boundingBox) const{
 
     int numProfiles = extrusion.zSampleVals.size();
     int profileSize = partProfile.vertexCoords.size();
     int outerSize = profileSize;
-
 
 
     if(partProfile.inset){
@@ -313,12 +305,15 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
     vector<glm::vec2> newPoints;
     newPoints.resize(profileSize);
 
+
     float extrusionBegin = *min_element(extrusion.zSampleVals.begin(), extrusion.zSampleVals.end());
+
     float extrusionEnd = *max_element(extrusion.zSampleVals.begin(), extrusion.zSampleVals.end());
     float extrusionLength = extrusionEnd - extrusionBegin;
 
     boundingBox[0][2] = extrusionBegin;
     boundingBox[1][2] = extrusionEnd;
+
 
 
     //Finds positions of profiles
@@ -360,17 +355,16 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
 
     
     int adjSize = numProfiles*profileSize;
-    char** profileAdjMatrix = partProfile.adjacencyMatrix;
+    vector<char> profileAdjMatrix = partProfile.adjacencyMatrix;
 
 
     //Initialises adjacency matrix
-    adjMatrix = new char*[adjSize];
+    adjMatrix.resize(adjSize*adjSize);
     for(int i = 0; i < adjSize; i++){
-        adjMatrix[i] = new char[adjSize];
         //Fills with zeros initially
         #pragma omp simd
         for(int j = 0; j < adjSize; j++){
-            adjMatrix[i][j] = 0;
+            adjMatrix[i*adjSize + j] = 0;
         }
     }
 
@@ -385,8 +379,8 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
 
                 int ind1 = startI + i;
                 int ind2 = startI + j;
-                adjMatrix[ind1][ind2] = profileAdjMatrix[i][j];
-                adjMatrix[ind2][ind1] = profileAdjMatrix[i][j];
+                adjMatrix[ind1*adjSize + ind2] = profileAdjMatrix[i*profileSize + j];
+                adjMatrix[ind2*adjSize + ind1] = profileAdjMatrix[i*profileSize + j];
 
             }
         }        
@@ -395,8 +389,8 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
     //Adds identity matrices to matrix
     #pragma omp simd
     for(int i = profileSize; i < profileSize*numProfiles; i++){
-        adjMatrix[i-profileSize][i] = 1;
-        adjMatrix[i][i-profileSize] = 1;
+        adjMatrix[(i-profileSize)*adjSize + i] = 1;
+        adjMatrix[i*adjSize + (i-profileSize)] = 1;
     }
 
     //Splits rectangles into triangles
@@ -406,11 +400,12 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
             for(int j = i+1; j < profileSize; j ++){
                 int ind1 = p*profileSize + i;
                 int ind2 = (p + 1)*profileSize + j;
-                adjMatrix[ind1][ind2] = profileAdjMatrix[i][j];
-                adjMatrix[ind2][ind1] = profileAdjMatrix[i][j];
+                adjMatrix[ind1*adjSize + ind2] = profileAdjMatrix[i*profileSize + j];
+                adjMatrix[ind2*adjSize + ind1] = profileAdjMatrix[i*profileSize + j];
             }
         }
     }
+
 
     //Find number of tetrahedrons from adjacency matrix
     int numTetras = 3*partProfile.numTriangles*(numProfiles-1);
@@ -419,16 +414,15 @@ int aircraft::generateExtrusion(const profile& partProfile, const extrusionData&
 }
 
 
-void aircraft::getExtrusionData(profile* profiles, extrusionData* extrusions, vector<double> paramValues, double volMeshRes) const{
+void aircraft::getExtrusionData(vector<profile>& profiles, vector<extrusionData>& extrusions, vector<double> paramValues, double volMeshRes) const{
     
     //Gets profiles
     int numProfiles = profileFunctions.size();
     for(int i = 0; i < numProfiles; i++){
-        profile* newProfile = profileFunctions[i] (parameterNames, paramValues, volMeshRes);
-        profiles[i] = *(newProfile);
-
-        delete newProfile;
+        profile newProfile = (profileFunctions[i] (parameterNames, paramValues, volMeshRes));
+        profiles[i] = newProfile;
     }
+
 
     int numParts = partNames.size();
     //Gets extrusion data
@@ -441,19 +435,22 @@ void aircraft::getExtrusionData(profile* profiles, extrusionData* extrusions, ve
 void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramValues, double volMeshRes){
     //Gets profiles
     int numProfiles = profileFunctions.size();
-    profile* profiles = new profile[numProfiles];
+    vector<profile> profiles;
+    profiles.resize(numProfiles);
     int numParts = partNames.size();
-    extrusionData* extrusions = new extrusionData[numParts];
+    vector<extrusionData> extrusions;
+    extrusions.resize(numParts);
     getExtrusionData(profiles, extrusions, paramValues, volMeshRes);
 
     //Generates meshes
     vector<vector<glm::vec3>> totalPoints;
     totalPoints.resize(numParts);
-    vector<char**> adjMatrices;
-    char** adjMatrix = nullptr;
+    vector<vector<char>> adjMatrices;
+    vector<char> adjMatrix;
     adjMatrices.resize(numParts);
     //Stores size of each adj matrix
-    int* adjSizes = new int[numParts];
+    vector<int> adjSizes;
+    adjSizes.resize(numParts);
 
     for(int i = 0; i < numParts; i++){
         //Gets extrusion
@@ -495,18 +492,6 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
 
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
     window.draw3D(totalPoints, adjMatrices, 3.0f);
-
-    delete[] profiles;
-    delete[] extrusions;
-
-    for(int i = 0; i < numParts; i++){
-        for(int j = 0; j < adjSizes[i]; j++){
-            delete[] adjMatrices[i][j];
-        }
-        delete[] adjMatrices[i];
-    }
-
-    delete[] adjSizes;
 
 }
 

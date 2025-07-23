@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <array>
 #include <glm/glm.hpp>
 #include <stdexcept>
 
@@ -10,16 +11,14 @@ using namespace std;
 
 struct profile{
     profile();
-    ~profile();
-
 
     profile(vector<glm::vec2>& _vertexCoords, double inset);
     profile(vector<glm::vec2>& _vertexCoords);
-    profile(profile& Profile);
-    profile operator=(profile& Profile);
+    //profile(profile& Profile);
+    profile& operator=(profile& Profile);
 
 
-    int triangulatePolygon(vector<glm::vec2> vertexCoords, char** adjacencyMatrix) const;
+    int triangulatePolygon(vector<glm::vec2> vertexCoords, vector<char>& adjacencyMatrix) const;
     bool pointInTriangle(glm::vec2 point, glm::vec2 vert1, glm::vec2 vert2, glm::vec2 vert3) const;
     vector<glm::vec2> generateInset(const vector<glm::vec2>& outerPoints) const;
     
@@ -31,7 +30,7 @@ struct profile{
     //Only contains inset coordinates
     vector<glm::vec2> insetCoords;
 
-    char** adjacencyMatrix;
+    vector<char> adjacencyMatrix;
 
     double inset;
 

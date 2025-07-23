@@ -4,7 +4,7 @@ void calcDerivedParams(vector<string>&, vector<double>&){
     return;
 }
 
-profile* fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
+profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
 
     double fuselageHeight = paramVals[(int)(find(paramNames.begin(), 
         paramNames.end(), "fuselageHeight") - paramNames.begin())];
@@ -41,7 +41,7 @@ profile* fuselageProfile(vector<string> paramNames, vector<double> paramVals, do
 
     profile outputProfile(bezPoints);
 
-    return new profile(outputProfile);
+    return outputProfile;
 }
 
 

@@ -9,6 +9,6 @@
 
 void calcDerivedParams(vector<string>&, vector<double>&);
 
-profile* fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes);
+profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes);
 
 extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVals, double meshRes);

@@ -17,7 +17,7 @@ meshWindow::~meshWindow(){
     SDL_DestroyWindow(window);
 }
 
-void meshWindow::draw2D(vector<glm::vec2> &points, char** adjMatrix) {
+void meshWindow::draw2D(vector<glm::vec2> &points, vector<char> adjMatrix) {
     
 
     //Width and position of the screen in same coordinate system as the given points
@@ -48,7 +48,7 @@ void meshWindow::draw2D(vector<glm::vec2> &points, char** adjMatrix) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     for(int i = 0; i < numPoints; i++){
         for(int j = 0; j < numPoints; j++){
-            if(adjMatrix[i][j]){
+            if(adjMatrix[i*numPoints + j]){
                 int x1 = SCREEN_WIDTH/2 + points[i][0]*zoom-viewPos[0]*zoom;
                 int y1 = SCREEN_HEIGHT/2-points[i][1]*zoom+viewPos[1]*zoom;
                 int x2 = SCREEN_WIDTH/2 + points[j][0]*zoom-viewPos[0]*zoom;
@@ -93,7 +93,7 @@ void meshWindow::draw2D(vector<glm::vec2> &points, char** adjMatrix) {
     }
 }
 
-void meshWindow::draw3DSingle(vector<glm::vec3> &points, char** adjMatrix, float dist){
+void meshWindow::draw3DSingle(vector<glm::vec3> &points, vector<char> adjMatrix, float dist){
 
     //Finds bounding box of shape
     glm::vec3 minPos = points[0];
@@ -163,11 +163,12 @@ void meshWindow::draw3DSingle(vector<glm::vec3> &points, char** adjMatrix, float
 
 }
 
-void meshWindow::draw3DMesh(vector<glm::vec3> points, char** adjMatrix,  
+void meshWindow::draw3DMesh(vector<glm::vec3> points, vector<char> adjMatrix,  
     float distToScreen, float realScreenWidth){
 
     int numPoints = points.size();
-    glm::ivec2* displayPoints = new glm::ivec2[numPoints];
+    vector<glm::ivec2> displayPoints;
+    displayPoints.resize(numPoints);
 
     glm::vec2 realScreenDim(realScreenWidth, realScreenWidth*SCREEN_HEIGHT/SCREEN_WIDTH);
 
@@ -187,7 +188,7 @@ void meshWindow::draw3DMesh(vector<glm::vec3> points, char** adjMatrix,
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     for(int i = 0; i < numPoints; i++){
         for(int j = 0; j < numPoints; j++){
-            if(adjMatrix[i][j]){
+            if(adjMatrix[i*numPoints + j]){
                 int x1 = displayPoints[i][0];
                 int y1 = displayPoints[i][1];
                 int x2 = displayPoints[j][0];
@@ -199,8 +200,6 @@ void meshWindow::draw3DMesh(vector<glm::vec3> points, char** adjMatrix,
     }
 
     SDL_RenderPresent(renderer);
-
-    delete[] displayPoints;
 
 }
 
@@ -218,7 +217,7 @@ void meshWindow::clear(){
 }
 
 //Draws multiple meshes at once
-void meshWindow::draw3D(vector<vector<glm::vec3>>& points, vector<char**> adjMatrices, float dist){
+void meshWindow::draw3D(vector<vector<glm::vec3>>& points, vector<vector<char>> adjMatrices, float dist){
 
 
     //Finds bounding box of shapes
