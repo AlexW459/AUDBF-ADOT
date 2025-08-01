@@ -41,7 +41,7 @@ classdef extrusion
 
     methods
 
-        function obj = extrusion(base_profile, extrude_marks, side_profile_matrix, sweep, density, additionalMass, massPos)
+        function obj = extrusion(base_profile, extrude_marks, xy_pos_vals, scale_vals, density, additionalMass, massPos)
 
             %NOTE: The connection_profile is a vector which has as its first
             %      dimension  the first dimension of base_profile.nodes2coords.
@@ -69,13 +69,6 @@ classdef extrusion
 
             num_profiles = size(extrude_marks, 2);
 
-            %Find the y-size of the base profile:
-            y_extent_base_profile = max(base_profile.vertex_coords(:,2))-...
-                                    min(base_profile.vertex_coords(:,2));
-
-            %Total length of extrusion
-            extrusion_length = extrude_marks(end)-extrude_marks(1);
-            
             obj.profiles = cell(num_profiles, 1);
 
             %Set each profile to the base profile scaled and translated:
@@ -85,22 +78,12 @@ classdef extrusion
                 %Now scale and translate:
                 extrude_amount     = extrude_marks(profile_index);
 
-                if(profile_index == 1)
-                    segment_length = 0;
-                else
-                    segment_length = extrude_amount-extrude_marks(profile_index-1);
-                end
+                scale_factor       = scale_vals(profile_index);
 
-                sweep_amount       = abs(sweep * (segment_length/extrusion_length));   
-                
-                scale_factor       = (side_profile_matrix(profile_index,1)-...
-                    side_profile_matrix(profile_index,2))/y_extent_base_profile;
-
-
-                translate_planar_y = mean(side_profile_matrix(profile_index,:), 2);
+                translate_planar = xy_pos_vals(profile_index, :);
 
                 obj.profiles{profile_index} = base_profile.scale_planar(scale_factor);
-                obj.profiles{profile_index} = obj.profiles{profile_index}.translate_planar( [sweep_amount,translate_planar_y] );
+                obj.profiles{profile_index} = obj.profiles{profile_index}.translate_planar(translate_planar);
                 obj.profiles{profile_index} = obj.profiles{profile_index}.translate(extrude_amount);
 
                 %Construct the nodes2coords matrix based on the profiles:
@@ -113,40 +96,7 @@ classdef extrusion
             %Gets adjacency matrix of base profile
             A = obj.profiles{1}.node_adjacency_matrix;
 
-            %Size of matrx
-            A_sz = size(A, 1);
-                        
-            %Creates a list of n block adjacency matrices
-            Ar = repmat(A, 1, num_profiles);
-            
-            %converts list of block matrices to cell array
-            Acell = mat2cell(Ar, A_sz, ones(1, num_profiles)*A_sz);
-            
-            %Converts cell array into block diagonal matrix
-            Ablk = blkdiag(Acell{:});
-            
-            %Adds block identity matrices along each of the off diagonals
-            Ablk = Ablk + diag(ones(1,A_sz*(num_profiles-1)), A_sz)...
-                + diag(ones(1,A_sz*(num_profiles-1)), -A_sz);
-            
-            %Creates a list of n block matrices containing adjacencies that relate to
-            %edges that split square facets into triangle facets
-            Ur = repmat(triu(A), 1, num_profiles-1);
-            
-            %Converts list of matrices into cell array
-            Ucell = mat2cell(Ur, A_sz, ones(1, num_profiles-1)*A_sz);
-            
-            %Converts cell array into block diagonal matrix
-            Ublk = blkdiag(Ucell{:});
-            
-            %Appends rows and columns of zeros onto the left and bottom sides of the
-            %diagonal block matrix in order to move the diagonal to the 4-off diagonal
-            Ublk = [zeros(A_sz*(num_profiles-1), A_sz), Ublk;...
-                zeros(A_sz, A_sz*num_profiles)];
-            
-            %Adds the diagonal block matrix, as well as it's transpose, which populates
-            %the lower left half of the matrix with the same elements
-            Ablk = Ablk + Ublk + Ublk';
+            Ablk = generateExtrusionAdj(A, num_profiles);
             obj.adjacency_matrix = Ablk;
 
 
@@ -233,13 +183,11 @@ classdef extrusion
             num_triangles = size(find(obj.ext_facets2nodes(:, 3)), 1);
             obj.ext_facets2nodes = obj.ext_facets2nodes(1:num_triangles, :);
 
-            obj.surface_mesh = extrusion_surface(base_profile, extrude_marks, side_profile_matrix, sweep);
+            obj.surface_mesh = extrusion_surface(base_profile, xy_pos_vals, extrude_marks, scale_vals);
             
         end
 
         function [total_COM, total_mass] = find_COM(obj)
-
-
 
             %Finds the mass and COM of the part
             total_volume = 0;
@@ -297,9 +245,8 @@ classdef extrusion
                 obj.extra_mass_locations + translation;
             end
 
-            obj.surface_mesh.transformations = ...
-                [obj.surface_mesh.transformations;
-                 translation, 0, 0];
+            obj.surface_mesh.transformations = [obj.surface_mesh.transformations; 
+                                                translation, 0, 0];
 
         end
 
@@ -351,12 +298,9 @@ classdef extrusion
                 temp_mass_locations(:,2:4) + pivot_point;
             end
 
-
-            obj.surface_mesh.transformations = ...
-                [obj.surface_mesh.transformations;
-                 -1*pivot_point, 0, 0;
-                 rotation_quat, 1;
-                 pivot_point, 0, 0];
+            %Adds transformation to surface mesh
+            obj.surface_mesh.transformations = [obj.surface_mesh.transformations; 
+                                                axis_unit_vector, rotation_angle, 1];
 
         end
 

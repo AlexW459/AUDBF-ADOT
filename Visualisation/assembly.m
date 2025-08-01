@@ -369,7 +369,7 @@ classdef assembly < handle
 
 
             [X,Y,Z] = meshgrid(bounding_box(1, 1):interval:bounding_box(2, 1), ...
-                bounding_box(1, 2):interval:bounding_box(2, 1), ...
+                bounding_box(1, 2):interval:bounding_box(2, 2), ...
                 bounding_box(1, 3):interval:bounding_box(2, 3));
 
 
@@ -385,6 +385,11 @@ classdef assembly < handle
 
             surface_points = min(surface_values, [], 4);
 
+            toc
+
+            surface_points = gaussian_blur(surface_points, 0.2, 5);
+
+
             [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);
 
             patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
@@ -397,7 +402,6 @@ classdef assembly < handle
 
             %[p, t] = distmeshsurface( SDF, FH, 0.02, bounding_box);
 
-            toc
 
             
 

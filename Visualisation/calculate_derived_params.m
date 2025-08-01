@@ -49,7 +49,7 @@ function [derived_parameters, derived_param_names] = calculate_derived_params(..
     
 
     %Width of the rods that the stabilisers on the empennage connect to
-    empennage_rod_width = max([horizontal_stabiliser_thickness, vertical_stabiliser_thickness]) + 0.02;
+    empennage_rod_width = max([horizontal_stabiliser_thickness, vertical_stabiliser_thickness]);
 
 
     wing_airfoil_index = parameters(find(strcmp(param_names, "wing_airfoil_index")));

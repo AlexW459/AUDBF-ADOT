@@ -17,8 +17,8 @@ function output_profile = empennage_boom_profile(parameters, param_names, der_pa
     t = linspace(0, max_degrees, num_points)';
 
     
-    B_upper = [-0.5*boom_thickness*cosd(t), 0.5*boom_thickness*sind(t)];
-    B_lower = [0.5*boom_thickness*cosd(t), -0.5*boom_thickness*sind(t)];
+    B_upper = [-0.5*cosd(t), 0.5*sind(t)];
+    B_lower = [0.5*cosd(t), -0.5*sind(t)];
 
     B = [B_upper(1:end-1, :); B_lower(1:end-1, :)];
 

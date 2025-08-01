@@ -67,6 +67,7 @@ classdef profile
                 %Finds triangulation from points
                 obj.triangles = triangulation(obj.polygon);
 
+
                 obj.nodes2coords = [obj.triangles.Points, obj.nodes2coords(1, 3)*ones(size(obj.triangles.Points, 1), 1)];
 
                 %Gets list of edges in triangulation
@@ -76,8 +77,10 @@ classdef profile
 
                 %Gets the adjacency matrix from the graph object
                 obj.node_adjacency_matrix = adjacency(G);
-                return;
-            end
+
+
+            else
+
 
             rot_mat = [0, -1; 1, 0]; % 90 degree rotation
 
@@ -120,9 +123,9 @@ classdef profile
             
             obj.polygon = polyshape({obj.vertex_coords(:, 1), obj.inset_vertex_coords(:, 1)},...
                 {obj.vertex_coords(:, 2), obj.inset_vertex_coords(:, 2)});
-            % 
+
             % plot(obj.polygon);
-            axis equal;
+            % axis equal;
 
             %Finds triangulation from points
             obj.triangles = triangulation(obj.polygon);
@@ -138,12 +141,18 @@ classdef profile
             %Gets the adjacency matrix from the graph object
             obj.node_adjacency_matrix = adjacency(G);
 
+
+            end
+
+
         end
 
         function obj = change_inset(obj, new_inset)
+
             obj.inset = new_inset;
 
-            obj.generate_inset();
+            obj = obj.generate_inset();
+
 
         end
 

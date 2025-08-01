@@ -92,7 +92,6 @@ function SDF = generate_SDF(vertices, X, Y, interval)
 
             SDFtable(i, j) = min(sqrt(dist(:, 1).^2 + dist(:, 2).^2))*distSign;
 
-
         end
     end
 
