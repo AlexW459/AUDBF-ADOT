@@ -91,17 +91,18 @@ classdef extrusion_surface
             eqVals = max(cat(4, profileSDF, beginFace, endFace), [], 4);
 
 
-            [face_nodes, node_coords] = isosurface(Xi, Yi, Zi, eqVals, 0.01);
+            % % [face_nodes, node_coords] = isosurface(Xi, Yi, Zi, eqVals, 0.01);
+            % % clf;
+            % % patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
+            % % 
+            % % xlabel('x');
+            % % ylabel('y');
+            % % zlabel('z');
+            % % 
+            % % xlim([-0.5,1.5]);
+            % % ylim([-0.75,0.75]);
+            % % zlim([-0.75,0.75]);
 
-            patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
-
-            xlabel('x');
-            ylabel('y');
-            zlabel('z');
-
-            xlim([-0.5,1.5]);
-            ylim([-0.75,0.75]);
-            zlim([-0.75,0.75]);
 
 
        end

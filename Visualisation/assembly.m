@@ -365,7 +365,7 @@ classdef assembly < handle
 
         function generate_surface(obj)
             bounding_box = [-1.1,-1,-1;2,1,1];
-            interval = 0.03;
+            interval = 0.05;
 
 
             [X,Y,Z] = meshgrid(bounding_box(1, 1):interval:bounding_box(2, 1), ...
@@ -387,7 +387,7 @@ classdef assembly < handle
 
             toc
 
-            surface_points = gaussian_blur(surface_points, 0.2, 5);
+            %surface_points = gaussian_blur(surface_points, 1, 5);
 
 
             [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);

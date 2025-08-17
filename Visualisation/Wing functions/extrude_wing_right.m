@@ -17,6 +17,7 @@ function [wing_extrusion, pivot_point] = extrude_wing_right(profiles, ...
 
     xy_pos_vals = [0, 0; wing_sweep, 0];
 
+
     wing_extrusion = extrusion(wing_base_profile, wing_extrude_marks,...
                                xy_pos_vals, scale_vals, density);
     
