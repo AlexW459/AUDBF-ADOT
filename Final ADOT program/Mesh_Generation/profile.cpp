@@ -193,7 +193,7 @@ int profile::triangulatePolygon(vector<glm::vec2> vertexCoords, vector<char>& ad
     while (numVerts > 3){
 
         //Stores ears found in current iteration
-        glm::vec2 earFound;
+        glm::ivec2 earFound(0, 0);
 
         //Checks if ear has been found
         for(int i = 0; i < numVerts; i++){

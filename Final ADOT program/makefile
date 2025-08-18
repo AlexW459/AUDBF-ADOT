@@ -2,7 +2,7 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -Wall -g -fopenmp-simd
+CXXFLAGS = -Wall -g -fopenmp-simd -O3 # -fopt-info-vec
 
 # Target executable
 TARGET = Main
@@ -11,8 +11,11 @@ TARGET = Main
 TARGET_DEL = Main.exe
 
 # Source files
-SRCS = main.cpp aircraft.cpp readCSV.cpp Mesh_Generation/profile.cpp \
-Mesh_Generation/meshWindow.cpp MULEplaneModel/MULEplane.cpp
+SRCS = main.cpp aircraft.cpp readCSV.cpp Mesh_Generation/profile.cpp Mesh_Generation/meshWindow.cpp \
+	MULEplaneModel/MULEplane.cpp Mesh_Generation/extrusionGen.cpp Mesh_Generation/surfaceMeshGen.cpp \
+	Mesh_Generation/writeMeshToObj.cpp Mesh_Generation/MarchingCubeCpp/MC.cpp
+
+
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)

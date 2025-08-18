@@ -28,14 +28,15 @@ int main(){
         paramNames.push_back(paramRanges.columns[i].first);
     }
 
-    glm::mat3 MOI;
-    glm::vec3 COM;
-    float mass;
+    glm::dmat3 MOI;
+    glm::dvec3 COM;
+    double mass;
 
-    vector<function<profile*(vector<string>, vector<double>, double)>> profileFunctions = {fuselageProfile};
+    vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = {fuselageProfile};
     function<void(vector<string>&, vector<double>&)> derivedParamsFunc = calcDerivedParams;
 
     aircraft MULEaircraft = aircraft(paramNames, derivedParamsFunc, profileFunctions);
+
 
     MULEaircraft.addPart("Fuselage", 1000, extrudeFuselage, 0);
 

@@ -46,18 +46,20 @@ profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, dou
 
 
 extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVals, double meshRes){
-    double fuselageLength = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "fuselageLength") - paramNames.begin())];
+    //double fuselageLength = paramVals[(int)(find(paramNames.begin(), 
+    //    paramNames.end(), "fuselageLength") - paramNames.begin())];
 
     extrusionData extrusion;
 
     extrusion.scaleVals = {1.0f, 1.0f};
+    extrusion.xPosVals = {0.0f, 0.0f};
     extrusion.yPosVals = {0.0f, 0.0f};
-    extrusion.zSampleVals = {0.0f, (float)fuselageLength};
+    //extrusion.zSampleVals = {0.0f, (float)fuselageLength};
     extrusion.zSampleVals = {0.0f, 1.0f};
-    extrusion.sweep = 0.0f;
+
     extrusion.translation = glm::vec3(0.0f, 0.0f, 0.0f);
 
+    extrusion.pivotPoint = {0.0f, 0.0f, 0.0f};
     extrusion.rotation = glm::quat(glm::vec3(0.5f*M_PI, 0.0f, -0.5f*M_PI));
     //extrusion.rotation = glm::quat(glm::vec3(0.0f, 0.0f, 0.0f));
     

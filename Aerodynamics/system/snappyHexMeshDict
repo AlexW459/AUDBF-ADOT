@@ -53,14 +53,14 @@ castellatedMeshControls
     // If local number of cells is >= maxLocalCells on any processor
     // switches from from refinement followed by balancing
     // (current method) to (weighted) balancing before refinement.
-    maxLocalCells 10000;
+    maxLocalCells 100000;
 
     // Overall cell limit (approximately). Refinement will stop immediately
     // upon reaching this number so a refinement level might not complete.
     // Note that this is the number of cells before removing the part which
     // is not 'visible' from the keepPoint. The final number of cells might
     // actually be a lot less.
-    maxGlobalCells 700000;
+    maxGlobalCells 2000000;
 
     // The surface refinement loop might spend lots of iterations refining just a
     // few cells. This setting will cause refinement to stop if <= minimumRefine
@@ -127,7 +127,7 @@ castellatedMeshControls
     }
 
     // Resolve sharp angles
-    resolveFeatureAngle 60;
+    resolveFeatureAngle 30;
 
 
     // Region-wise refinement
@@ -182,7 +182,7 @@ snapControls
     //- Relative distance for points to be attracted by surface feature point
     //  or edge. True distance is this factor times local
     //  maximum edge length.
-    tolerance 4.0;
+    tolerance 2.0;
 
     //- Number of mesh displacement relaxation iterations.
     nSolveIter 30;
@@ -190,6 +190,23 @@ snapControls
     //- Maximum number of snapping relaxation iterations. Should stop
     //  before upon reaching a correct mesh.
     nRelaxIter 5;
+
+    // Feature snapping
+
+        //- Number of feature edge snapping iterations.
+        //  Leave out altogether to disable.
+        nFeatureSnapIter 10;
+
+        //- Detect (geometric only) features by sampling the surface
+        //  (default=false).
+        implicitFeatureSnap false;
+
+        //- Use castellatedMeshControls::features (default = true)
+        explicitFeatureSnap true;
+
+        //- Detect points on multiple surfaces (only for explicitFeatureSnap)
+        multiRegionFeatureSnap false;
+
 }
 
 
@@ -234,7 +251,7 @@ addLayersControls
 
     // When not to extrude surface. 0 is flat surface, 90 is when two faces
     // are perpendicular
-    featureAngle 100;
+    featureAngle 60;
 
     // At non-patched sides allow mesh to slip if extrusion direction makes
     // angle larger than slipFeatureAngle. Default is 0.5*featureAngle.
@@ -251,7 +268,7 @@ addLayersControls
     nSmoothNormals 3;
 
     // Smooth layer thickness over surface patches
-    nSmoothThickness 2;
+    nSmoothThickness 10;
 
     // Stop layer growth on highly warped cells
     maxFaceThicknessRatio 0.5;
@@ -296,7 +313,7 @@ meshQualityControls
     //  Set to very negative number (e.g. -1e30) to disable.
     minVol -1e30;
 
-    minTetQuality 1e-30;
+    minTetQuality 1e-15;
 
     //- Minimum face twist. Set to <-1 to disable. dot product of face normal
     //  and face centre triangles normal

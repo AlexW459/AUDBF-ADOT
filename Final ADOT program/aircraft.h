@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <utility>
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
+#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <algorithm>
@@ -11,26 +13,13 @@
 
 #include "Mesh_Generation/meshWindow.h"
 #include "Mesh_Generation/profile.h"
+#include "Mesh_Generation/surfaceMeshGen.h"
+#include "Mesh_Generation/extrusionGen.h"
+#include "Mesh_Generation/writeMeshToObj.h"
+
 
 using namespace std;
 
-struct extrusionData{
-    vector<float> zSampleVals;
-    vector<float> yPosVals;
-    vector<float> scaleVals;
-    float sweep;
-
-    glm::quat rotation;
-    glm::vec3 translation;
-
-    extrusionData(){};
-
-    extrusionData(vector<float> _zSampleVals, vector<float> _yPosVals,
-        vector<float> _scaleVals, float _sweep, glm::quat _rotation, 
-        glm::vec3 _translation):zSampleVals(_zSampleVals), yPosVals(_yPosVals), 
-        scaleVals(_scaleVals), sweep(_sweep), rotation(_rotation), translation(_translation){};
-
-};
 
 
 
@@ -40,33 +29,33 @@ class aircraft{
             _derivedParamsFunc, 
             vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions);
 
-        void addPart(string partName, float density,
+        void addPart(string partName, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
-        void addPart(string partName, string parentPart, float density,
+        void addPart(string partName, string parentPart, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
 
         int findPart(string partName);
-        vector<int> findParents(int partIndex);
 
         void calculateVals(vector<double> paramValues, double volMeshRes, double surfMeshRes,
-            float &mass, glm::vec3 &COM, glm::mat3 &MOI);
+            double &mass, glm::dvec3 &COM, glm::dmat3 &MOI);
 
         void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVals, double volMeshRes);
 
     private:
-        //Finds the variables associated with the volumetric mesh
-        void findVolVals(const profile& partProfile, const extrusionData& extrusion, float& mass, glm::vec3& COM, 
-            glm::mat3& MOI, glm::mat2x3& boundingBox) const;
+
+        vector<int> findParents(int partIndex) const;
+
+        //Finds the variables associated with the volumetric mesh, including the bounding box of each part
+        void findVolVals(const profile& partProfile, const extrusionData& extrusion, double& volume, glm::dvec3& COM, 
+            glm::dmat3& MOI, glm::mat2x3& boundingBox) const;
         
         void getExtrusionData(vector<profile>& profiles, vector<extrusionData>& extrusions, vector<double> paramValues, double volMeshRes) const;
-        int generateExtrusion(const profile& partProfile, const extrusionData& extrusion, vector<char>& adjMatrix, 
-            vector<glm::vec3>& points, glm::mat2x3& boundingBox) const;
         //Gets relational matrix used in translation of MOI. Returns relational matrix
-        glm::mat3 constructRelationMatrix(glm::vec3 r) const;
+        glm::dmat3 constructRelationMatrix(glm::dvec3 r) const;
 
-        //Gets SDF of a single part for a range of values with a specified resolution. Returns dimensions of SDF
-        glm::vec3 getSDFvals(const extrusionData& extrusions, const profile& partProfile, float***& SDF,
-            glm::mat2x3 boundingBox, double surfMeshRes) const;
+        void getAeroVals();
+
+        void getFlightPerformance();
 
         //Names of all of the parameters, in order for searching
         vector<string> parameterNames;
@@ -81,6 +70,6 @@ class aircraft{
         vector<int> partParents;
         //Stores the index of the profile used for each part
         vector<int> partProfiles;
-        vector<float> partDensities;
-  
+        vector<double> partDensities;
+
 };
