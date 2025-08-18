@@ -138,7 +138,7 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
     //Applies transformations to coordinates
     #pragma omp simd collapse(2)
-    for(int p = 0; p < numParents; p++){
+    for(int p = 0; p < numParents + 1; p++){
         for(int i = 0; i < totalPartSDFSize; i++){
 
             XYZ[i] += translations[i];
