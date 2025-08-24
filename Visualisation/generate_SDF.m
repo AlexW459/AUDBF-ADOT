@@ -11,14 +11,15 @@ function SDF = generate_SDF(vertices, X, Y, interval)
     y2 = [vertices(2:end, 2); vertices(1, 2)];
 
     %Find parameters of implicit equation of side of polygon
+    l2 = (x1-x2).^2 + (y1-y2).^2;
+    v = [x1, y1];
+    diff = [x2, y2]-v;
+    % 
+
+
     a1 = y2-y1;
     b1 = x1 - x2;
     c1 = x2.*y1 - x1.*y2;
-    
-    l2 = (x1-x2).^2 + (y1-y2).^2;
-    v = [x1, y1];
-    w = [x2, y2];
-    diff = w-v;
 
 
     %Precalculates values for relevant range
@@ -34,10 +35,15 @@ function SDF = generate_SDF(vertices, X, Y, interval)
 
     SDFtable = zeros(size(xVals, 2), size(yVals, 2));
 
+
+
     for i = 1:size(xVals, 2)
         for j = 1:size(yVals, 2)
             p = [xVals(i), yVals(j)];
             %Find if point is inside or outside polygon
+
+              dotProds = dot(p-v, diff, 2)./l2;
+    
 
             %Choose [100, 0] as a point that will definitely be outside the
             %polygon. This point and the current coordinate form a line
@@ -85,16 +91,20 @@ function SDF = generate_SDF(vertices, X, Y, interval)
 
             %Find distance from point to nearest line segment
 
-            t = max([zeros(size(v, 1), 1), min([ones(size(v, 1), 1), dot(p-v, w-v, 2) ./ l2], [], 2)], [], 2);
+            t = max([zeros(size(v, 1), 1), min([ones(size(v, 1), 1), dotProds], [], 2)], [], 2);
 
             proj = v + [t .*diff(:, 1), t.*diff(:, 2)];
             dist = p-proj;
 
             SDFtable(i, j) = min(sqrt(dist(:, 1).^2 + dist(:, 2).^2))*distSign;
 
-
         end
     end
+
+
+
+
+    toc
 
     %Find location of X and Y vales in table of values
     Xrow = reshape(X, [1, xSize(1)*xSize(2)*xSize(3)]);

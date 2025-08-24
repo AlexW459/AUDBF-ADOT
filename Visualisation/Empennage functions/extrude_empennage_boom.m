@@ -6,7 +6,7 @@ function [empennage_boom, pivot_point] = extrude_empennage_boom(profiles, ...
     profile_names, parameters, param_names, der_params, der_param_names, density)
     circular_profile = profiles{find(strcmp(profile_names, "empennage_boom_profile"))};
 
-    boom_width = 0.04;
+    boom_width = 0.05;
     boom_length = der_params(find(strcmp(der_param_names, "empennage_boom_length")));
 
     rod_width = ...
@@ -16,12 +16,11 @@ function [empennage_boom, pivot_point] = extrude_empennage_boom(profiles, ...
 
     extrude_marks = [0, -boom_length+0.01, -boom_length, -boom_length-rod_length];
 
-    boom_side_profile = [boom_width*0.5, -0.5*boom_width; ...
-                            boom_width*0.5, -0.5*boom_width;
-                            rod_width*0.5, -0.5*rod_width;
-                            rod_width*0.5, -0.5*rod_width];
+    xy_pos_vals = [0, 0; 0, 0; 0, 0; 0, 0];
 
-    empennage_boom = extrusion(circular_profile, extrude_marks, boom_side_profile, 0, density);
+    scale_vals = [boom_width, boom_width, rod_width, rod_width];
+
+    empennage_boom = extrusion(circular_profile, extrude_marks, xy_pos_vals, scale_vals, density);
 
     pivot_point = [0, 0, 0];
 

@@ -28,7 +28,7 @@ function output_profile = fuselage_profile(parameters, param_names, der_params, 
     t = linspace(0, 1, num_points)';
 
     B_left = (1-t).^3 * P1 + t.*(3*(1-t).^2)*P2 + (3*(1-t).*t.^2)*P3 + t.^3 * P4;
-    B_right = flip([-B_left(2:end-1,1),B_left(2:end-1,2)], 1);
+    B_right = flip([-B_left(2:end-1,1), B_left(2:end-1,2)], 1);
 
     B = [B_left; B_right];
 

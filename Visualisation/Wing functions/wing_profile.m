@@ -21,6 +21,7 @@ function airfoil_profile = wing_profile(parameters, param_names, der_params, der
         wing_airfoil_max_camber_pos, wing_airfoil_max_thickness, ...
         wing_root_thickness, num_points);
 
+
     % plot(airfoil_upper(:, 1), airfoil_upper(:, 2),'ko');
     % hold on;
     % plot(airfoil_lower(:, 1), airfoil_lower(:, 2),'ko');

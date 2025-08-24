@@ -12,21 +12,15 @@ function [wing_extrusion, pivot_point] = extrude_wing_left(profiles, profile_nam
     wing_sweep = parameters(find(strcmp(param_names, "wing_sweep")));
     wing_scale = parameters(find(strcmp(param_names, "wing_scale")));
 
-    %Gets relevant variables
-    wing_root_thickness = parameters(find(strcmp(param_names, "wing_root_thickness")));
-
-
     wing_extrude_marks = [0, wing_length];
 
 
-    wing_side_profile_matrix = [0.5*wing_root_thickness, ...
-                                 -0.5*wing_root_thickness;...
-                                0.5*wing_root_thickness*wing_scale, ...
-                                -0.5*wing_root_thickness*wing_scale];
+    scale_vals = [1, wing_scale];
 
+    xy_pos_vals = [0, 0; wing_sweep, 0];
 
     wing_extrusion = extrusion(wing_base_profile, wing_extrude_marks,...
-                               wing_side_profile_matrix, wing_sweep, density);
+                               xy_pos_vals, scale_vals, density);
 
     pivot_point = [0, 0, 0];
 
