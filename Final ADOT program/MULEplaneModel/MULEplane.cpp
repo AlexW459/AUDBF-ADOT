@@ -51,11 +51,11 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
 
     extrusionData extrusion;
 
-    extrusion.scaleVals = {1.0f, 1.0f};
-    extrusion.xPosVals = {0.0f, 0.0f};
-    extrusion.yPosVals = {0.0f, 0.0f};
+    extrusion.scaleVals = {1.0f, 1.0f, 1.0f, 1.0f};
+    extrusion.xPosVals = {0.0f, 0.0f, 0.0f, 0.0f};
+    extrusion.yPosVals = {0.0f, 0.0f, 0.0f, 0.0f};
     //extrusion.zSampleVals = {0.0f, (float)fuselageLength};
-    extrusion.zSampleVals = {0.0f, 1.0f};
+    extrusion.zSampleVals = {0.0f, 0.3f, 0.5f, 0.8f};
 
     extrusion.translation = glm::vec3(0.0f, 0.0f, 0.0f);
 

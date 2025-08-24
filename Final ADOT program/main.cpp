@@ -40,7 +40,8 @@ int main(){
 
     MULEaircraft.addPart("Fuselage", 1000, extrudeFuselage, 0);
 
-    MULEaircraft.calculateVals(paramVals, 20, 20, mass, COM, MOI);
+    MULEaircraft.calculateVals(paramVals, 50, 50, mass, COM, MOI);
+
 
     MULEaircraft.plot(500, 500, paramVals, 20);
 

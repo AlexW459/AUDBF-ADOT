@@ -67,6 +67,8 @@ int aircraft::findPart(string partName){
 void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, double surfMeshRes,
     double &mass, glm::dvec3 &COM, glm::dmat3 &MOI){
 
+
+
     //Variables to store information about each extrusion
     vector<string> paramNames = parameterNames;
 
@@ -91,7 +93,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
     vector<glm::mat2x3> boundingBoxes;
     boundingBoxes.resize(numParts);
-    glm::mat2x3 totalBoundingBox(-1e6, -1e6, -1e6, 1e6, 1e6, 1e6);
+    glm::mat2x3 totalBoundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
 
     for(int i = 0; i < numParts; i++){
 
@@ -103,6 +105,8 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         glm::mat2x3 boundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
         findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI, boundingBox);
 
+
+
         //Apply part's own transformations
         partCOM -= extrusions[i].pivotPoint;
         partCOM = extrusions[i].rotation * partCOM;
@@ -113,60 +117,63 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         //Multiplies MOI by common factor
         MOI *= partMass;
 
-        //Performs reverse operations on the MOI because these equations actually move the point
-        //around which the part rotates, and so to move the part while continuing to rotate it around the 
-        //origin
-        glm::dmat3 returnPivotMat = constructRelationMatrix(extrusions[i].pivotPoint);
-        partMOI = partMOI + partMass*returnPivotMat;
-        glm::dmat3 rotMat = glm::mat3_cast(extrusions[i].rotation);
-        partMOI = rotMat*partMOI*(glm::transpose(rotMat));
-        glm::dmat3 transMat = constructRelationMatrix(-1.0*(extrusions[i].translation + 
-            extrusions[i].pivotPoint));
-        partMOI = partMOI + partMass*transMat;
         
-
-        //Applies transformations to bounding box
-        boundingBox[0] = glm::dvec3(boundingBox[0]) - extrusions[i].pivotPoint;
-        boundingBox[1] = glm::dvec3(boundingBox[1]) - extrusions[i].pivotPoint;
-        boundingBox[0] = extrusions[i].rotation * glm::dvec3(boundingBox[0]);
-        boundingBox[1] = extrusions[i].rotation * glm::dvec3(boundingBox[1]);
-        boundingBox[0] = glm::dvec3(boundingBox[0]) + extrusions[i].translation + extrusions[i].pivotPoint;
-        boundingBox[1] = glm::dvec3(boundingBox[1]) + extrusions[i].translation + extrusions[i].pivotPoint;
-
         //Get transformations applied to part
         vector<int> parentIndices = findParents(i);
-        for(int p = 0; p < (int)parentIndices.size(); p++){
-            int pIndex = parentIndices[p];
-            //Apply transformations to part
-            partCOM -= extrusions[pIndex].pivotPoint;
-            partCOM = extrusions[pIndex].rotation * partCOM;
-            partCOM += extrusions[pIndex].translation + extrusions[pIndex].pivotPoint;
+        //Adds part itself to list of transformations
+        vector<int> transformIndices = {i};
+        transformIndices.insert(transformIndices.begin() + 1, parentIndices.begin(), parentIndices.end());
 
-            glm::dmat3 returnPivotMat = constructRelationMatrix(extrusions[pIndex].pivotPoint);
+        //cout << "untransformed bounding box: " << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
+
+        for(int p = 0; p < (int)transformIndices.size(); p++){
+            int tIndex = transformIndices[p];
+            //Performs reverse operations on the MOI because these equations actually move the point
+            //around which the part rotates, and so to move the part while continuing to rotate it around the 
+            //origin
+            partCOM -= extrusions[tIndex].pivotPoint;
+            partCOM = extrusions[tIndex].rotation * partCOM;
+            partCOM += extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
+
+            glm::dmat3 returnPivotMat = constructRelationMatrix(extrusions[tIndex].pivotPoint);
             partMOI = partMOI + partMass*returnPivotMat;
-            glm::dmat3 rotMat = glm::mat3_cast(extrusions[pIndex].rotation);
+            glm::dmat3 rotMat = glm::mat3_cast(extrusions[tIndex].rotation);
             partMOI = rotMat*partMOI*(glm::transpose(rotMat));
-            glm::dmat3 transMat = constructRelationMatrix(-1.0*(extrusions[pIndex].translation + 
-                extrusions[pIndex].pivotPoint));
+            glm::dmat3 transMat = constructRelationMatrix(-1.0*(extrusions[tIndex].translation + 
+                extrusions[tIndex].pivotPoint));
             partMOI = partMOI + partMass*transMat;
 
 
-
             //Apply transformations to bounding box
-            
-            boundingBox[0] = glm::dvec3(boundingBox[0]) - extrusions[i].pivotPoint;
-            boundingBox[1] = glm::dvec3(boundingBox[1]) - extrusions[i].pivotPoint;
-            boundingBox[0] = extrusions[i].rotation * glm::dvec3(boundingBox[0]);
-            boundingBox[1] = extrusions[i].rotation * glm::dvec3(boundingBox[1]);
-            boundingBox[0] = glm::dvec3(boundingBox[0]) + extrusions[i].translation + extrusions[i].pivotPoint;
-            boundingBox[1] = glm::dvec3(boundingBox[1]) + extrusions[i].translation + extrusions[i].pivotPoint;
+            boundingBox[0] = glm::dvec3(boundingBox[0]) - extrusions[tIndex].pivotPoint;
+            boundingBox[1] = glm::dvec3(boundingBox[1]) - extrusions[tIndex].pivotPoint;
+            boundingBox[0] = extrusions[tIndex].rotation * glm::dvec3(boundingBox[0]);
+            boundingBox[1] = extrusions[tIndex].rotation * glm::dvec3(boundingBox[1]);
+            boundingBox[0] = glm::dvec3(boundingBox[0]) + extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
+            boundingBox[1] = glm::dvec3(boundingBox[1]) + extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
+
         }
+
+        
+        //cout << "transformed bounding box: " << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
+
+
+
+        //Rearranges coordinates of bounding box to account for the fact that the maximum and minimum coordinates
+        //may have switched positions during the rotations
+        glm::vec3 newMinBound = min(boundingBox[0], boundingBox[1]);
+        glm::vec3 newMaxBound = max(boundingBox[0], boundingBox[1]);
+
+        boundingBox[0] = newMinBound;
+        boundingBox[1] = newMaxBound;
+
 
         //Adds 5% in every direction to bounding box
         float margin = 0.05;
         glm::vec3 boundSize = boundingBox[1] - boundingBox[0];
         boundingBox[0] -= boundSize*margin;
         boundingBox[1] += boundSize*margin;
+
 
 
         //Adjusts total bounding box if necessary
@@ -178,7 +185,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         totalBoundingBox[1][2] = max(totalBoundingBox[1][2], boundingBox[1][2]);
 
         boundingBoxes[i] = boundingBox;
-        
+
         //Adds to total COM
         COMSoFar += partCOM*partMass;
         //Adds to total mass
@@ -192,18 +199,22 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     glm::dmat3 transMat = constructRelationMatrix(COM);
     MOI = MOISoFar + massSoFar*transMat;
 
-    
-    //Gets SDF
-    vector<float> SDF;
 
     //Gets parents of each part
     vector<vector<int>> parentIndices;
+    parentIndices.resize(numParts);
     for(int i = 0; i < numParts; i++){
         parentIndices[i] = findParents(i);
     }
 
     //Gets SDF
+    vector<float> SDF;
     glm::ivec3 SDFSize = generateSDF(SDF, profiles, partProfiles, extrusions, parentIndices, totalBoundingBox, boundingBoxes, surfMeshRes);
+
+
+    applyGaussianBlur(0.2, 5, SDF, SDFSize);
+
+
     int SDFTotalSize = SDFSize[0] * SDFSize[1] * SDFSize[2];
 
     //Generates surface mesh
@@ -212,7 +223,12 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     #pragma omp simd
     for(int i = 0; i < SDFTotalSize; i++){
         field[i] = SDF[i];
+        if(field[i] < 0) {
+            cout << field[i] << endl;
+        }
+        
     }
+    
 
     MC::mcMesh surfaceMesh;
     MC::marching_cube(field, SDFSize[0], SDFSize[1], SDFSize[2], surfaceMesh);
@@ -222,8 +238,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
 
     //Gets aerodynamic forces
-
-
 
 }
 
@@ -243,6 +257,8 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     vector<char> adjMatrix;
     int numTetras = generateExtrusion(partProfile, extrusion, adjMatrix, extrudePoints, boundingBox);
 
+
+
     //Allocates an additional element due to how the tetrahedron searching code works
     //The vector in this space is unused
     vector<glm::ivec4> tetraIndices;
@@ -253,7 +269,7 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     int adjSize = extrudePoints.size();
     int tetra = 0;
     //Only check upper right half of matrix to avoid double-counting tetrahedrons
-    //#pragma omp simd
+    #pragma omp simd
     for(int r = 0; r < adjSize; r++){
         //#pragma omp simd
         for(int c = r; c < adjSize; c++){
@@ -337,6 +353,8 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     //Multiplies by common factor. Now equal to MOI/mass
     MOI = MOISoFar*0.1;
 
+
+
 }
 
 
@@ -368,6 +386,8 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
     extrusions.resize(numParts);
     getExtrusionData(profiles, extrusions, paramValues, volMeshRes);
 
+
+
     //Generates meshes
     vector<vector<glm::vec3>> totalPoints;
     totalPoints.resize(numParts);
@@ -393,29 +413,27 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
         totalPoints[i].resize(numPoints);
 
 
-        //Applies part transformations
-        #pragma omp simd
-        for(int j = 0; j < numPoints; j++){
-            totalPoints[i][j] = extrusions[i].rotation * glm::dvec3(points[j]) + extrusions[i].translation;
-        }
-
         //Applies parent transformations
         vector<int> parentIndices = findParents(i);
-        for(int p = 0; p < (int)parentIndices.size(); p++){
-            int pIndex = parentIndices[p];
-            glm::quat rotation = extrusions[pIndex].rotation;
-            glm::vec3 translation = extrusions[pIndex].translation;
-            glm::vec3 pivotPoint = extrusions[pIndex].pivotPoint;
-
+        //Adds the part itself to list of transformations
+        vector<int> transformIndices = {i};
+        transformIndices.insert(transformIndices.begin() + 1, parentIndices.begin(), parentIndices.end());
+        #pragma omp simd collapse(2)
+        for(int p = 0; p < (int)transformIndices.size(); p++){
             //Apply transformations to part
-            #pragma omp simd
             for(int j = 0; j < numPoints; j++){
+                int tIndex = transformIndices[p];
+                glm::quat rotation = extrusions[tIndex].rotation;
+                glm::vec3 translation = extrusions[tIndex].translation;
+                glm::vec3 pivotPoint = extrusions[tIndex].pivotPoint;
+
                 totalPoints[i][j] = rotation * (totalPoints[i][j] - pivotPoint) + translation + pivotPoint;
             }
 
         }
 
     }
+
 
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
     window.draw3D(totalPoints, adjMatrices, 3.0f);
