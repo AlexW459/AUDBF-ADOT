@@ -80,7 +80,7 @@ glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, cons
     SDF.resize(totalSDFSize);
     #pragma omp simd
     for(int i = 0; i < totalSDFSize; i++){
-        SDF[i] = 10.0f;
+        SDF[i] = 100.0;
 
     }
 
@@ -335,7 +335,7 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     int numVerts = v.size();
 
     //Point outside model
-    glm::dvec2 pOut = glm::dvec2(21000.245, 1500.245);
+    glm::dvec2 pOut = glm::dvec2(200.245, 150.245);
 
 
     vector<double> a1, b1, c1, d2, l2;

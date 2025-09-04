@@ -1,21 +1,19 @@
 
 #Cleans mesh
-surfaceCheck aircraftMesh/aircraftModelRaw.obj -splitNonManifold
-cp aircraftModelRaw*.obj splitPatches
-rm aircraftModelRaw*.obj
-rm badFaces
-rm aircraftMesh/zone_aircraftModelRaw.vtk
+#surfaceCheck aircraftMesh/aircraftModelRaw.obj -splitNonManifold
+#mv aircraftModelRaw*.obj splitPatches
 
 #Only retains largest mesh
-largestFile=$(wc -l *splitPatches/aircraftModelRaw*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
-cp $largestFile aircraftMesh/aircraftModelSplit.obj
-rm splitPatches/*
+#largestFile=$(wc -l *splitPatches/aircraftModelRaw*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
+#cp $largestFile aircraftMesh/aircraftModelSplit.obj
+#rm splitPatches/*
 
 
-surfaceLambdaMuSmooth aircraftMesh/aircraftModelSplit.obj aircraftMesh/aircraftModel.obj 0.8 0.2 30
+surfaceLambdaMuSmooth aircraftMesh/aircraftModelRaw.obj aircraftMesh/aircraftModel.obj 0.5 0.5 20
 
 gzip aircraftMesh/aircraftModel.obj
 
+rm constant/geometry/aircraftModel.obj.gz
 cp aircraftMesh/aircraftModel.obj.gz constant/geometry
 
 rm -r 0/*

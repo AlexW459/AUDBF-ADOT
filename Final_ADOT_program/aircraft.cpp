@@ -1,5 +1,8 @@
 #include "aircraft.h"
 
+#define MC_CPP_USE_DOUBLE_PRECISION
+#define MC_IMPLEM_ENABLE
+#include "Mesh_Generation/MC.h"
 
 aircraft::aircraft(vector<string> _paramNames, function<void(vector<string>&, vector<double>&)> 
     _derivedParamsFunc,
@@ -92,7 +95,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
     vector<glm::dmat2x3> boundingBoxes;
     boundingBoxes.resize(numParts);
-    glm::dmat2x3 totalBoundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
+    glm::dmat2x3 totalBoundingBox(100.0, 100.0, 100.0, -100.0, -100.0, -100.0);
 
     for(int i = 0; i < numParts; i++){
 
@@ -102,7 +105,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         glm::dmat3 partMOI;
         double partVolume;
         int profileIndex = partProfiles[i];
-        glm::dmat2x3 boundingBox(1e6, 1e6, 1e6, -1e6, -1e6, -1e6);
+        glm::dmat2x3 boundingBox(100.0, 100.0, 100.0, -100.0, -100.0, -100.0);
         findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI, boundingBox);
 
 
@@ -218,13 +221,38 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
     //applyGaussianBlur(0.8, 9, SDF, SDFSize);
 
+    int totalSDFSize = SDFSize[0] * SDFSize[1] * SDFSize[2];
+
+    MC::MC_FLOAT* field = new MC::MC_FLOAT[totalSDFSize];
+	for (int i = 0; i < totalSDFSize; i++)
+	{
+        field[i] = SDF[i];
+	}
+
+    MC::mcMesh mesh;
+
+    MC::marching_cube(field, SDFSize[0], SDFSize[1], SDFSize[2], mesh);
+
+    glm::dvec3 minPoint = coordField[0];
+    double interval = 1/surfMeshRes;
 
 
-    MeshReconstruction::Mesh mesh = MeshReconstruction::MarchCube(SDF, coordField, SDFSize, 0.0);
+    //Moves points from index coordinates to actual space coordinates
+    #pragma omp simd
+    for (int i = 0; i < (int)mesh.vertices.size(); i++){
+        glm::dvec3 newPoint = minPoint + interval*glm::dvec3(mesh.vertices[i].x, mesh.vertices[i].y, mesh.vertices[i].z);
+        mesh.vertices[i].x = newPoint[0];
+        mesh.vertices[i].y = newPoint[1];
+        mesh.vertices[i].z = newPoint[2];
+    }
+    
 
+    writeMeshToObj("Aerodynamics_Simulation/aircraftMesh/aircraftModelRaw.obj", mesh);
+    delete[] field;
 
+    ///MeshReconstruction::Mesh mesh = MeshReconstruction::MarchCube(SDF, coordField, SDFSize, 0.0);
     //Writes mesh to obj file
-    WriteObjFile(mesh, "test.obj");
+    //WriteObjFile(mesh, "Aerodynamics_Simulation/aircraftMesh/aircraftModelRaw.obj");
 
     //Gets aerodynamic forces
 
