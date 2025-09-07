@@ -71,7 +71,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     double &mass, glm::dvec3 &COM, glm::dmat3 &MOI){
 
 
-
     //Variables to store information about each extrusion
     vector<string> paramNames = parameterNames;
 
@@ -88,6 +87,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
     getExtrusionData(profiles, extrusions, paramValues, volMeshRes); 
 
+
     //Gets extrusion information and finds relevant values
     glm::dvec3 COMSoFar(0, 0, 0);
     double massSoFar = 0;
@@ -95,7 +95,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
     vector<glm::dmat2x3> boundingBoxes;
     boundingBoxes.resize(numParts);
-    glm::dmat2x3 totalBoundingBox(100.0, 100.0, 100.0, -100.0, -100.0, -100.0);
+    glm::dmat2x3 totalBoundingBox(50.0, 50.0, 50.0, -50.0, -50.0, -50.0);
 
     for(int i = 0; i < numParts; i++){
 
@@ -105,7 +105,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         glm::dmat3 partMOI;
         double partVolume;
         int profileIndex = partProfiles[i];
-        glm::dmat2x3 boundingBox(100.0, 100.0, 100.0, -100.0, -100.0, -100.0);
+        glm::dmat2x3 boundingBox(50.0, 50.0, 50.0, -50.0, -50.0, -50.0);
         findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI, boundingBox);
 
 
@@ -126,9 +126,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         vector<int> transformIndices = {i};
         transformIndices.insert(transformIndices.begin() + 1, parentIndices.begin(), parentIndices.end());
 
-
-
-        //cout << "untransformed bounding box: " << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
+        //cout << "untransformed bounding box min: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << endl;
 
         for(int p = 0; p < (int)transformIndices.size(); p++){
             int tIndex = transformIndices[p];
@@ -149,17 +147,14 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
 
             //Apply transformations to bounding box
-            boundingBox[0] = glm::dvec3(boundingBox[0]) - extrusions[tIndex].pivotPoint;
-            boundingBox[1] = glm::dvec3(boundingBox[1]) - extrusions[tIndex].pivotPoint;
-            boundingBox[0] = extrusions[tIndex].rotation * glm::dvec3(boundingBox[0]);
-            boundingBox[1] = extrusions[tIndex].rotation * glm::dvec3(boundingBox[1]);
-            boundingBox[0] = glm::dvec3(boundingBox[0]) + extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
-            boundingBox[1] = glm::dvec3(boundingBox[1]) + extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
+            boundingBox[0] = boundingBox[0] - extrusions[tIndex].pivotPoint;
+            boundingBox[1] = boundingBox[1] - extrusions[tIndex].pivotPoint;
+            boundingBox[0] = extrusions[tIndex].rotation * boundingBox[0];
+            boundingBox[1] = extrusions[tIndex].rotation * boundingBox[1];
+            boundingBox[0] = boundingBox[0] + extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
+            boundingBox[1] = boundingBox[1] + extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
 
         }
-
-        
-        //cout << "transformed bounding box: " << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
 
 
 
@@ -171,6 +166,8 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         boundingBox[0] = newMinBound;
         boundingBox[1] = newMaxBound;
 
+        //cout << "transformed bounding box min: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << endl;
+
 
         //Adds 10% in every direction to bounding box
         double margin = 0.05;
@@ -181,12 +178,15 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
 
         //Adjusts total bounding box if necessary
-        totalBoundingBox[0][0] = min(totalBoundingBox[0][0], boundingBox[0][0]);
+        totalBoundingBox[0] = min(totalBoundingBox[0], boundingBox[0]);
+        totalBoundingBox[1] = max(totalBoundingBox[1], boundingBox[1]);
+
+        /*totalBoundingBox[0][0] = min(totalBoundingBox[0][0], boundingBox[0][0]);
         totalBoundingBox[0][1] = min(totalBoundingBox[0][1], boundingBox[0][1]);
         totalBoundingBox[0][2] = min(totalBoundingBox[0][2], boundingBox[0][2]);
         totalBoundingBox[1][0] = max(totalBoundingBox[1][0], boundingBox[1][0]);
         totalBoundingBox[1][1] = max(totalBoundingBox[1][1], boundingBox[1][1]);
-        totalBoundingBox[1][2] = max(totalBoundingBox[1][2], boundingBox[1][2]);
+        totalBoundingBox[1][2] = max(totalBoundingBox[1][2], boundingBox[1][2]);*/
 
         boundingBoxes[i] = boundingBox;
 

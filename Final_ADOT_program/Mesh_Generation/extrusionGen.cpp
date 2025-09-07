@@ -7,7 +7,6 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
     vector<char>& adjMatrix, vector<glm::dvec3>& points, glm::dmat2x3& boundingBox){
 
 
-
     int numProfiles = extrusion.zSampleVals.size();
     int profileSize = partProfile.vertexCoords.size();
     int outerSize = profileSize;
@@ -31,10 +30,10 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
     boundingBox[0][2] = extrusionBegin;
     boundingBox[1][2] = extrusionEnd;
 
-    boundingBox[0][0] = 1e6;
-    boundingBox[0][1] = 1e6;
-    boundingBox[1][0] = -1e6;
-    boundingBox[1][1] = -1e6;
+    boundingBox[0][0] = 50;
+    boundingBox[0][1] = 50;
+    boundingBox[1][0] = -50;
+    boundingBox[1][1] = -50;
 
 
     //Finds positions of profiles
@@ -125,8 +124,5 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
     int numTetras = 3*partProfile.numTriangles*(numProfiles-1);
 
 
-    
     return numTetras;
-
-
 }

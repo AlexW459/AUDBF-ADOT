@@ -294,16 +294,22 @@ int profile::triangulatePolygon(vector<glm::dvec2> vertexCoords, vector<char>& a
 }
 
 vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamberPosDecile,
-    double maxThicknessPercent, double airfoilChord, double meshRes){
+    double maxThicknessPercent, double airfoilChord, double flapRadius, double meshRes){
+
 
     //Get actual values from NACA numbers
     double maxCamber = maxCamberPercent/100;
     double maxCamberPos = maxCamberPosDecile/10;
     double maxThickness = maxThicknessPercent/100;
+    double curvedLength = (airfoilChord - flapRadius)/airfoilChord;
 
-    //Gets number of points, accounting for the fact that 
-    int numX = floor(airfoilChord * meshRes) + 1;
-    int numPoints = 2*numX - 2;
+    //Gets number of points, accounting for the fact that the airfoil ends in a 
+    // single point at both ends
+    int numX, numPoints;
+    //Increases mesh resolution as airfoils are particularly important
+    numX = floor(1.5 * curvedLength * airfoilChord * meshRes) + 1;
+    numPoints = 2*numX - 2;
+
 
     vector<glm::dvec2> airfoilPoints;
     airfoilPoints.resize(numPoints);
@@ -313,53 +319,79 @@ vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamber
     vector<glm::dvec2> diffXY;
     diffXY.resize(numX); 
 
-    #pragma omp simd
+
     for(int i = 0; i < numX; i++){
-        double xVal = i/(numX - 1);
+        //Gets the x value by finding the current point as a fraction of the total length
+        double xVal = pow((double)i/(numX - 1), 1.8);
+        //Adjusts for possible reduced length of airfoil
+        xVal *= curvedLength;
         camberPoints[i][0] = xVal;
+
 
         //Gets thickness of airfoil
         double camberThickness = 5*maxThickness*(0.2969*sqrt(xVal) - 
             0.1260 * xVal - 0.3516*xVal*xVal + 0.2843*xVal*xVal*xVal
             - 0.1036*xVal*xVal*xVal*xVal);
+
+
         
         //Gets y position of centreline
             //Before max camber pos
-        camberPoints[i][0] = maxCamber / (maxCamberPos*maxCamberPos) * 
-            (2.0*maxCamberPos*xVal - xVal*xVal) * (xVal < maxCamberPos) +
+        if(xVal < maxCamberPos){
+            camberPoints[i][1] = maxCamber / (maxCamberPos*maxCamberPos) * 
+            (2.0*maxCamberPos*xVal - xVal*xVal) * (xVal < maxCamberPos);
+        }else{
             //After max camber pos
-            maxCamber / ((1.0 - maxCamberPos)*(1.0 - maxCamberPos)) * 
+            camberPoints[i][1] = maxCamber / ((1.0 - maxCamberPos)*(1.0 - maxCamberPos)) * 
             ((1.0 - 2.0*maxCamberPos) + 2.0*maxCamberPos*xVal - xVal*xVal) * (xVal >= maxCamberPos);
+        }
 
         //Gets gradient perpendicular to airfoil
             //Before max camber pos
-        double perpGrad = 2.0*maxCamber / (maxCamberPos*maxCamberPos) * (maxCamberPos - xVal) *
-            (xVal < maxCamberPos) +
+        double perpGrad;
+        if(xVal < maxCamberPos) {
+            perpGrad = 2.0*maxCamber / (maxCamberPos*maxCamberPos) * (maxCamberPos - xVal);
+        }else{
             //After max camber pos
-            2.0*maxCamber / ((1.0 - maxCamberPos)*(1.0 - maxCamberPos)) * (maxCamberPos-xVal) *
-            (xVal >= maxCamberPos);
+            perpGrad = 2.0*maxCamber / ((1.0 - maxCamberPos)*(1.0 - maxCamberPos)) * (maxCamberPos-xVal);
+        }
 
+        
         //Gets distance away from camber line in each dimension for upper points
         //(distance for lower points is the negative)
-        diffXY[i][0] = -camberThickness * (perpGrad / sqrt(1.0 + perpGrad*perpGrad));
-        diffXY[i][1] = camberThickness * (1.0 / sqrt(1.0 + perpGrad*perpGrad));
+        /*diffXY[i][0] = -camberThickness * (perpGrad / sqrt(1.0 + perpGrad*perpGrad));
+        diffXY[i][1] = camberThickness * (1.0 / sqrt(1.0 + perpGrad*perpGrad));*/
+
+        double theta = atan(perpGrad);
+        diffXY[i][0] =  -camberThickness * sin(theta);
+        diffXY[i][1] = camberThickness * cos(theta);
+
     }
 
-    //Gets airfoil points
+    //Gets airfoil points by adding thickness vectors onto camber line
     #pragma omp simd
     for(int i = 0; i < numX - 1; i++){
 
-        //Subtracts 0.5 so that airfoil is centred around the origin
-        airfoilPoints[i][0] = camberPoints[i][0] + diffXY[i][0] - 0.5;
-        airfoilPoints[numPoints - numX + 1 + i][1] = camberPoints[numX - i - 1][0] - diffXY[numX - i - 1][0] - 0.5;
-
+        //Subtracts half of the airfoil length so that airfoil is centred around the origin
+        airfoilPoints[i][0] = camberPoints[i][0] + diffXY[i][0] - curvedLength/2.0;
         airfoilPoints[i][1] = camberPoints[i][1] + diffXY[i][1];
+
+        airfoilPoints[numPoints - numX + 1 + i][0] = camberPoints[numX - i - 1][0] - diffXY[numX - i - 1][0] - curvedLength/2.0;
         airfoilPoints[numPoints - numX + 1 + i][1] = camberPoints[numX - i - 1][1] - diffXY[numX - i - 1][1];
         
-        //Scales points according to desired chord length
+    }
+
+    //Scales all points according to the airfoil chord
+    for(int i = 0; i < (int) airfoilPoints.size(); i++){
         airfoilPoints[i] *= airfoilChord;
-        airfoilPoints[numPoints - numX + 1 + i][1] *= airfoilChord;
     }
 
     return airfoilPoints;
 }
+
+
+vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamberPosDecile,
+    double maxThicknessPercent, double airfoilChord, double meshRes){
+        return generateNACAAirfoil(maxCamberPercent, maxCamberPosDecile, maxThicknessPercent, 0, airfoilChord, meshRes);
+}
+

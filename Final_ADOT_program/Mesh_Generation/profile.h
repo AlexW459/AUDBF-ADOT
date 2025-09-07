@@ -40,4 +40,7 @@ struct profile{
 };
 
 vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamberPosDecile,
+    double maxThicknessPercent, double airfoilChord, double flapRadius, double meshRes);
+
+vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamberPosDecile,
     double maxThicknessPercent, double airfoilChord, double meshRes);

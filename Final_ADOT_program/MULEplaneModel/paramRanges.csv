@@ -1,3 +1,3 @@
-,fuselageHeight,fuselageParam1,fuselageParam2,fuselageLength,noseconeLength,noseconeTipScale,noseconeOffset,wingLength,wingVertPos,wingHorizPos,wingRootThickness,wingScale,wingSweep,tailconeLength,tailconeTipScale,batteryPos,horizStabiliserWidth,empennageLength,horizontalStabiliserThickness,vertStabiliserHeight,vertStabiliserThickness
-min,0.1,0.1,0.1,0.5,0.2,0.2,-0.15,0.4,0,0,0.03,0.2,0,0.2,0.1,0,0.1,0.05,0.02,0.1,0.02
-max,0.5,0.5,0.5,1.5,0.6,0.9,0.15,1,1,1,0.2,1,1,0.5,0.9,1,0.8,0.6,0.08,0.6,0.08
+,fuselageHeight,fuselageParam1,fuselageParam2,fuselageLength,noseconeLength,noseconeTipScale,noseconeOffset,wingLength,wingVertPos,wingHorizontalPosition,wingRootChord,wingScale,wingSweep,wingAirfoilMaxCamber,wingAirfoilMaxCamberPos,wingAirfoilMaxThickness,tailconeLength,tailconeTipScale,batteryPos,horizStabiliserWidth,horizStabiliserMaxThickness,horizontalStabiliserChord,empennageLength,vertStabiliserHeight,vertStabiliserMaxThickness,vertStabiliserChord
+min,0.1,0.1,0.1,0.5,0.2,0.2,-0.1,0.4,0,0,0.2,0.2,0,0,0,1,0.2,0.1,0,0.1,1,0.1,0.05,0.1,1,0.1
+max,0.3,0.3,0.3,0.9,0.3,0.9,0,1,1,1,0.4,1,0.5,9,9,40,0.5,0.9,1,0.8,40,0.4,0.6,0.6,40,0.4

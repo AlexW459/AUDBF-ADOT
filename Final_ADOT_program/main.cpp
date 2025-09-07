@@ -18,6 +18,9 @@ int main(){
     paramVals.resize(paramRanges.columns.size());
     vector<string> paramNames;
 
+    for(int j = 0; j < 10; j++){
+        cout << j << endl;
+
     //Finds random values of parameters within bounds
     for(int i = 0; i < (int)paramVals.size(); i++){
 
@@ -34,16 +37,30 @@ int main(){
     glm::dvec3 COM;
     double mass;
 
-    vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = {fuselageProfile};
+    vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = {fuselageProfile, wingProfile};
     function<void(vector<string>&, vector<double>&)> derivedParamsFunc = calcDerivedParams;
 
     aircraft MULEaircraft = aircraft(paramNames, derivedParamsFunc, profileFunctions);
 
 
-    MULEaircraft.addPart("Fuselage", 1000, extrudeFuselage, 0);
+    MULEaircraft.addPart("fuselage", 1000, extrudeFuselage, 0);
+    MULEaircraft.addPart("rightWing", "fuselage", 1000, extrudeRightWing, 1);
+    MULEaircraft.addPart("leftWing",  "fuselage", 1000, extrudeLeftWing, 1);
 
-    MULEaircraft.calculateVals(paramVals, 50, 50, mass, COM, MOI);
+    try
+    {
+        MULEaircraft.calculateVals(paramVals, 50, 50, mass, COM, MOI);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
 
+    }
+    
+
+    
+
+    }
 
     //MULEaircraft.plot(500, 500, paramVals, 20);
 
