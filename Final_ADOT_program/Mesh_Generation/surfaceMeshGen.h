@@ -14,10 +14,13 @@ using namespace std;
 
 int meshIndexTo1DIndex(int i, int j, int k, int sizeX, int sizeY);
 
+glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 totalBoundingBox, double surfMeshRes);
+
 //Gets SDF of entire aircraft. Returns dimensions of SDF
-glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, const vector<profile>& profiles, vector<int> profileIndices,
-    const vector<extrusionData>& extrusions, vector<vector<int>> parentIndices, glm::dmat2x3 totalBoundingBox, 
-    vector<glm::dmat2x3> boundingBoxes, double surfMeshRes);
+void updateSDF(vector<double>& SDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, const vector<profile>& profiles, vector<int> profileIndices,
+    const vector<extrusionData>& extrusions, const vector<vector<int>>& parentIndices,
+    vector<glm::dmat2x3> boundingBoxes, glm::dmat2x3 totalBoundingBox, double surfMeshRes);
+
 
 //Gets SDF of a single part with a specified resolution. Returns size of SDF
 glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profile& partProfile, int partIndex,

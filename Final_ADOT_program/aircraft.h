@@ -31,7 +31,7 @@ class aircraft{
 
         void addPart(string partName, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
-        void addPart(string partName, string parentPart, double density,
+        void addPart(string partName, string parentPart, char controlSurface, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
 
         int findPart(string partName);
@@ -51,6 +51,7 @@ class aircraft{
         
         void getExtrusionData(vector<profile>& profiles, vector<extrusionData>& extrusions, vector<double> paramValues, double volMeshRes) const;
         //Gets relational matrix used in translation of MOI. Returns relational matrix
+        #pragma omp declare simd
         glm::dmat3 constructRelationMatrix(glm::dvec3 r) const;
 
         void getAeroVals();
@@ -71,5 +72,8 @@ class aircraft{
         //Stores the index of the profile used for each part
         vector<int> partProfiles;
         vector<double> partDensities;
+
+        //Stores whether each part is a control surface
+        vector<bool> controlSurfaces;
 
 };

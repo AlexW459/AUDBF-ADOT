@@ -12,11 +12,7 @@ float smoothMin(float a, float b, float k){
     return 0.5*( a+b-sqrt(x*x+k*k) );
 }
 
-glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, const vector<profile>& profiles, vector<int> profileIndices,
-    const vector<extrusionData>& extrusions, vector<vector<int>> parentIndices, glm::dmat2x3 totalBoundingBox, 
-    vector<glm::dmat2x3> boundingBoxes, double surfMeshRes){
-
-    //cout << "total bounding box: " << totalBoundingBox[0][0] << ", " << totalBoundingBox[0][1] << ", " << totalBoundingBox[0][2] << endl;
+glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 totalBoundingBox, double surfMeshRes){
 
     //Generates matrices of values
     glm::dvec3 boundSize = totalBoundingBox[1] - totalBoundingBox[0];
@@ -28,27 +24,14 @@ glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, cons
 
     totalBoundingBox[1] += glm::dvec3(interval, interval, interval) - endBoundRemainder;
 
-    //cout << "total bounding box min: " << totalBoundingBox[0][0] << ", " << totalBoundingBox[0][1] << ", " << totalBoundingBox[0][2] << endl;
-    //cout << "total bounding box max: " << totalBoundingBox[1][0] << ", " << totalBoundingBox[1][1] << ", " << totalBoundingBox[1][2] << endl;
-
-
-
     boundSize = totalBoundingBox[1] - totalBoundingBox[0];
-
 
     //Adds an additional two point2 to account for the first and last point
     glm::ivec3 SDFSize(round(boundSize / interval) + glm::dvec3(1.0, 1.0, 1.0));
 
-
-    //cout << "SDFSize: " << SDFSize[0] << ", " << SDFSize[1] << ", " << SDFSize[2] << endl;
-
-
     int totalSDFSize = SDFSize[0]*SDFSize[1]*SDFSize[2];
 
-    vector<glm::dvec3> XYZ;
     XYZ.resize(totalSDFSize);
-    coordField.resize(totalSDFSize);
-
 
     //Fills meshgrids
     vector<glm::dvec3> xVals;
@@ -70,13 +53,10 @@ glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, cons
         zVals[i] = glm::dvec3(0, 0, totalBoundingBox[0][2] + i*interval);
     }
 
-
-
     #pragma omp simd collapse(3)
     for(int i = 0; i < SDFSize[0]; i++){
         for(int j = 0; j < SDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){
-                coordField[meshIndexTo1DIndex(i, j, k, SDFSize[0], SDFSize[1])] = xVals[i] + yVals[j] + zVals[k];
                 XYZ[meshIndexTo1DIndex(i, j, k, SDFSize[0], SDFSize[1])] = xVals[i] + yVals[j] + zVals[k];
             }
         }
@@ -89,11 +69,19 @@ glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, cons
         SDF[i] = 50.0;
 
     }
+    
+    return SDFSize;
+}
 
 
+void updateSDF(vector<double>& SDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, const vector<profile>& profiles, 
+    vector<int> profileIndices, const vector<extrusionData>& extrusions, const vector<vector<int>>& parentIndices,
+    vector<glm::dmat2x3> boundingBoxes, glm::dmat2x3 totalBoundingBox, double surfMeshRes){
 
-
+    
     int numParts = extrusions.size();
+
+    glm::dvec3 boundSize = totalBoundingBox[1] - totalBoundingBox[0];
 
     //Gets SDF of each part
     for(int p = 0; p < numParts; p++){
@@ -105,14 +93,11 @@ glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, cons
         boundingIndices[0] = floor((boundingBoxes[p][0]-totalBoundingBox[0])/boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
         boundingIndices[1] = ceil((boundingBoxes[p][1]-totalBoundingBox[0])/boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
 
-        //cout << "bounding box: " << boundingBoxes[i][0][0] << ", " << boundingBoxes[i][0][1] << ", " << boundingBoxes[i][0][2] << endl;
-        //cout << "total bounding box: " << totalBoundingBox[1][0] << ", " << totalBoundingBox[1][1] << ", " << totalBoundingBox[1][2] << endl;
 
         glm::ivec3 partSDFSize = generatePartSDF(extrusions, profiles[profileIndices[p]], p, parentIndices[p],
-            XYZ, SDFSize, 
-            boundingIndices, surfMeshRes, partSDF);
+            XYZ, SDFSize, boundingIndices, surfMeshRes, partSDF);
 
-
+    
         //Find minimum of part SDF and total SDF for points in bounding box
         #pragma omp simd collapse(3)
         for(int i = 0; i < partSDFSize[0]; i++){
@@ -129,31 +114,20 @@ glm::ivec3 generateSDF(vector<double>& SDF, vector<glm::dvec3>& coordField, cons
                     //Vectorisable min function
                     SDF[index] = SDF[index] + (partSDF[partIndex] - SDF[index]) * (partSDF[partIndex] < SDF[index]);
 
-                    //SDF[index] != 0 && partSDF[partIndex] != 0 && 
-                    /*if(SDF[index] == 0) {
-                        cout << "SDF: " << initialSDF << " Part SDF: " << partSDF[partIndex] << " Final SDF: " << SDF[index] << endl;
-                    }*/
-
-                    //SDF[index] = smoothMin(SDF[index], partSDF[partIndex], 0.01);
-
-
                 }
             }
         }
 
     }
-
-
-    return SDFSize;
+    
 }
+
 
 
 
 glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profile& partProfile, 
     int partIndex, vector<int> parentIndices, const vector<glm::dvec3>& meshGrid, glm::ivec3 SDFSize, 
     glm::imat2x3 boundingIndices, double surfMeshRes, vector<double>& SDF){
-
-
 
 
     glm::ivec3 partSDFSize = boundingIndices[1] - boundingIndices[0];
@@ -219,8 +193,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         }
     }
 
-
-
     //Precalculates tables of values related to extrusion scaling and translation along its length
     
     //Gets required bounds of table
@@ -230,8 +202,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         minZ += (XYZ[i][2] - minZ) * (XYZ[i][2] < minZ);
         maxZ += (XYZ[i][2] - maxZ) * (XYZ[i][2] > maxZ);
     }
-
-
 
     //Accounts for the fact that the length of the table in the z direction is slightly larger
     //than the bounds of the SDF due to the SDF bounds not dividing exactly by the interval
@@ -391,7 +361,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         maxX += (XYZ[i][0] - maxX) * (XYZ[i][0] > maxX);
         minY += (XYZ[i][1] - minY) * (XYZ[i][1] < minY);
         maxY += (XYZ[i][1] - maxY) * (XYZ[i][1] > maxY);
-
     }
 
 
@@ -428,13 +397,10 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     }
 
     
-
-
     double minProfileX = v[0][0];
     for(int i = 1; i < numVerts; i++){
         minProfileX = min(minProfileX, v[i][0]);
     }
-
 
 
     //Fills table with values

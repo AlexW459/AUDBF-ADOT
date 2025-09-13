@@ -20,13 +20,23 @@ struct extrusionData{
     glm::dvec3 translation;
     glm::dvec3 pivotPoint;
 
+    bool isControl;
+    glm::vec3 controlAxis;
+
     extrusionData(){};
+
 
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint):zSampleVals(_zSampleVals),
+        glm::dvec3 _pivotPoint, bool _isControl, glm::dvec3 _controlAxis):zSampleVals(_zSampleVals),
         posVals(_posVals), scaleVals(_scaleVals), rotation(_rotation), 
-        translation(_translation), pivotPoint(_pivotPoint){};
+        translation(_translation), pivotPoint(_pivotPoint), isControl(_isControl), controlAxis(_controlAxis) {};
+
+    extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
+        vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
+        glm::dvec3 _pivotPoint) : extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, _translation,
+            _pivotPoint, false, glm::dvec3(0, 0, 0)) {};
+
 };
 
 int generateExtrusion(const profile& partProfile, const extrusionData& extrusion, vector<char>& adjMatrix, 

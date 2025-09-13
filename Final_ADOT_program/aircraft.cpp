@@ -19,12 +19,14 @@ void aircraft::addPart(string partName, double density,
     //Adds first part to tree
     partNames.push_back(partName);
     partParents.push_back(-1);
+    //First part cannot be a control surface
+    controlSurfaces.push_back(0);
     extrusionFunctions.push_back(extrusionFunction);
     partDensities.push_back(density);
     partProfiles.push_back(profileIndex);
 }
 
-void aircraft::addPart(string partName, string parentName, double density,
+void aircraft::addPart(string partName, string parentName, char controlSurface, double density,
     function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex){
 
     //Gets index of parent
@@ -39,6 +41,7 @@ void aircraft::addPart(string partName, string parentName, double density,
     //Adds parent index to list
     partParents.push_back(parentIndex);
 
+    controlSurfaces.push_back(controlSurface);
     extrusionFunctions.push_back(extrusionFunction);
     partDensities.push_back(density);
     partProfiles.push_back(profileIndex);
@@ -97,6 +100,11 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     boundingBoxes.resize(numParts);
     glm::dmat2x3 totalBoundingBox(50.0, 50.0, 50.0, -50.0, -50.0, -50.0);
 
+    //Stores values relating to control points
+    vector<glm::dmat3> controlMOIs;
+    vector<glm::vec3> controlCOMs;
+
+    
     for(int i = 0; i < numParts; i++){
 
 
@@ -109,6 +117,8 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI, boundingBox);
 
 
+
+
         //Apply part's own transformations
         partCOM -= extrusions[i].pivotPoint;
         partCOM = extrusions[i].rotation * partCOM;
@@ -117,17 +127,16 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
         double partMass = partVolume*partDensities[i];
         //Multiplies MOI by common factor
-        MOI *= partMass;
+        partMOI *= partMass;
 
-        
         //Get transformations applied to part
         vector<int> parentIndices = findParents(i);
         //Adds part itself to list of transformations
         vector<int> transformIndices = {i};
         transformIndices.insert(transformIndices.begin() + 1, parentIndices.begin(), parentIndices.end());
 
-        //cout << "untransformed bounding box min: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << endl;
 
+        #pragma omp simd
         for(int p = 0; p < (int)transformIndices.size(); p++){
             int tIndex = transformIndices[p];
             //Performs reverse operations on the MOI because these equations actually move the point
@@ -158,6 +167,8 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
 
 
+
+
         //Rearranges coordinates of bounding box to account for the fact that the maximum and minimum coordinates
         //may have switched positions during the rotations
         glm::dvec3 newMinBound = min(boundingBox[0], boundingBox[1]);
@@ -174,8 +185,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         glm::dvec3 boundSize = boundingBox[1] - boundingBox[0];
         boundingBox[0] -= boundSize*margin;
         boundingBox[1] += boundSize*margin;
-
-
 
         //Adjusts total bounding box if necessary
         totalBoundingBox[0] = min(totalBoundingBox[0], boundingBox[0]);
@@ -215,9 +224,16 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
 
     //Gets SDF
+
+    //Inits SDF
     vector<double> SDF;
-    vector<glm::dvec3> coordField;
-    glm::ivec3 SDFSize = generateSDF(SDF, coordField, profiles, partProfiles, extrusions, parentIndices, totalBoundingBox, boundingBoxes, surfMeshRes);
+    vector<glm::dvec3> XYZ;
+    glm::ivec3 SDFSize = initSDF(SDF, XYZ, totalBoundingBox, surfMeshRes);
+    updateSDF(SDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
+        boundingBoxes, totalBoundingBox, surfMeshRes);
+
+
+    
 
     //applyGaussianBlur(0.8, 9, SDF, SDFSize);
 
@@ -233,7 +249,8 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
     MC::marching_cube(field, SDFSize[0], SDFSize[1], SDFSize[2], mesh);
 
-    glm::dvec3 minPoint = coordField[0];
+    glm::dvec3 minPoint = totalBoundingBox[0];
+
     double interval = 1/surfMeshRes;
 
 
@@ -273,7 +290,6 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     vector<glm::dvec3> extrudePoints;
     vector<char> adjMatrix;
     int numTetras = generateExtrusion(partProfile, extrusion, adjMatrix, extrudePoints, boundingBox);
-
 
 
     //Allocates an additional element due to how the tetrahedron searching code works
