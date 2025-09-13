@@ -20,13 +20,12 @@ void aircraft::addPart(string partName, double density,
     partNames.push_back(partName);
     partParents.push_back(-1);
     //First part cannot be a control surface
-    controlSurfaces.push_back(0);
     extrusionFunctions.push_back(extrusionFunction);
     partDensities.push_back(density);
     partProfiles.push_back(profileIndex);
 }
 
-void aircraft::addPart(string partName, string parentName, char controlSurface, double density,
+void aircraft::addPart(string partName, string parentName, bool controlSurface, double density,
     function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex){
 
     //Gets index of parent
@@ -41,7 +40,7 @@ void aircraft::addPart(string partName, string parentName, char controlSurface, 
     //Adds parent index to list
     partParents.push_back(parentIndex);
 
-    controlSurfaces.push_back(controlSurface);
+    controlSurfaces.push_back(partNames.size() - 1);
     extrusionFunctions.push_back(extrusionFunction);
     partDensities.push_back(density);
     partProfiles.push_back(profileIndex);
@@ -103,6 +102,7 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     //Stores values relating to control points
     vector<glm::dmat3> controlMOIs;
     vector<glm::vec3> controlCOMs;
+    vector<double> controlMasses;
 
     
     for(int i = 0; i < numParts; i++){
@@ -115,9 +115,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         int profileIndex = partProfiles[i];
         glm::dmat2x3 boundingBox(50.0, 50.0, 50.0, -50.0, -50.0, -50.0);
         findVolVals(profiles[profileIndex], extrusions[i], partVolume, partCOM, partMOI, boundingBox);
-
-
-
 
         //Apply part's own transformations
         partCOM -= extrusions[i].pivotPoint;
@@ -166,9 +163,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         }
 
 
-
-
-
         //Rearranges coordinates of bounding box to account for the fact that the maximum and minimum coordinates
         //may have switched positions during the rotations
         glm::dvec3 newMinBound = min(boundingBox[0], boundingBox[1]);
@@ -176,8 +170,6 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
 
         boundingBox[0] = newMinBound;
         boundingBox[1] = newMaxBound;
-
-        //cout << "transformed bounding box min: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << endl;
 
 
         //Adds 10% in every direction to bounding box
@@ -190,19 +182,20 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
         totalBoundingBox[0] = min(totalBoundingBox[0], boundingBox[0]);
         totalBoundingBox[1] = max(totalBoundingBox[1], boundingBox[1]);
 
-        /*totalBoundingBox[0][0] = min(totalBoundingBox[0][0], boundingBox[0][0]);
-        totalBoundingBox[0][1] = min(totalBoundingBox[0][1], boundingBox[0][1]);
-        totalBoundingBox[0][2] = min(totalBoundingBox[0][2], boundingBox[0][2]);
-        totalBoundingBox[1][0] = max(totalBoundingBox[1][0], boundingBox[1][0]);
-        totalBoundingBox[1][1] = max(totalBoundingBox[1][1], boundingBox[1][1]);
-        totalBoundingBox[1][2] = max(totalBoundingBox[1][2], boundingBox[1][2]);*/
-
         boundingBoxes[i] = boundingBox;
 
-        //Adds to total COM
-        COMSoFar += partCOM*partMass;
-        //Adds to total mass
-        massSoFar += partMass;
+        if(!extrusions[i].isControl){
+            //Adds to total COM
+            COMSoFar += partCOM*partMass;
+            //Adds to total mass
+            massSoFar += partMass;
+
+            MOISoFar += partMOI;
+        }else{
+            controlCOMs.push_back(partCOM*partMass);
+            controlMOIs.push_back(partMOI);
+            controlMasses.push_back(partMass);
+        }
 
     }
 
@@ -229,11 +222,12 @@ void aircraft::calculateVals(vector<double> paramValues, double volMeshRes, doub
     vector<double> SDF;
     vector<glm::dvec3> XYZ;
     glm::ivec3 SDFSize = initSDF(SDF, XYZ, totalBoundingBox, surfMeshRes);
+    //Adds parts
     updateSDF(SDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
         boundingBoxes, totalBoundingBox, surfMeshRes);
 
-
-    
+    //Copies SDF without control surfaces for future use
+    vector<double> staticSDF = SDF;
 
     //applyGaussianBlur(0.8, 9, SDF, SDFSize);
 

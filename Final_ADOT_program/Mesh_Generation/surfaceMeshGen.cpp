@@ -170,7 +170,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     //Adds part transformations to list
     vector<int> transformIndices = {partIndex};
     transformIndices.insert(transformIndices.begin() + 1, parentIndices.begin(), parentIndices.end());
-    
 
     for(int i = 0; i < numParents + 1; i++){
         int tIndex = transformIndices[numParents - i];
@@ -179,6 +178,16 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         pivotPoints[i] = extrusions[tIndex].pivotPoint;
         translations[i] = extrusions[tIndex].translation + pivotPoints[i];
         rotations[i] = glm::inverse(extrusions[tIndex].rotation);
+
+    }
+
+    //Adds control surface rotation if required
+    if(extrusions[partIndex].isControl){
+        //Rotates control surface
+        glm::dquat controlRot = glm::angleAxis(extrusions[partIndex].rotateAngle, extrusions[partIndex].controlAxis);
+        pivotPoints.insert(pivotPoints.begin(), extrusions[partIndex].pivotPoint);
+        translations.insert(translations.begin(), extrusions[partIndex].pivotPoint);
+        rotations.insert(rotations.begin(), controlRot);
     }
 
     //Applies transformations to coordinates
@@ -217,9 +226,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     posTable.resize(numZ);
 
     
-
-
-
     //Inserts values into vector with the start and end values added on to either side
     vector<double> zSample;
     vector<glm::dvec3> scaleVals, posVals;//xPosVals, yPosVals;

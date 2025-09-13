@@ -31,7 +31,7 @@ class aircraft{
 
         void addPart(string partName, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
-        void addPart(string partName, string parentPart, char controlSurface, double density,
+        void addPart(string partName, string parentPart, bool controlSurface, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
 
         int findPart(string partName);
@@ -73,7 +73,7 @@ class aircraft{
         vector<int> partProfiles;
         vector<double> partDensities;
 
-        //Stores whether each part is a control surface
-        vector<bool> controlSurfaces;
+        //Stores the indices of the control surfaces
+        vector<int> controlSurfaces;
 
 };

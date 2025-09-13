@@ -21,7 +21,8 @@ struct extrusionData{
     glm::dvec3 pivotPoint;
 
     bool isControl;
-    glm::vec3 controlAxis;
+    glm::dvec3 controlAxis;
+    double rotateAngle;
 
     extrusionData(){};
 

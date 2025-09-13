@@ -44,8 +44,8 @@ int main(){
 
 
     MULEaircraft.addPart("fuselage", 1000, extrudeFuselage, 0);
-    MULEaircraft.addPart("rightWing", "fuselage", 1000, extrudeRightWing, 1);
-    MULEaircraft.addPart("leftWing",  "fuselage", 1000, extrudeLeftWing, 1);
+    MULEaircraft.addPart("rightWing", "fuselage", false, 1000, extrudeRightWing, 1);
+    MULEaircraft.addPart("leftWing",  "fuselage", false, 1000, extrudeLeftWing, 1);
 
     try
     {
