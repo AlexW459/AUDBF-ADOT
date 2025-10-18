@@ -21,7 +21,7 @@ struct extrusionData{
     glm::dvec3 pivotPoint;
 
     bool isControl;
-    glm::dvec3 controlAxis;
+    glm::dvec3 controlAxis = glm::dvec3(0.0, 0.0, 0.0);
     double rotateAngle;
 
     extrusionData(){};
@@ -42,3 +42,5 @@ struct extrusionData{
 
 int generateExtrusion(const profile& partProfile, const extrusionData& extrusion, vector<char>& adjMatrix, 
     vector<glm::dvec3>& points, glm::dmat2x3& boundingBox);
+
+double getParam(string param, const vector<double>& paramVals, const vector<string>& paramNames);

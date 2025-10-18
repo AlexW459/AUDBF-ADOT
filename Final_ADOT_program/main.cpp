@@ -13,57 +13,60 @@ int main(){
 
     //Gets maximum and minimun values of each parameter
     dataTable paramRanges = readCSV(planeModel + "/paramRanges.csv");
+    dataTable motorTable = readCSV(planeModel + "/motorSelection.csv");
 
     vector<double> paramVals;
-    paramVals.resize(paramRanges.columns.size());
+    paramVals.resize(paramRanges.rows.size());
     vector<string> paramNames;
+    paramNames.resize(paramRanges.rows.size());
 
-    for(int j = 0; j < 10; j++){
-        cout << j << endl;
+    vector<dataTable> discreteTables = {motorTable};
+    vector<int> discreteVals;
+    discreteVals.resize(discreteTables.size());
+    
 
     //Finds random values of parameters within bounds
     for(int i = 0; i < (int)paramVals.size(); i++){
 
-        double min = paramRanges.columns[i].second[0];
+        double min = paramRanges.rows[i].second[0];
 
-        double max = paramRanges.columns[i].second[1];
+        double max = paramRanges.rows[i].second[1];
+
         paramVals[i] = (double)rand()/RAND_MAX*(max-min)+min;
 
-        paramNames.push_back(paramRanges.columns[i].first);
+        paramNames[i] = paramRanges.rows[i].first;
 
+    }
+
+
+    //Finds random values of discrete parameters
+    for(int i = 0; i < (int)discreteTables.size(); i++){
+
+        int numChoices = discreteTables[i].rows.size();
+
+        discreteVals[i] = rand() % numChoices;
     }
 
     glm::dmat3 MOI;
     glm::dvec3 COM;
     double mass;
 
-    vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = {fuselageProfile, wingProfile};
-    function<void(vector<string>&, vector<double>&)> derivedParamsFunc = calcDerivedParams;
 
-    aircraft MULEaircraft = aircraft(paramNames, derivedParamsFunc, profileFunctions);
+    vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = 
+        {fuselageProfile, wingProfile, motorPodProfile, elevatorProfile};
+    
+
+    aircraft MULEaircraft = aircraft(paramNames, discreteTables, calcDerivedParams, profileFunctions);
 
 
     MULEaircraft.addPart("fuselage", 1000, extrudeFuselage, 0);
     MULEaircraft.addPart("rightWing", "fuselage", false, 1000, extrudeRightWing, 1);
-    MULEaircraft.addPart("leftWing",  "fuselage", false, 1000, extrudeLeftWing, 1);
+    MULEaircraft.addPart("leftWing", "fuselage", false, 1000, extrudeLeftWing, 1);
+    //MULEaircraft.addPart("elevatorRight", "rightWing", true, 1000, extrudeRightElevator, 3);
 
-    try
-    {
-        MULEaircraft.calculateVals(paramVals, 50, 50, mass, COM, MOI);
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-
-    }
-    
-
-    
-
-    }
+    MULEaircraft.calculateVals(paramVals, discreteVals, 50.0, 100.0, mass, COM, MOI);
 
     //MULEaircraft.plot(500, 500, paramVals, 20);
-
 
     //Quit SDL
     SDL_Quit();

@@ -70,6 +70,9 @@
         "variant": "cpp",
         "format": "cpp",
         "charconv": "cpp",
-        "span": "cpp"
+        "span": "cpp",
+        "regex": "cpp",
+        "u": "cpp",
+        "k": "cpp"
     }
 }

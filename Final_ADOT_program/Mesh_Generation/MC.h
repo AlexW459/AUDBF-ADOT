@@ -238,12 +238,12 @@ namespace MC
 	\param nx, ny, nz grid dimension
 	\param outputMesh indexed mesh returned.
 	*/
-	void marching_cube(MC_FLOAT* field, muint nx, muint ny, muint nz, mcMesh& outputMesh)
+	void marching_cube(vector<MC_FLOAT> field, muint nx, muint ny, muint nz, mcMesh& outputMesh)
 	{
 		outputMesh.vertices.reserve(defaultVerticeArraySize);
 		outputMesh.normals.reserve(defaultNormalArraySize);
 		outputMesh.indices.reserve(defaultTriangleArraySize);
-
+		
 		const mcVec3i size = {{{ nx, ny, nz }}};
 		mcVec3i* slab_inds = new mcVec3i[nx * ny * 2];
 		MC_FLOAT vs[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };

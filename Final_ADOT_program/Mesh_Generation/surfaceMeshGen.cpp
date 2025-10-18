@@ -1,11 +1,10 @@
 #include "surfaceMeshGen.h"
 
-#pragma omp declare simd
+
 int meshIndexTo1DIndex(int i, int j, int k, int sizeX, int sizeY) {
     return (k * sizeY + j) * sizeX + i;
 }
 
-#pragma omp declare simd
 float smoothMin(float a, float b, float k){
     k *= 2.0;
     float x = b-a;
@@ -14,8 +13,12 @@ float smoothMin(float a, float b, float k){
 
 glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 totalBoundingBox, double surfMeshRes){
 
+
     //Generates matrices of values
     glm::dvec3 boundSize = totalBoundingBox[1] - totalBoundingBox[0];
+
+    //cout << "total bounding box: " << totalBoundingBox[0][0] << ", " << totalBoundingBox[0][1] << ", " << totalBoundingBox[0][2] << " - "
+    //        << totalBoundingBox[1][0] << ", " << totalBoundingBox[1][1] << ", " << totalBoundingBox[1][2] << endl;
     
     //Adjusts boundary to account for the fact that the resolution doesn't perfectly divide into
     //the bounding box
@@ -40,20 +43,16 @@ glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 to
     yVals.resize(SDFSize[1]);
     vector<glm::dvec3> zVals;
     zVals.resize(SDFSize[2]);
-    #pragma omp simd
     for(int i = 0; i < SDFSize[0]; i++){
         xVals[i] = glm::dvec3(totalBoundingBox[0][0] + i*interval, 0, 0);
     }
-    #pragma omp simd
     for(int i = 0; i < SDFSize[1]; i++){
         yVals[i] = glm::dvec3(0, totalBoundingBox[0][1] + i*interval, 0);
     }
-    #pragma omp simd
     for(int i = 0; i < SDFSize[2]; i++){
         zVals[i] = glm::dvec3(0, 0, totalBoundingBox[0][2] + i*interval);
     }
 
-    #pragma omp simd collapse(3)
     for(int i = 0; i < SDFSize[0]; i++){
         for(int j = 0; j < SDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){
@@ -64,7 +63,6 @@ glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 to
 
     //Initialises SDF by assuming all points are well outside the model
     SDF.resize(totalSDFSize);
-    #pragma omp simd
     for(int i = 0; i < totalSDFSize; i++){
         SDF[i] = 50.0;
 
@@ -74,52 +72,59 @@ glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 to
 }
 
 
-void updateSDF(vector<double>& SDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, const vector<profile>& profiles, 
-    vector<int> profileIndices, const vector<extrusionData>& extrusions, const vector<vector<int>>& parentIndices,
-    vector<glm::dmat2x3> boundingBoxes, glm::dmat2x3 totalBoundingBox, double surfMeshRes){
 
-    
-    int numParts = extrusions.size();
+vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, const vector<profile>& profiles, 
+    vector<int> profileIndices, const vector<extrusionData>& extrusions, const vector<vector<int>>& parentIndices,
+    const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, double surfMeshRes){
+
+
+    int numParts = meshSurfaces.size();
+
+    //cout << "SDF size: " << SDFSize[0] << ", " << SDFSize[1] << ", " << SDFSize[2] << endl;
 
     glm::dvec3 boundSize = totalBoundingBox[1] - totalBoundingBox[0];
 
     //Gets SDF of each part
     for(int p = 0; p < numParts; p++){
+        int partIndex = meshSurfaces[p];
 
         //Get SDF of part
         vector<double> partSDF;
         //Finds indices of edge of bounding box of part
         glm::imat2x3 boundingIndices;
-        boundingIndices[0] = floor((boundingBoxes[p][0]-totalBoundingBox[0])/boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
-        boundingIndices[1] = ceil((boundingBoxes[p][1]-totalBoundingBox[0])/boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
+        boundingIndices[0] = floor((boundingBoxes[partIndex][0]-totalBoundingBox[0])/
+                                boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
+        boundingIndices[1] = ceil((boundingBoxes[partIndex][1]-totalBoundingBox[0])/
+                                boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
+                    
 
+        //cout << "part bounding box: " << boundingBoxes[partIndex][0][0] << ", " << boundingBoxes[partIndex][0][1] << ", " << boundingBoxes[partIndex][0][2] << " - "
+        //<< boundingBoxes[partIndex][1][0] << ", " << boundingBoxes[partIndex][1][1] << ", " << boundingBoxes[partIndex][1][2] << endl;
 
-        glm::ivec3 partSDFSize = generatePartSDF(extrusions, profiles[profileIndices[p]], p, parentIndices[p],
-            XYZ, SDFSize, boundingIndices, surfMeshRes, partSDF);
-
+        glm::ivec3 partSDFSize = generatePartSDF(extrusions, profiles[profileIndices[partIndex]], 
+            partIndex, parentIndices[partIndex], XYZ, SDFSize, boundingIndices, surfMeshRes, partSDF);
     
         //Find minimum of part SDF and total SDF for points in bounding box
-        #pragma omp simd collapse(3)
         for(int i = 0; i < partSDFSize[0]; i++){
             for(int j = 0; j < partSDFSize[1]; j++){
                 for(int k = 0; k < partSDFSize[2]; k++){
 
-                    int index = meshIndexTo1DIndex(i + boundingIndices[0][0], j + boundingIndices[0][1], k + boundingIndices[0][2],
+                    int SDFindex = meshIndexTo1DIndex(i + boundingIndices[0][0], j + boundingIndices[0][1], k + boundingIndices[0][2],
                         SDFSize[0], SDFSize[1]);
                         
-                    int partIndex = meshIndexTo1DIndex(i, j, k, partSDFSize[0], partSDFSize[1]);
-                    
-                    //double initialSDF = SDF[index];
+                    int partSDFIndex = meshIndexTo1DIndex(i, j, k, partSDFSize[0], partSDFSize[1]);
 
+                    //if(p == 1 && partSDF[partIndex] < 0) cout << "hi" << endl;
+                    
                     //Vectorisable min function
-                    SDF[index] = SDF[index] + (partSDF[partIndex] - SDF[index]) * (partSDF[partIndex] < SDF[index]);
+                    initialSDF[SDFindex] = initialSDF[SDFindex] + (partSDF[partSDFIndex] - initialSDF[SDFindex]) * (partSDF[partSDFIndex] < initialSDF[SDFindex]);
 
                 }
             }
         }
-
     }
-    
+
+    return initialSDF;
 }
 
 
@@ -129,20 +134,20 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     int partIndex, vector<int> parentIndices, const vector<glm::dvec3>& meshGrid, glm::ivec3 SDFSize, 
     glm::imat2x3 boundingIndices, double surfMeshRes, vector<double>& SDF){
 
-
     glm::ivec3 partSDFSize = boundingIndices[1] - boundingIndices[0];
     int totalPartSDFSize = partSDFSize[0] * partSDFSize[1] * partSDFSize[2];
 
-    //cout << "bounding indices: " << boundingIndices[0][0] << ", " << boundingIndices[0][1] << ", " << boundingIndices[0][2] << endl;
+    //cout << "bounding indices: " << boundingIndices[0][0] << ", " << boundingIndices[0][1] << ", " << boundingIndices[0][2] << 
+    //" - " << boundingIndices[1][0] << ", " << boundingIndices[1][1] << ", " << boundingIndices[1][2] << endl;
     //cout << "SDFSize: " <<  SDFSize[0] << ", " << SDFSize[1] << ", " << SDFSize[2] << endl;
     //cout << "partSDFSize: " <<  partSDFSize[0] << ", " << partSDFSize[1] << ", " << partSDFSize[2] << endl;
+
 
     //Copies coordinates from within bounding box to local variables
     vector<glm::dvec3> XYZ;
     XYZ.resize(totalPartSDFSize);
 
 
-    #pragma omp simd collapse(3)
     for(int i = 0; i < partSDFSize[0]; i++){
         for(int j = 0; j < partSDFSize[1]; j++){
             for(int k = 0; k < partSDFSize[2]; k++){
@@ -170,15 +175,15 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     //Adds part transformations to list
     vector<int> transformIndices = {partIndex};
     transformIndices.insert(transformIndices.begin() + 1, parentIndices.begin(), parentIndices.end());
+    int numTransformations = numParents + 1;
 
-    for(int i = 0; i < numParents + 1; i++){
-        int tIndex = transformIndices[numParents - i];
+    for(int i = 0; i < numTransformations; i++){
+        int tIndex = transformIndices[numTransformations - i - 1];
         //Pre-Adds the pivot point to the translation as the translation from the pivot point
         //to the origin is the next step in the transformation anyway
         pivotPoints[i] = extrusions[tIndex].pivotPoint;
         translations[i] = extrusions[tIndex].translation + pivotPoints[i];
         rotations[i] = glm::inverse(extrusions[tIndex].rotation);
-
     }
 
     //Adds control surface rotation if required
@@ -187,12 +192,13 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         glm::dquat controlRot = glm::angleAxis(extrusions[partIndex].rotateAngle, extrusions[partIndex].controlAxis);
         pivotPoints.insert(pivotPoints.begin(), extrusions[partIndex].pivotPoint);
         translations.insert(translations.begin(), extrusions[partIndex].pivotPoint);
-        rotations.insert(rotations.begin(), controlRot);
+        rotations.insert(rotations.begin(), glm::inverse(controlRot));
+
+        numTransformations++;
     }
 
     //Applies transformations to coordinates
-    #pragma omp simd collapse(2)
-    for(int p = 0; p < numParents + 1; p++){
+    for(int p = 0; p < numTransformations; p++){
         for(int i = 0; i < totalPartSDFSize; i++){
 
             XYZ[i] -= translations[p];
@@ -241,13 +247,10 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         posVals[i] = glm::dvec3(extrusions[partIndex].posVals[i - 1], 0.0);
     }
 
-
     //copy(extrusions[partIndex].xPosVals.begin(), extrusions[partIndex].xPosVals.end(), xPosVals.begin()+1);
     //copy(extrusions[partIndex].yPosVals.begin(), extrusions[partIndex].yPosVals.end(), yPosVals.begin()+1);
     scaleVals[0] = scaleVals[1]; 
     scaleVals[numVals - 1] = scaleVals[numVals - 2];
-
-
 
     //xPosVals[0] = xPosVals[1]; xPosVals[numVals - 1] = xPosVals[numVals - 2];
     //yPosVals[0] = yPosVals[1]; yPosVals[numVals - 1] = yPosVals[numVals - 2];
@@ -261,43 +264,37 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         //reverse(xPosVals.begin(), xPosVals.end());
         //reverse(yPosVals.begin(), yPosVals.end());
         reverse(posVals.begin(), posVals.end());
-
-        //Adds actual bounds of bounding box at either end of zSample
-        zSample[0] = minZ + 1e-6;
-        zSample[numVals-1] = endZ - 1e-6;
-    }else{
-        zSample[0] = minZ - 1e-6;
-        zSample[numVals-1] = endZ + 1e-6;
     }
 
+    //Adds actual bounds of bounding box at either end of zSample
+    zSample[0] = minZ - 1e-3;
+    zSample[numVals-1] = endZ + 1e-3;
 
 
     vector<int> segmentNums;
     segmentNums.resize(numZ);
     vector<double> zTable;
+
     zTable.resize(numZ);
 
     for(int i = 0; i < numZ; i++){
         zTable[i] = minZ + (double)i * interval;
 
         //Gets location of current z value in list
-        segmentNums[i] = lower_bound(zSample.begin()+1, zSample.end(), zTable[i]) - zSample.begin()-1;
+        segmentNums[i] = distance(zSample.begin(), lower_bound(zSample.begin()+1, zSample.end(), zTable[i]))-1;
+
     }
 
-    #pragma omp simd
     for(int i = 0; i < numZ; i++){
         //Linearly interpolates between the two points either side of the segment
         double fraction = (zTable[i] - zSample[segmentNums[i]])/(zSample[segmentNums[i] + 1] - zSample[segmentNums[i]]);
         scaleTable[i] = scaleVals[segmentNums[i]] * (1.0 - fraction) + scaleVals[segmentNums[i] + 1] * fraction;
         posTable[i] = posVals[segmentNums[i]] * (1.0 - fraction) + posVals[segmentNums[i] + 1] * fraction;
-        //xPosTable[i] = xPosVals[segmentNums[i]] * (1.0f - fraction) + xPosVals[segmentNums[i] + 1] * fraction;
-        //yPosTable[i] = yPosVals[segmentNums[i]] * (1.0f - fraction) + yPosVals[segmentNums[i] + 1] * fraction;
 
     }
 
 
     //Scales and translates coordinates along the extrusion length
-    #pragma omp simd
     for(int i = 0; i < totalPartSDFSize; i++){
         //Gets segment of current point
         int segmentNum = (int)((XYZ[i][2] - minZ)/tableZRange*(double)(numZ - 1));
@@ -312,6 +309,7 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         XYZ[i] = (XYZ[i] - pos)/scale;
 
     }
+
 
 
     //Precalculates table of values of distances to part
@@ -340,11 +338,9 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     }
     v2[numVerts - 1] = v[0];
 
-    #pragma omp simd 
     for(int i = 0; i < numVerts; i++){
         diff[i] = v2[i] - v[i];
         l2[i] = sqrt(glm::dot(diff[i], diff[i]));
-
 
         a1[i] = v2[i][1] - v[i][1];
         b1[i] = v[i][0] - v2[i][0];
@@ -360,13 +356,12 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     double minY = XYZ[0][1];
     double maxY = XYZ[0][1];
 
-
-    #pragma omp simd
     for(int i = 1; i < totalPartSDFSize; i++){
         minX += (XYZ[i][0] - minX) * (XYZ[i][0] < minX);
         maxX += (XYZ[i][0] - maxX) * (XYZ[i][0] > maxX);
         minY += (XYZ[i][1] - minY) * (XYZ[i][1] < minY);
         maxY += (XYZ[i][1] - maxY) * (XYZ[i][1] > maxY);
+
     }
 
 
@@ -408,7 +403,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         minProfileX = min(minProfileX, v[i][0]);
     }
 
-
     //Fills table with values
     for(int x = 0; x < numXY[0]; x++){
         for(int y = 0; y < numXY[1]; y++){
@@ -417,7 +411,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
 
             //Loops over each edge of the profile and checks the distance
-            #pragma omp simd
             for(int e = 0; e < numVerts; e++){
 
 
@@ -460,7 +453,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
             //Gets total intersection count
             int totIntersections = 0;
-            #pragma omp simd reduction(+:totIntersections)
             for(int e = 0; e < numVerts; e++){
                 totIntersections += intersections[e];
             }
@@ -474,15 +466,16 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
             //Assigns distance with sign
             SDFTable[x*numXY[1] + y] = sqrt(minDist2) * (1 - 2*(totIntersections % 2));
 
+            //if(totIntersections != 0) cout << totIntersections << endl;
+
         }
     }
-
 
     //Finds SDF values for profile
     vector<double> profileSDF;
     profileSDF.resize(totalPartSDFSize);
 
-    #pragma omp simd
+    
     for(int i = 0; i < totalPartSDFSize; i++){
         //Gets location in table
         int segmentNumX = (int)((XYZ[i][0] - minX)/tableXYRange[0] * (double)(numXY[0] - 1));
@@ -518,7 +511,6 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     //Fills SDF by combining the SDF of the profile along the extrusion with the SDF of the planes on
     //either end of the extrusion
     SDF.resize(totalPartSDFSize);
-    #pragma omp simd
     for(int i = 0; i < totalPartSDFSize; i++){
         //Maximum of the profile SDF and the two planes
         double beginFace = (beginPlaneZ - XYZ[i][2]) / sqrt(1 + beginPlaneZ*beginPlaneZ);
@@ -536,7 +528,7 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     return partSDFSize;
 }
 
-void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSize){
+/*void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSize){
     int r = round(((float)n-1)/2);
 
     glm::ivec3 shrunkSDFSize = SDFSize - glm::ivec3(2*r, 2*r, 2*r);
@@ -565,7 +557,6 @@ void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSi
     //near the edge of the SDF as they do not have a sufficient number of elements
     //To either side of them
     rowMults.resize(shrunkSDFSize[0] * SDFSize[1] * SDFSize[2]);
-    #pragma omp simd collapse(3)
     for(int i = 0; i < shrunkSDFSize[0]; i++){
         for(int j = 0; j < SDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){
@@ -576,7 +567,6 @@ void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSi
 
     //x, y and z indices are with respect to the inner portion of the SDF that is not
     //trimmed during the matrix multiplication process
-    #pragma omp simd collapse(4)
     for(int i = 0; i < shrunkSDFSize[0]; i++){
         for(int j = 0; j < SDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){
@@ -592,7 +582,6 @@ void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSi
 
     vector<float> colMults;
     colMults.resize(shrunkSDFSize[0] * shrunkSDFSize[1] * SDFSize[2]);
-    #pragma omp simd collapse(3)
     for(int i = 0; i < shrunkSDFSize[0]; i++){
         for(int j = 0; j < shrunkSDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){
@@ -602,7 +591,6 @@ void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSi
     }
 
     //multiplies kernel with SDF in col direction
-    #pragma omp simd collapse(4)
     for(int i = 0; i < shrunkSDFSize[0]; i++){
         for(int j = 0; j < shrunkSDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){
@@ -615,7 +603,6 @@ void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSi
     }
 
 
-    #pragma omp simd collapse(3)
     for(int i = r; i < shrunkSDFSize[0] + r; i++){
         for(int j = r; j < shrunkSDFSize[1] + r; j++){
             for(int k = r; k < shrunkSDFSize[2] + r; k++){
@@ -624,7 +611,7 @@ void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSi
         }
     }
 
-    #pragma omp simd collapse(4)
+
     for(int i = 0; i < shrunkSDFSize[0]; i++){
         for(int j = 0; j < shrunkSDFSize[1]; j++){
             for(int k = 0; k < shrunkSDFSize[2]; k++){
@@ -638,4 +625,4 @@ void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSi
 
 
 
-}
+}*/

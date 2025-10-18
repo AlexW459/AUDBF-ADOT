@@ -27,10 +27,12 @@ boundaryField
         type            fixedValue;
         value           uniform $flowVelocity;
     }
+    
     outlet
     {
-        type            zeroGradient;
-        value           uniform 0;
+        type            inletOutlet;
+        inletValue      uniform $flowVelocity;
+        value           uniform $flowVelocity;
     }
 
     aircraftModel
@@ -38,19 +40,32 @@ boundaryField
         type            noSlip;
     }
 
-    lowerWall
+    lower
     {
-        type            symmetryPlane;
+        type           inletOutlet;
+        inletValue     uniform $flowVelocity;
+        value          uniform $flowVelocity;
     }
 
-    upperWall
+    upper
     {
-        type            symmetryPlane;
+        type           inletOutlet;
+        inletValue     uniform $flowVelocity;
+        value          uniform $flowVelocity;
     }
 
-    "(front|back)"
+    front
     {
-        type            symmetryPlane;
+        type           inletOutlet;
+        inletValue     uniform $flowVelocity;
+        value          uniform $flowVelocity;
+    }
+
+    back
+    {
+        type           inletOutlet;
+        inletValue     uniform $flowVelocity;
+        value          uniform $flowVelocity;
     }
 
     "proc.*"

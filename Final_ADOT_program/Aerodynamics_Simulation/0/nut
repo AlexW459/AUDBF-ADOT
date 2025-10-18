@@ -22,11 +22,13 @@ boundaryField
 {
     front
     {
-        type            symmetryPlane;
+        type            calculated;
+        value           uniform 0;
     }
     back
     {
-        type            symmetryPlane;
+        type            calculated;
+        value           uniform 0;
     }
     inlet
     {
@@ -38,13 +40,20 @@ boundaryField
         type            calculated;
         value           uniform 0;
     }
-    lowerWall
+    lower
     {
-        type            symmetryPlane;
+        type            calculated;
+        value           uniform 0;
     }
-    upperWall
+    upper
     {
-        type            symmetryPlane;
+        type            calculated;
+        value           uniform 0;
+    }
+    aircraftModel
+    {
+        type            nutUSpaldingWallFunction;
+        value           uniform 0;
     }
 }
 

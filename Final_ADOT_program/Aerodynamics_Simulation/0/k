@@ -22,11 +22,15 @@ boundaryField
 {
     front
     {
-        type            symmetryPlane;
+        type            inletOutlet;
+        inletValue      uniform 1e-06;
+        value           uniform 1e-06;
     }
     back
     {
-        type            symmetryPlane;
+        type            inletOutlet;
+        inletValue      uniform 1e-06;
+        value           uniform 1e-06;
     }
     inlet
     {
@@ -35,17 +39,24 @@ boundaryField
     }
     outlet
     {
+        type            zeroGradient;
+    }
+    lower
+    {
         type            inletOutlet;
-        inletValue      uniform 0.24;
+        inletValue      uniform 1e-06;
+        value           uniform 1e-06;
+    }
+    upper
+    {
+        type            inletOutlet;
+        inletValue      uniform 1e-06;
+        value           uniform 1e-06;
+    }
+    aircraftModel
+    {
+        type            kqRWallFunction;
         value           uniform 0.24;
-    }
-    lowerWall
-    {
-        type            symmetryPlane;
-    }
-    upperWall
-    {
-        type            symmetryPlane;
     }
 }
 

@@ -22,7 +22,7 @@ boundaryField
 {
     "(front|back)"
     {
-        type            symmetryPlane;
+        type            calculated;
         value           uniform 0;
     }
     inlet
@@ -35,14 +35,14 @@ boundaryField
         type            calculated;
         value           uniform 0;
     }
-    lowerWall
+    upper
     {
-        type            symmetryPlane;
+        type            calculated;
         value           uniform 0;
     }
-    upperWall
+    lower
     {
-        type            symmetryPlane;
+        type            calculated;
         value           uniform 0;
     }
     aircraftModel

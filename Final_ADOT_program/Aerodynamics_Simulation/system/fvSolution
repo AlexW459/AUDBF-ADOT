@@ -55,7 +55,9 @@ potentialFlow
 {
     nNonOrthogonalCorrectors 10;
     PhiRefCell 0;
-    PhiRefValue 0;
+    PhiRefValue 0.0;
+    pRefCell    0;
+    pRefValue   0.0;
 }
 
 RAS

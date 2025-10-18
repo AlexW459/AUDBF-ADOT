@@ -2,7 +2,7 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -Wall -g -fopenmp-simd -O3 # -fopt-info-vec
+CXXFLAGS = -Wall -g -std=c++14 -march=x86-64 -msse2 -O3 #-fopt-info-vec-missed -fno-inline
 
 # Target executable
 TARGET = Main

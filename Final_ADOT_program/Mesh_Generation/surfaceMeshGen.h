@@ -10,6 +10,9 @@
 #include "profile.h"
 #include "extrusionGen.h"
 
+#define INITIAL_GEN true
+#define UPDATE_GEN false
+
 using namespace std;
 
 int meshIndexTo1DIndex(int i, int j, int k, int sizeX, int sizeY);
@@ -17,10 +20,10 @@ int meshIndexTo1DIndex(int i, int j, int k, int sizeX, int sizeY);
 glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 totalBoundingBox, double surfMeshRes);
 
 //Gets SDF of entire aircraft. Returns dimensions of SDF
-void updateSDF(vector<double>& SDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, const vector<profile>& profiles, vector<int> profileIndices,
-    const vector<extrusionData>& extrusions, const vector<vector<int>>& parentIndices,
-    vector<glm::dmat2x3> boundingBoxes, glm::dmat2x3 totalBoundingBox, double surfMeshRes);
-
+vector<double> updateSDF(vector<double> SDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
+    const vector<profile>& profiles, vector<int> profileIndices, const vector<extrusionData>& extrusions, 
+    const vector<vector<int>>& parentIndices, const vector<glm::dmat2x3>& boundingBoxes,
+     glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, double surfMeshRes);
 
 //Gets SDF of a single part with a specified resolution. Returns size of SDF
 glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profile& partProfile, int partIndex,
@@ -28,4 +31,4 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     glm::imat2x3 boundingIndices, double surfMeshRes, vector<double>& SDF);
 
 
-void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSize);
+//void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSize);

@@ -37,8 +37,8 @@ geometry
     refinementBox
     {
         type searchableBox;
-        min (-1.0 -0.7 0.0);
-        max ( 8.0  0.7 2.5);
+        min (-0.367778 -0.622488 -0.162620);
+        max (0.989549 0.622488 0.162620);
     }
 };
 
@@ -53,14 +53,14 @@ castellatedMeshControls
     // If local number of cells is >= maxLocalCells on any processor
     // switches from from refinement followed by balancing
     // (current method) to (weighted) balancing before refinement.
-    maxLocalCells 100000;
+    maxLocalCells 10000;
 
     // Overall cell limit (approximately). Refinement will stop immediately
     // upon reaching this number so a refinement level might not complete.
     // Note that this is the number of cells before removing the part which
     // is not 'visible' from the keepPoint. The final number of cells might
     // actually be a lot less.
-    maxGlobalCells 2000000;
+    maxGlobalCells 20000;
 
     // The surface refinement loop might spend lots of iterations refining just a
     // few cells. This setting will cause refinement to stop if <= minimumRefine
@@ -81,6 +81,7 @@ castellatedMeshControls
     nCellsBetweenLevels 3;
 
 
+    //preservePatches (inlet outlet front back upper lower);
 
     // Explicit feature edge refinement
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,12 +92,11 @@ castellatedMeshControls
     (
         {
             file "aircraftModel.eMesh";
-            level 6;
+            level 2;
         }
 
 
     );
-
 
 
     // Surface based refinement
@@ -113,12 +113,11 @@ castellatedMeshControls
         aircraftModel
         {
             // Surface-wise min and max refinement level
-            level (5 6);
+            level (2 3);
             
             patchInfo
             {
                 type wall;
-                inGroups (aircraftModelGroup);
             }
 
         }
@@ -158,10 +157,9 @@ castellatedMeshControls
 
     // After refinement patches get added for all refinementSurfaces and
     // all cells intersecting the surfaces get put into these patches. The
-    // section reachable from the insidePoint is kept.
+    insidePoint (-1.3667782 0.001 0.001);
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
-    insidePoint (3 3 0.43);
 
 
     // Whether any faceZones (as specified in the refinementSurfaces)
@@ -177,7 +175,7 @@ snapControls
 {
     //- Number of patch smoothing iterations before finding correspondence
     //  to surface
-    nSmoothPatch 3;
+    nSmoothPatch 5;
 
     //- Relative distance for points to be attracted by surface feature point
     //  or edge. True distance is this factor times local
@@ -221,7 +219,7 @@ addLayersControls
     // Per final patch (so not geometry!) the layer information
     layers
     {
-        "(lowerWall|aircraftModel).*"
+        "aircraftModel"
         {
             nSurfaceLayers 1;
         }
@@ -262,7 +260,7 @@ addLayersControls
     nRelaxIter 3;
 
     // Number of smoothing iterations of surface normals
-    nSmoothSurfaceNormals 1;
+    nSmoothSurfaceNormals 3;
 
     // Number of smoothing iterations of interior mesh movement direction
     nSmoothNormals 3;

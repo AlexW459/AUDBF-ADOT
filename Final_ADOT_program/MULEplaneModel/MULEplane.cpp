@@ -1,31 +1,47 @@
 #include "MULEplane.h"
 
-void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals){
-    double fuselageLength = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "fuselageLength") - paramNames.begin())];
-    double wingRootChord = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingRootChord") - paramNames.begin())];
-    double wingHorizontalPosition = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingHorizontalPosition") - paramNames.begin())];
+void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals, 
+    const vector<dataTable>& discreteTables, vector<int> discreteVals){
 
+    double fuselageLength = getParam("fuselageLength", paramVals, paramNames);
+    double wingRootChord = getParam("wingRootChord", paramVals, paramNames);
+    double wingHorizontalPosition = getParam("wingHorizontalPosition", paramVals, paramNames);
+    double wingSweep = getParam("wingSweep", paramVals, paramNames);
+    double wingScale = getParam("wingScale", paramVals, paramNames);
+    double elevatorMaxThickness = getParam("elevatorMaxThickness", paramVals, paramNames);
+    double elevatorChord = getParam("elevatorChord", paramVals, paramNames);
 
     double wingXPos = (fuselageLength-wingRootChord)*wingHorizontalPosition+wingRootChord*0.5;
-    paramNames.push_back("wingXPos");
-    paramVals.push_back(wingXPos);
 
-    return;
+    double motorWidth = getParam("Diameter", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames);
+
+    double motorMass = getParam("Weight", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames);
+
+    double elevatorSweep = wingSweep- 0.5*wingRootChord*wingScale*(1-wingScale);
+
+
+    //Position of elevator pivot point in x direction
+    double elevatorRadius = 1.1019*(elevatorMaxThickness/100)*(elevatorMaxThickness/100)*elevatorChord;
+
+
+    vector<double> newParamVals = {wingXPos, motorWidth, motorMass, elevatorSweep,
+                                   elevatorRadius};
+    vector<string> newParamNames = {"wingXPos", "motorWidth", "motorMass", "elevatorSweep",
+                                   "elevatorRadius"};
+
+    //Adds new parameters to list
+    paramVals.insert(paramVals.end(), newParamVals.begin(), newParamVals.end());
+    paramNames.insert(paramNames.end(), newParamNames.begin(), newParamNames.end());
+
 }
 
 profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
 
-    double fuselageHeight = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "fuselageHeight") - paramNames.begin())];
+    double fuselageHeight = getParam("fuselageHeight", paramVals, paramNames);
+    double fuselageParam1 = getParam("fuselageParam1", paramVals, paramNames);
+    double fuselageParam2 = getParam("fuselageParam2", paramVals, paramNames);
 
-    double fuselageParam1 = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "fuselageParam1") - paramNames.begin())];
-    double fuselageParam2 = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "fuselageParam2") - paramNames.begin())];
-    double plasticThickness = 0.05;
+    //double plasticThickness = 0.05;
 
     //Defines points that set bezier curve
     glm::dvec2 p1(0, fuselageHeight*0.5);
@@ -41,7 +57,7 @@ profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, dou
 
     //Finds points on bezier curve
     for(int i = 0; i < numPoints; i++){
-        double tVal = (double)i/numPoints;
+        double tVal = (double)i/(numPoints - 1);
         bezPoints[i] = (1 - tVal)*(1 - tVal)*(1 - tVal) * p1 + tVal * 3 * (1-tVal)*(1-tVal) * p2
                      + (3 * (1-tVal) * tVal*tVal) * p3 + tVal*tVal*tVal * p4;
     }
@@ -52,27 +68,22 @@ profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, dou
     }
 
 
-    profile outputProfile(bezPoints, plasticThickness);
+    profile outputProfile(bezPoints);//, plasticThickness);
+
+    //outputProfile.plot(500, 500);
 
     return outputProfile;
 }
 
 
 extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVals, double meshRes){
-    double fuselageLength = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "fuselageLength") - paramNames.begin())];
-    double fuselageHeight = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "fuselageHeight") - paramNames.begin())];
-    double noseconeLength = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "noseconeLength") - paramNames.begin())];
-    double noseconeTipScale = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "noseconeTipScale") - paramNames.begin())];
-    double noseconeOffset = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "noseconeOffset") - paramNames.begin())];
-    double tailconeLength = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "tailconeLength") - paramNames.begin())];
-    double tailconeTipScale = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "tailconeTipScale") - paramNames.begin())];
+    double fuselageLength = getParam("fuselageLength", paramVals, paramNames);
+    double fuselageHeight = getParam("fuselageHeight", paramVals, paramNames);
+    double noseconeLength = getParam("noseconeLength", paramVals, paramNames);
+    double noseconeTipScale = getParam("noseconeTipScale", paramVals, paramNames);
+    double noseconeOffset = getParam("noseconeOffset", paramVals, paramNames);
+    double tailconeLength = getParam("tailconeLength", paramVals, paramNames);
+    double tailconeTipScale = getParam("tailconeTipScale", paramVals, paramNames);
 
     extrusionData extrusion;
 
@@ -144,39 +155,58 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
     extrusion.translation = glm::dvec3(0.0, 0.0, 0.0);
 
     extrusion.pivotPoint = {0.0, 0.0, 0.0};
-    extrusion.rotation = glm::dquat(glm::dvec3(0.5*M_PI, 0.0, -0.5*M_PI));
+    extrusion.rotation = glm::dquat(glm::dvec3(-0.5*M_PI, 0.0, -0.5*M_PI));
+    extrusion.isControl = false;
+
 
     return extrusion;
 }
 
 profile wingProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
-    double wingAirfoilMaxCamber = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingAirfoilMaxCamber") - paramNames.begin())];
-    double wingAirfoilMaxCamberPos = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingAirfoilMaxCamberPos") - paramNames.begin())];
-    double wingAirfoilMaxThickness = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingAirfoilMaxThickness") - paramNames.begin())];
-    double wingRootChord = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingRootChord") - paramNames.begin())];
+    double wingAirfoilMaxCamber = getParam("wingAirfoilMaxCamber", paramVals, paramNames);
+    double wingAirfoilMaxCamberPos = getParam("wingAirfoilMaxCamberPos", paramVals, paramNames);
+    double wingAirfoilMaxThickness = getParam("wingAirfoilMaxThickness", paramVals, paramNames);
+    double wingRootChord = getParam("wingRootChord", paramVals, paramNames);
+    double elevatorRadius = getParam("elevatorRadius", paramVals, paramNames);
 
+    double insetThickness = 0.005;
 
-    vector<glm::dvec2> airfoilPoints = generateNACAAirfoil(wingAirfoilMaxCamber, wingAirfoilMaxCamberPos, wingAirfoilMaxThickness, wingRootChord, 0.02, meshRes);
+    vector<glm::dvec2> airfoilPoints = generateNACAAirfoil(wingAirfoilMaxCamber, wingAirfoilMaxCamberPos, wingAirfoilMaxThickness, wingRootChord, elevatorRadius, meshRes);
 
-    profile airfoilProfile(airfoilPoints);
+    profile airfoilProfile(airfoilPoints, insetThickness);
+
+    //airfoilProfile.plot(500, 500);
 
     return airfoilProfile;
 }
 
 extrusionData extrudeLeftWing(vector<string> paramNames, vector<double> paramVals, double meshRes){
-    double wingScale = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingScale") - paramNames.begin())];
-    double wingLength = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingLength") - paramNames.begin())];
-    double wingSweep = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingSweep") - paramNames.begin())];
+    double wingScale = getParam("wingScale", paramVals, paramNames);
+    double wingLength = getParam("wingLength", paramVals, paramNames);
+    double wingSweep = getParam("wingSweep", paramVals, paramNames);
+    double wingXPos = getParam("wingXPos", paramVals, paramNames);
 
-    double wingXPos = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingXPos") - paramNames.begin())];
+    extrusionData extrusion;
+
+    extrusion.zSampleVals = {0.0, wingLength};
+    extrusion.scaleVals = {glm::dvec2(1, 1), glm::dvec2(wingScale, wingScale)};
+    extrusion.posVals = {glm::dvec2(0, 0), glm::dvec2(wingSweep, 0)};
+
+
+    extrusion.pivotPoint = glm::dvec3(0.0, 0.0, 0.0);
+    extrusion.rotation = glm::dquat(glm::dvec3(0.0, 0.5*M_PI, 0.0));
+    extrusion.translation = glm::dvec3(0.0, 0.0, wingXPos);
+    extrusion.isControl = false;
+
+    return extrusion;
+}
+
+
+extrusionData extrudeRightWing(vector<string> paramNames, vector<double> paramVals, double meshRes){
+    double wingScale = getParam("wingScale", paramVals, paramNames);
+    double wingLength = getParam("wingLength", paramVals, paramNames);
+    double wingSweep = getParam("wingSweep", paramVals, paramNames);
+    double wingXPos = getParam("wingXPos", paramVals, paramNames);
 
 
     extrusionData extrusion;
@@ -189,33 +219,84 @@ extrusionData extrudeLeftWing(vector<string> paramNames, vector<double> paramVal
     extrusion.pivotPoint = glm::dvec3(0.0, 0.0, 0.0);
     extrusion.rotation = glm::dquat(glm::dvec3(0.0, 0.5*M_PI, 0.0));
     extrusion.translation = glm::dvec3(0.0, 0.0, wingXPos);
+    extrusion.isControl = false;
 
     return extrusion;
 }
 
 
-extrusionData extrudeRightWing(vector<string> paramNames, vector<double> paramVals, double meshRes){
-    double wingScale = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingScale") - paramNames.begin())];
-    double wingLength = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingLength") - paramNames.begin())];
-    double wingSweep = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingSweep") - paramNames.begin())];
+profile motorPodProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
 
-    double wingXPos = paramVals[(int)(find(paramNames.begin(), 
-        paramNames.end(), "wingXPos") - paramNames.begin())];
+    double motorWidth = getParam("motorWidth", paramVals, paramNames);
 
+    double insetThickness = 0.01;
+
+    double podWidth = 2*insetThickness + motorWidth;
+
+    //Gets number of points and then multiplies by 2 to account for small size of motor
+    int halfNumPoints = ceil(podWidth*M_PI*0.5*meshRes);
+    vector<glm::dvec2> profilePoints;
+    profilePoints.resize(halfNumPoints*2);
+
+    for(int i = 0; i < halfNumPoints; i++){
+        double angle = i*M_PI/(halfNumPoints - 1);
+
+        profilePoints[i][0] = -0.5*podWidth*cos(angle);
+        profilePoints[i][1] = 0.5*podWidth*sin(angle) + 0.25*podWidth;
+
+        profilePoints[halfNumPoints + i][0] = 0.5*podWidth*cos(angle);
+        profilePoints[halfNumPoints + i][1] = -0.5*podWidth*sin(angle) - 0.25*podWidth;
+    }
+
+    profile motorProfile(profilePoints, insetThickness);
+
+    //motorProfile.plot(500, 500);
+
+    return motorProfile;
+    
+}
+
+profile elevatorProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
+    double elevatorChord = getParam("elevatorChord", paramVals, paramNames);
+    double elevatorMaxThickness = getParam("elevatorMaxThickness", paramVals, paramNames);
+    
+    double insetThickness = 0.01;
+
+    vector<glm::dvec2> airfoilPoints = generateNACAAirfoil(0.0, 0.0, elevatorMaxThickness, elevatorChord, meshRes);
+
+    profile airfoilProfile(airfoilPoints, insetThickness);
+
+    //airfoilProfile.plot(500, 500);
+
+    return airfoilProfile;
+}
+
+
+
+extrusionData extrudeRightElevator(vector<string> paramNames, vector<double> paramVals, double meshRes){
+    double wingRootChord = getParam("wingRootChord", paramVals, paramNames);
+    double elevatorChord = getParam("wingRootChord", paramVals, paramNames);
+    double wingLength = getParam("wingLength", paramVals, paramNames);
+    double elevatorSweep = getParam("elevatorSweep", paramVals, paramNames);
+    double elevatorRadius = getParam("elevatorRadius", paramVals, paramNames);
+    double elevatorPivot = -elevatorRadius + 0.5*elevatorChord;
 
     extrusionData extrusion;
 
-    extrusion.zSampleVals = {0.0, wingLength};
-    extrusion.scaleVals = {glm::dvec2(1, 1), glm::dvec2(wingScale, wingScale)};
-    extrusion.posVals = {glm::dvec2(0, 0), glm::dvec2(wingSweep, 0)};
+    extrusion.zSampleVals = {0.0, -wingLength};
+    extrusion.scaleVals = {glm::dvec2(1.0, 1.0), glm::dvec2(1.0, 1.0)};
+    extrusion.posVals = {glm::dvec2(0.0, 0.0), glm::dvec2(0.2, 0.0)};
+
+    extrusion.pivotPoint = glm::dvec3(elevatorPivot, 0.0, 0.0);
 
 
-    extrusion.pivotPoint = glm::dvec3(0.0, 0.0, 0.0);
-    extrusion.rotation = glm::dquat(glm::dvec3(0.0, 0.5*M_PI, 0.0));
-    extrusion.translation = glm::dvec3(0.0, 0.0, wingXPos);
+    extrusion.rotation = glm::dquat(glm::dvec3(0.0, 0.0, 0.0));
+    extrusion.translation = glm::dvec3(0.5*wingRootChord, 0.5, 0.0);
+    extrusion.isControl = true;
+    //extrusion.controlAxis = glm::dvec3(elevatorSweep, 0.0, wingLength);
+    extrusion.controlAxis = glm::dvec3(elevatorSweep, 0.0, -wingLength);
+    extrusion.controlAxis /= glm::length(extrusion.controlAxis);
+
 
     return extrusion;
 }

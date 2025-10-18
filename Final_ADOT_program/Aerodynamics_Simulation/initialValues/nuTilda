@@ -29,26 +29,30 @@ boundaryField
     }
     outlet
     {
-        type            inletOutlet;
-        inletValue      uniform $waveNumber;
-        value           uniform $waveNumber;
+        type            zeroGradient;
     }
-    lowerWall
+    lower
     {
-        type            symmetryPlane;
+        type            inletOutlet;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
     }
     aircraftModel
     {
         type            fixedValue;
         value           uniform 0;
     }
-    upperWall
+    upper
     {
-        type            symmetryPlane;
+        type            inletOutlet;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
     }
     "(front|back)"
     {
-        type            symmetryPlane;
+        type            inletOutlet;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
     }
     "proc.*"
     {

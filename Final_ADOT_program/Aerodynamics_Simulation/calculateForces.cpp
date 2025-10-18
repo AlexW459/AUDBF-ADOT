@@ -329,7 +329,7 @@ int main(){
     cout << "Net Force: ("<< netForce[0] << ", "  << netForce[1] << ", " << netForce[2] << ")\n";
     cout << "Net Torque: ("<< netTorque[0] << ", "  << netTorque[1] << ", " << netTorque[2] << ")\n";
 
-    cout << "total area: " << totArea << endl;
+   // cout << "total area: " << totArea << endl;
 
     //Frees memory
     delete pointList;

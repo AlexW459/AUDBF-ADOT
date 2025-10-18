@@ -23,25 +23,40 @@ dataTable readCSV(string fileName){
     getline(columnNames, val, ',');
     //Fills up vector of column headings
     while(getline(columnNames, val, ',')){
-        vector<float> valueVec;
-        csvContents.columns.push_back(make_pair(val, valueVec));
+        //Checks for whitespace at the end of the string (not allowed)
+        if(isspace(val[val.length() - 1] )) val.erase(val.end() - 1);
+
+        csvContents.colNames.push_back(val);
     }
 
     
+    int rowNum = 0;
+
     //Fills up rows
     while(getline(csvFile, line)){
         //Gets first value in column, always a string
         stringstream row(line);
         getline(row, val, ',');
+        vector<double> rowVals;
 
-        csvContents.rowNames.push_back(val);
-        //Fills up columns
+        csvContents.rows.push_back(make_pair(val, rowVals));
+        //Fills up columns in row
         int col = 0;
+
         while(getline(row, val, ',')){
-            csvContents.columns[col].second.push_back( stof(val));
+            try{
+                csvContents.rows[rowNum].second.push_back( stod(val));
+            } catch(int e){
+                throw std::runtime_error("Invalid table data in row " + to_string(rowNum+1) + ", column " + 
+                    to_string(col) + ". " + val + " is not a valid value.Must be a number");
+            }
             col++;
         }
+
+        rowNum++;
     }
+
+    csvFile.close();
 
     return csvContents;
 } 

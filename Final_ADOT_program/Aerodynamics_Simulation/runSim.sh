@@ -32,13 +32,21 @@ decomposePar -copyZero
 
 mpirun -np 4 snappyHexMesh -parallel -overwrite
 
-find . -type f -iname "*level*" -exec rm {} \;
+#find . -type f -iname "*level*" -exec rm {} \;
 
-mpirun renumberMesh -overwrite -parallel
+mpirun renumberMesh -constant -overwrite -parallel
+
+#Copies to zero directories
+for dir in processor*; do
+    if [ -d "$dir/constant/polyMesh" ]; then
+        mkdir -p $dir/0
+        cp -r $dir/constant/polyMesh $dir/0/
+    fi
+done
 
 mpirun potentialFoam -initialiseUBCs -parallel -writep
 
-reconstructPar -withZero -constant
+reconstructPar -withZero
 
 rm -r  processor*
 
