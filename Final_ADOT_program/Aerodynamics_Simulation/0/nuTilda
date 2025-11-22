@@ -14,28 +14,18 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+#include "initialConditions"
+
 dimensions      [0 2 -1 0 0 0 0];
 
-internalField   uniform 0.05;
+internalField   uniform $waveNumber;
 
 boundaryField
 {
-    front
-    {
-        type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
-    }
-    back
-    {
-        type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
-    }
     inlet
     {
         type            fixedValue;
-        value           uniform 0.05;
+        value           uniform $waveNumber;
     }
     outlet
     {
@@ -44,21 +34,28 @@ boundaryField
     lower
     {
         type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
-    }
-    upper
-    {
-        type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
     }
     aircraftModel
     {
         type            fixedValue;
         value           uniform 0;
     }
+    upper
+    {
+        type            inletOutlet;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
+    }
+    "(front|back)"
+    {
+        type            inletOutlet;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
+    }
+    "proc.*"
+    {
+        type            processor;
+    }
 }
-
-
-// ************************************************************************* //

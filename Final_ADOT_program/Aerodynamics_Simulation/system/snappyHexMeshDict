@@ -37,8 +37,8 @@ geometry
     refinementBox
     {
         type searchableBox;
-        min (-0.367778 -0.622488 -0.162620);
-        max (0.989549 0.622488 0.162620);
+        min (-0.343860 -0.728144 -0.157192);
+        max (1.120871 0.728144 0.157192);
     }
 };
 
@@ -53,14 +53,14 @@ castellatedMeshControls
     // If local number of cells is >= maxLocalCells on any processor
     // switches from from refinement followed by balancing
     // (current method) to (weighted) balancing before refinement.
-    maxLocalCells 10000;
+    maxLocalCells 20000;
 
     // Overall cell limit (approximately). Refinement will stop immediately
     // upon reaching this number so a refinement level might not complete.
     // Note that this is the number of cells before removing the part which
     // is not 'visible' from the keepPoint. The final number of cells might
     // actually be a lot less.
-    maxGlobalCells 20000;
+    maxGlobalCells 100000;
 
     // The surface refinement loop might spend lots of iterations refining just a
     // few cells. This setting will cause refinement to stop if <= minimumRefine
@@ -157,7 +157,7 @@ castellatedMeshControls
 
     // After refinement patches get added for all refinementSurfaces and
     // all cells intersecting the surfaces get put into these patches. The
-    insidePoint (-1.3667782 0.001 0.001);
+    insidePoint (-.342860 0.001 0.001);
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
 

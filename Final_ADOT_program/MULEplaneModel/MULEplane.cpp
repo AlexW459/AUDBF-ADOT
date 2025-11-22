@@ -155,7 +155,7 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
     extrusion.translation = glm::dvec3(0.0, 0.0, 0.0);
 
     extrusion.pivotPoint = {0.0, 0.0, 0.0};
-    extrusion.rotation = glm::dquat(glm::dvec3(-0.5*M_PI, 0.0, -0.5*M_PI));
+    extrusion.rotation = glm::dquat(glm::dvec3(0.5*M_PI, 0.0, 0.5*M_PI));
     extrusion.isControl = false;
 
 

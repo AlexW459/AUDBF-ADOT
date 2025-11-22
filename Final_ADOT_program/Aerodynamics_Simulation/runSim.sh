@@ -1,3 +1,4 @@
+#!/bin/bash
 
 #Cleans mesh
 #surfaceCheck aircraftMesh/aircraftModelRaw.obj -splitNonManifold
@@ -8,6 +9,7 @@
 #cp $largestFile aircraftMesh/aircraftModelSplit.obj
 #rm splitPatches/*
 
+cd Aerodynamics_Simulation
 
 surfaceLambdaMuSmooth aircraftMesh/aircraftModelRaw.obj aircraftMesh/aircraftModel.obj 0.5 0.5 20
 
@@ -28,26 +30,30 @@ rm constant/geometry/aircraftModel.eMesh
 blockMesh
 surfaceFeatures
 
-decomposePar -copyZero
+#decomposePar -copyZero
 
-mpirun -np 4 snappyHexMesh -parallel -overwrite
+#mpirun -np 4 snappyHexMesh -parallel -overwrite
+snappyHexMesh -overwrite
 
 #find . -type f -iname "*level*" -exec rm {} \;
 
-mpirun renumberMesh -constant -overwrite -parallel
+#mpirun renumberMesh -constant -overwrite -parallel
+renumberMesh -constant -overwrite
 
 #Copies to zero directories
-for dir in processor*; do
-    if [ -d "$dir/constant/polyMesh" ]; then
-        mkdir -p $dir/0
-        cp -r $dir/constant/polyMesh $dir/0/
-    fi
-done
+#for dir in processor*; do
+#    if [ -d "$dir/constant/polyMesh" ]; then
+#        mkdir -p $dir/0
+#        cp -r $dir/constant/polyMesh $dir/0/
+#    fi
+#done
 
-mpirun potentialFoam -initialiseUBCs -parallel -writep
+cp -r constant/polyMesh 0/
 
-reconstructPar -withZero
+#mpirun potentialFoam -initialiseUBCs -parallel -writep
 
-rm -r  processor*
+potentialFoam -initialiseUBCs -writep
 
+#reconstructPar -withZero
 
+#rm -r  processor*

@@ -2,7 +2,7 @@
 CXX = g++
 
 # Compiler flags
-CXXFLAGS = -Wall -g -std=c++14 -march=x86-64 -msse2 -O3 #-fopt-info-vec-missed -fno-inline
+CXXFLAGS = -Wall -g -std=c++20 -march=x86-64 -msse2 -O3 #-fopt-info-vec-missed -fno-inline
 
 # Target executable
 TARGET = Main
@@ -13,6 +13,7 @@ TARGET_DEL = Main.exe
 # Source files
 SRCS = main.cpp aircraft.cpp readCSV.cpp Mesh_Generation/profile.cpp Mesh_Generation/meshWindow.cpp \
 	MULEplaneModel/MULEplane.cpp Mesh_Generation/extrusionGen.cpp Mesh_Generation/surfaceMeshGen.cpp \
+	Aerodynamics_Simulation/calculateForces.cpp
 
 
 

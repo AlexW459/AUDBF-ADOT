@@ -18,45 +18,46 @@ dimensions      [0 2 -2 0 0 0 0];
 
 internalField   uniform 0.24;
 
+//Calculate the internal field using 1.5(meanU * turbulence intensity)
+
 boundaryField
 {
-    front
-    {
-        type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
-    }
-    back
-    {
-        type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
-    }
     inlet
     {
         type            fixedValue;
-        value           uniform 0.24;
+        value           $internalField;
     }
     outlet
     {
         type            zeroGradient;
+
     }
     lower
     {
         type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
-    }
-    upper
-    {
-        type            inletOutlet;
-        inletValue      uniform 1e-06;
-        value           uniform 1e-06;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
     }
     aircraftModel
     {
         type            kqRWallFunction;
-        value           uniform 0.24;
+        value           $internalField;
+    }
+    upper
+    {
+        type            inletOutlet;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
+    }
+    "(front|back)"
+    {
+        type            inletOutlet;
+        inletValue      uniform 1e-6;
+        value           uniform 1e-6;
+    }
+    "proc.*"
+    {
+        type            processor;
     }
 }
 

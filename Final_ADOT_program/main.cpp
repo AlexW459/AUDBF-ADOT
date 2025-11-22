@@ -47,8 +47,8 @@ int main(){
         discreteVals[i] = rand() % numChoices;
     }
 
-    glm::dmat3 MOI;
-    glm::dvec3 COM;
+    vector<glm::dmat3> MOIs;
+    vector<glm::dvec3> COMs;
     double mass;
 
 
@@ -64,9 +64,10 @@ int main(){
     MULEaircraft.addPart("leftWing", "fuselage", false, 1000, extrudeLeftWing, 1);
     //MULEaircraft.addPart("elevatorRight", "rightWing", true, 1000, extrudeRightElevator, 3);
 
-    MULEaircraft.calculateVals(paramVals, discreteVals, 50.0, 100.0, mass, COM, MOI);
+    MULEaircraft.calculateVals(paramVals, discreteVals, 50.0, 100.0, mass, COMs, MOIs);
 
-    //MULEaircraft.plot(500, 500, paramVals, 20);
+
+    MULEaircraft.plot(500, 500, paramVals, 50.0);
 
     //Quit SDL
     SDL_Quit();

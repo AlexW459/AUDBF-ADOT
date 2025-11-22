@@ -20,12 +20,7 @@ internalField   uniform 0;
 
 boundaryField
 {
-    front
-    {
-        type            calculated;
-        value           uniform 0;
-    }
-    back
+    "(front|back)"
     {
         type            calculated;
         value           uniform 0;
@@ -40,12 +35,12 @@ boundaryField
         type            calculated;
         value           uniform 0;
     }
-    lower
+    upper
     {
         type            calculated;
         value           uniform 0;
     }
-    upper
+    lower
     {
         type            calculated;
         value           uniform 0;
@@ -54,6 +49,10 @@ boundaryField
     {
         type            nutUSpaldingWallFunction;
         value           uniform 0;
+    }
+    "proc.*"
+    {
+        type            processor;
     }
 }
 

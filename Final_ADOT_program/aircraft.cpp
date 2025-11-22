@@ -67,7 +67,7 @@ int aircraft::findPart(string partName){
 
 
 void aircraft::calculateVals(vector<double> paramValues, vector<int> discreteVals, 
-    double volMeshRes, double surfMeshRes, double &mass, glm::dvec3 &COM, glm::dmat3 &MOI){
+    double volMeshRes, double surfMeshRes, double &mass, vector<glm::dvec3> &COMs, vector<glm::dmat3> &MOIs){
 
     //Variables to store information required to construct extrusions
     vector<string> paramNames = parameterNames;
@@ -89,9 +89,9 @@ void aircraft::calculateVals(vector<double> paramValues, vector<int> discreteVal
 
 
     //Gets extrusion information and finds relevant values
-    glm::dvec3 COMSoFar(0, 0, 0);
-    double massSoFar = 0;
-    glm::dmat3 MOISoFar(0);
+    glm::dvec3 COMSoFar(0.0);
+    double massSoFar = 0.0;
+    glm::dmat3 MOISoFar(0.0);
 
     vector<glm::dmat2x3> boundingBoxes;
     boundingBoxes.resize(numParts);
@@ -138,20 +138,20 @@ void aircraft::calculateVals(vector<double> paramValues, vector<int> discreteVal
 
         for(int p = 0; p < (int)transformIndices.size(); p++){
             int tIndex = transformIndices[p];
-            //Performs reverse operations on the MOI because these equations actually move the point
-            //around which the part rotates, and so to move the part while continuing to rotate it around the 
-            //origin
+
             partCOM -= extrusions[tIndex].pivotPoint;
             partCOM = extrusions[tIndex].rotation * partCOM;
             partCOM += extrusions[tIndex].translation + extrusions[tIndex].pivotPoint;
 
+            //Performs reverse operations on the MOI because these equations actually move the point
+            //around which the part rotates, 
             glm::dmat3 returnPivotMat = constructRelationMatrix(extrusions[tIndex].pivotPoint);
-            partMOI = partMOI + partMass*returnPivotMat;
+            partMOI += partMass*returnPivotMat;
             glm::dmat3 rotMat = glm::mat3_cast(extrusions[tIndex].rotation);
             partMOI = rotMat*partMOI*(glm::transpose(rotMat));
             glm::dmat3 transMat = constructRelationMatrix(-1.0*(extrusions[tIndex].translation + 
                 extrusions[tIndex].pivotPoint));
-            partMOI = partMOI + partMass*transMat;
+            partMOI += + partMass*transMat;
 
             //Apply transformations to pivot point and axis of rotation
             partPivot -= extrusions[tIndex].pivotPoint;
@@ -216,11 +216,9 @@ void aircraft::calculateVals(vector<double> paramValues, vector<int> discreteVal
 
 
     //Gets COM
-    COM = COMSoFar/massSoFar;
-
-    //Translates point around which MOI is calculated so that it is around the COM of the assembly
-    glm::dmat3 transMat = constructRelationMatrix(COM);
-    MOI = MOISoFar + massSoFar*transMat;
+    double staticMass = massSoFar;
+    glm::dvec3 staticCOM = COMSoFar/massSoFar;
+    glm::dmat3 staticMOI = MOISoFar;
 
     //Gets SDF
     //staticSurfaces.insert(staticSurfaces.end(), controlSurfaces.begin(), controlSurfaces.end());
@@ -237,10 +235,18 @@ void aircraft::calculateVals(vector<double> paramValues, vector<int> discreteVal
 
     //applyGaussianBlur(0.2, 7, staticSDF, SDFSize);
 
+
+
     //Gets aerodynamic forces
     vector<vector<double>> positionVariables = {{0.0, 0.0}};
+    pair<vector<glm::dvec3>, vector<glm::dmat3>> physVals = getPhysVals(positionVariables, staticMass, staticCOM,
+         staticMOI, controlMasses, controlPivotPoints, controlAxes, controlCOMs, controlMOIs);
+
+    COMs = physVals.first;
+    MOIs = physVals.second;
+
     vector<pair<glm::dvec3, glm::dvec3>> aeroTable = getAeroVals(positionVariables, staticSDF, SDFSize, XYZ, 
-        profiles, extrusions, controlPivotPoints, controlAxes,boundingBoxes, totalBoundingBox, surfMeshRes);
+        profiles, extrusions, controlAxes, controlPivotPoints, COMs, boundingBoxes, totalBoundingBox, surfMeshRes);
     
 }
 
@@ -294,8 +300,8 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
     vector<double> tetraVolumes;
     tetraVolumes.resize(numTetras);
     float volumeSoFar = 0;
-    glm::dvec3 COMSoFar(0, 0, 0);
-    glm::dmat3 MOISoFar(0);
+    glm::dvec3 COMSoFar(0.0);
+    glm::dmat3 MOISoFar(0.0);
     int ind1[3] = {1, 0, 0};
     int ind2[3] = {2, 2, 1};
 
@@ -355,7 +361,7 @@ void aircraft::findVolVals(const profile& partProfile, const extrusionData& extr
 
 
 void aircraft::getExtrusionData(vector<profile>& profiles, vector<extrusionData>& extrusions, 
-                                vector<double> paramValues, double volMeshRes) const{
+    vector<double> paramValues, double volMeshRes) const{
 
     //Gets profiles
     int numProfiles = profileFunctions.size();
@@ -375,16 +381,19 @@ void aircraft::getExtrusionData(vector<profile>& profiles, vector<extrusionData>
 
 vector<pair<glm::dvec3, glm::dvec3>> aircraft::getAeroVals(vector<vector<double>> positionVariables, 
     const vector<double>& staticSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
-    const vector<profile>& profiles, vector<extrusionData> extrusions, vector<glm::dvec3> controlPivots, 
-    vector<glm::dvec3> controlAxes, const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, 
-    double surfMeshRes){
+    const vector<profile>& profiles, vector<extrusionData> extrusions,
+    vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlPivots,vector<glm::dvec3> totalCOMs, 
+    const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, double surfMeshRes){
 
     vector<double> SDF = staticSDF;
 
     //Gets parent indices
-
     int numPositions = positionVariables.size();
     int numControl = controlSurfaces.size();
+
+    vector<double> prevPosVals;
+    prevPosVals.resize(numControl, 0.0);
+
 
     vector<pair<glm::dvec3, glm::dvec3>> forceVals;
     forceVals.resize(numPositions);
@@ -396,104 +405,178 @@ vector<pair<glm::dvec3, glm::dvec3>> aircraft::getAeroVals(vector<vector<double>
         double pitch = posVals[0];
         double yaw = posVals[1];
 
-        vector<glm::dmat2x3> adjustedBoundingBoxes = boundingBoxes;
-        glm::dmat2x3 adjustedTotBoundingBox = totalBoundingBox;
-
-        //Assigns positions to control variables
+        //Checks whether mesh needs to be regenerated
+        int controlSameCount = 0;
         for(int c = 0; c < numControl; c++){
-            int surfaceIndex = controlSurfaces[c];
-            extrusions[surfaceIndex].rotateAngle = posVals[c+2];
-
-            glm::dmat2x3 boundingBox = adjustedBoundingBoxes[surfaceIndex];
-            cout << "initial bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
-                << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
-    
-            cout << "initial total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
-                << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
-            
-            //Rotates bounding box
-            glm::dquat rotation = glm::angleAxis(extrusions[surfaceIndex].rotateAngle, controlAxes[c]);
-            cout << "axis: " << controlAxes[c][0] << ", " << controlAxes[c][1] << ", " << controlAxes[c][2] << endl;
-            glm::dmat2x3 adjustedBounds;
-            adjustedBounds[0] = rotation * (boundingBoxes[surfaceIndex][0] - controlPivots[c]) + controlPivots[c];
-            adjustedBounds[1] = rotation * (boundingBoxes[surfaceIndex][1] - controlPivots[c]) + controlPivots[c];
-
-            glm::dvec3 newMinBound = min(adjustedBounds[0], adjustedBounds[1]);
-            glm::dvec3 newMaxBound = max(adjustedBounds[0], adjustedBounds[1]);
-
-            adjustedBoundingBoxes[surfaceIndex] = glm::dmat2x3(newMinBound, newMaxBound);
-
-            adjustedTotBoundingBox[0] = min(adjustedTotBoundingBox[0], adjustedBoundingBoxes[surfaceIndex][0]);
-            adjustedTotBoundingBox[1] = max(adjustedTotBoundingBox[1], adjustedBoundingBoxes[surfaceIndex][1]);
-
-            boundingBox = adjustedBoundingBoxes[surfaceIndex];
-
-            cout << "rotated bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
-                << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
-    
-            cout << "rotated total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
-                << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
-            
+            if(prevPosVals[c] == posVals[i+2]) controlSameCount++;
         }
 
+        if(controlSameCount < numControl || i == 0){
+
+            vector<glm::dmat2x3> adjustedBoundingBoxes = boundingBoxes;
+            glm::dmat2x3 adjustedTotBoundingBox = totalBoundingBox;
+
+
+            //Assigns positions to control variables
+            for(int c = 0; c < numControl; c++){
+                int surfaceIndex = controlSurfaces[c];
+                extrusions[surfaceIndex].rotateAngle = posVals[c+2];
+
+                glm::dmat2x3 boundingBox = adjustedBoundingBoxes[surfaceIndex];
+                cout << "initial bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
+                    << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
         
-        //Generates SDF
-        vector<double> SDF = updateSDF(staticSDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
-            adjustedBoundingBoxes, adjustedTotBoundingBox, controlSurfaces, surfMeshRes);
+                cout << "initial total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
+                    << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
+                
+                //Rotates bounding box
+                glm::dquat rotation = glm::angleAxis(extrusions[surfaceIndex].rotateAngle, controlAxes[c]);
+                cout << "axis: " << controlAxes[c][0] << ", " << controlAxes[c][1] << ", " << controlAxes[c][2] << endl;
+                glm::dmat2x3 adjustedBounds;
+                adjustedBounds[0] = rotation * (boundingBoxes[surfaceIndex][0] - controlPivots[c]) + controlPivots[c];
+                adjustedBounds[1] = rotation * (boundingBoxes[surfaceIndex][1] - controlPivots[c]) + controlPivots[c];
 
-        //Meshes SDF
-        MC::mcMesh mesh;
-        MC::marching_cube(SDF, SDFSize[0], SDFSize[1], SDFSize[2], mesh);
-        glm::dvec3 minPoint = totalBoundingBox[0];
-        double interval = 1/surfMeshRes;
+                glm::dvec3 newMinBound = min(adjustedBounds[0], adjustedBounds[1]);
+                glm::dvec3 newMaxBound = max(adjustedBounds[0], adjustedBounds[1]);
 
-        //Moves points from index coordinates to actual space coordinates
-        for (int p = 0; p < (int)mesh.vertices.size(); p++){
-            glm::dvec3 newPoint = minPoint + interval*glm::dvec3(mesh.vertices[p].x, mesh.vertices[p].y, mesh.vertices[p].z);
-            mesh.vertices[p].x = newPoint[0];
-            mesh.vertices[p].y = newPoint[1];
-            mesh.vertices[p].z = newPoint[2];
+                adjustedBoundingBoxes[surfaceIndex] = glm::dmat2x3(newMinBound, newMaxBound);
+
+                adjustedTotBoundingBox[0] = min(adjustedTotBoundingBox[0], adjustedBoundingBoxes[surfaceIndex][0]);
+                adjustedTotBoundingBox[1] = max(adjustedTotBoundingBox[1], adjustedBoundingBoxes[surfaceIndex][1]);
+
+                boundingBox = adjustedBoundingBoxes[surfaceIndex];
+
+                cout << "rotated bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
+                    << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
+        
+                cout << "rotated total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
+                    << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
+
+                prevPosVals[c] = posVals[c+2];
+            }
+
+            
+            //Generates SDF
+            vector<double> SDF = updateSDF(staticSDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
+                adjustedBoundingBoxes, adjustedTotBoundingBox, controlSurfaces, surfMeshRes);
+
+            //Meshes SDF
+            MC::mcMesh mesh;
+            MC::marching_cube(SDF, SDFSize[0], SDFSize[1], SDFSize[2], mesh);
+            glm::dvec3 minPoint = totalBoundingBox[0];
+            double interval = 1/surfMeshRes;
+
+            //Moves points from index coordinates to actual space coordinates
+            for (int p = 0; p < (int)mesh.vertices.size(); p++){
+                glm::dvec3 newPoint = minPoint + interval*glm::dvec3(mesh.vertices[p].x, mesh.vertices[p].y, mesh.vertices[p].z);
+                mesh.vertices[p].x = newPoint[0];
+                mesh.vertices[p].y = newPoint[1];
+                mesh.vertices[p].z = newPoint[2];
+            }
+            
+            writeMeshToObj("Aerodynamics_Simulation/aircraftMesh/aircraftModelRaw.obj", mesh);
+
+            glm::dmat2x3 widerAdjustedTotBoundingBox;
+            widerAdjustedTotBoundingBox[1] = adjustedTotBoundingBox[1] + glm::dvec3(0.5, 0.5, 0.5);
+            widerAdjustedTotBoundingBox[0] = adjustedTotBoundingBox[0] + glm::dvec3(-2.0, -0.5, -0.5);
+
+            //Writes correct bounding box to file
+
+            string scriptCall = "./Aerodynamics_Simulation/updateBounds.sh " + to_string(widerAdjustedTotBoundingBox[0][0]) + " " +
+                to_string(widerAdjustedTotBoundingBox[0][1]) + " " + to_string(widerAdjustedTotBoundingBox[0][2]) + " " +
+                to_string(widerAdjustedTotBoundingBox[1][0]) + " " + to_string(widerAdjustedTotBoundingBox[1][1]) + " " +
+                to_string(widerAdjustedTotBoundingBox[1][2]) + " " + 
+                to_string(adjustedTotBoundingBox[0][0]) + " " + to_string(adjustedTotBoundingBox[0][1]) + " " + 
+                to_string(adjustedTotBoundingBox[0][2]) + " " + to_string(adjustedTotBoundingBox[1][0]) + " " + 
+                to_string(adjustedTotBoundingBox[1][1]) + " " + to_string(adjustedTotBoundingBox[1][2]);
+
+
+            int success = system(scriptCall.c_str());
+            if(success)throw std::runtime_error("Setting bounding box failed");
+
         }
-        
-        writeMeshToObj("Aerodynamics_Simulation/aircraftMesh/aircraftModelRaw.obj", mesh);
 
-        glm::dmat2x3 widerAdjustedTotBoundingBox;
-        widerAdjustedTotBoundingBox[1] = adjustedTotBoundingBox[1] + glm::dvec3(0.2, 0.2, 0.2);
-        widerAdjustedTotBoundingBox[0] = adjustedTotBoundingBox[0] + glm::dvec3(-1.0, -0.2, -0.2);
-
-        //Writes correct bounding box to file
         glm::dvec3 velocity(-testVelocity*cos(pitch)*cos(yaw), -testVelocity*cos(yaw)*sin(pitch), -testVelocity*sin(pitch));
         int ySign = velocity[1] == 0 ? 0 : velocity[1] > 0 ? 1 :  -1;
         int zSign = velocity[2] == 0 ? 0 : velocity[2] > 0 ? 1 :  -1;
 
 
-        string scriptCall = "./Aerodynamics_Simulation/updateDicts.sh " + to_string(widerAdjustedTotBoundingBox[0][0]) + " " +
-            to_string(widerAdjustedTotBoundingBox[0][1]) + " " + to_string(widerAdjustedTotBoundingBox[0][2]) + " " +
-            to_string(widerAdjustedTotBoundingBox[1][0]) + " " + to_string(widerAdjustedTotBoundingBox[1][1]) + " " +
-            to_string(widerAdjustedTotBoundingBox[1][2]) + " " + to_string(velocity[0]) + " " + to_string(velocity[1]) +
-            " " + to_string(velocity[2]) + " " + to_string(ySign) + " " + to_string(zSign) + " " + 
-            to_string(adjustedTotBoundingBox[0][0]) + " " + to_string(adjustedTotBoundingBox[0][1]) + " " + 
-            to_string(adjustedTotBoundingBox[0][2]) + " " + to_string(adjustedTotBoundingBox[1][0]) + " " + 
-            to_string(adjustedTotBoundingBox[1][1]) + " " + to_string(adjustedTotBoundingBox[1][2]);
+        string dictScriptCall = "./Aerodynamics_Simulation/updateDicts.sh " + to_string(velocity[0]) + " " + to_string(velocity[1]) +
+            " " + to_string(velocity[2]) + " " + to_string(ySign) + " " + to_string(zSign);
+        int success = system(dictScriptCall.c_str());
+        if(success) throw std::runtime_error("Setting air velocity failed");
 
-
-        int success = system(scriptCall.c_str());
-
-        if(success){
-            throw std::runtime_error("Flight simulation failed with error code " + success);
-        }
+        ////Runs simulation
+        //success = system("./Aerodynamics_Simulation/runSim.sh");
+        //if(success) throw std::runtime_error("Aerodynamics simulation failed");
 
         //Get aerodynamic forces
-        forceVals[i].first = glm::dvec3(0.0, 0.0, 0.0);
-        forceVals[i].second = glm::dvec3(0.0, 0.0, 0.0);
+        forceVals[i] = calculateForces("Aerodynamics_Simulation/", totalCOMs[i], G_CONSTANT, RHO);
 
     }
 
     return forceVals;
 }
 
+pair<vector<glm::dvec3>, vector<glm::dmat3>> aircraft::getPhysVals(vector<vector<double>> positionVariables,
+    double staticMass, glm::dvec3 staticCOM, glm::dmat3 staticMOI, vector<double> controlMasses, 
+    vector<glm::dvec3> controlPivots, vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlCOMs,
+    vector<glm::dmat3> controlMOIs){
+
+    int numPositions = positionVariables.size();
+    int numControl = controlMasses.size();
+
+    pair<vector<glm::dvec3>, vector<glm::dmat3>> outputVals;
+    outputVals.first.resize(numPositions);
+    outputVals.second.resize(numPositions);
+        
+    
+    for(int i = 0; i < numPositions; i++){
+        vector<double> posVals = positionVariables[i];
+
+        double totalMass = staticMass;
+        glm::dvec3 totalCOM = staticCOM*totalMass;
+        glm::dmat3 totalMOI = staticMOI;
+
+        for(int c = 0; c < numControl; c++){
+
+            glm::dquat controlRot = glm::angleAxis(posVals[c+2], controlAxes[c]);
+            //Rotates COM
+            glm::dvec3 controlCOM = controlRot * (controlCOMs[c] - controlPivots[c]) + controlPivots[c];
+            totalCOM += controlCOM*controlMasses[c];
+            totalMass += controlMasses[c];
+
+            //Rotates MOI
+            glm::dmat3 controlMOI = controlMOIs[c];
+            glm::dmat3 returnPivotMat = constructRelationMatrix(controlPivots[c]);
+            controlMOI += controlMasses[c]*returnPivotMat;
+            glm::dmat3 rotMat = glm::mat3_cast(controlRot);
+            controlMOI = rotMat*controlMOI*(glm::transpose(rotMat));
+            //glm::dmat3 transMat = constructRelationMatrix(-1.0*controlPivots[c]);
+            controlMOI = controlMOI - controlMasses[c]*returnPivotMat;
+
+            totalMOI += controlMOI;
+            totalMass += controlMasses[c];
+        }
+
+        totalCOM /= totalMass;
+
+        //Moves the MOI so it is centred around the COM
+        totalMOI += constructRelationMatrix(totalCOM);
+
+        outputVals.first[i] = totalCOM;
+        outputVals.second[i] = totalMOI;
+
+    }
+
+    return outputVals;
+}
+
+
 
 void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramValues, double volMeshRes){
+
+
     //Gets profiles
     int numProfiles = profileFunctions.size();
     vector<profile> profiles;
@@ -502,7 +585,6 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
     vector<extrusionData> extrusions;
     extrusions.resize(numParts);
     getExtrusionData(profiles, extrusions, paramValues, volMeshRes);
-
 
 
     //Generates meshes
@@ -514,6 +596,7 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
     //Stores size of each adj matrix
     vector<int> adjSizes;
     adjSizes.resize(numParts);
+
 
     for(int i = 0; i < numParts; i++){
         //Gets extrusion
@@ -555,7 +638,7 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVal
 
 
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
-    window.draw3D(totalPoints, adjMatrices, 1.5f);
+    window.draw3D(totalPoints, adjMatrices, 1.5);
 
 }
 

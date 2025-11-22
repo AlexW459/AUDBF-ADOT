@@ -89,76 +89,7 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
             }
         }
 
-        //if(extrusion.isControl)  cout << "initial part bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
-        //    << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
-
         
-    //}
-    //else{
-    /*if(extrusion.isControl){
-        //Start and end points of cylinder encompassing full range of motion of control surface
-        glm::dmat2x3 axisEndPoints;
-
-        glm::dvec3 d = extrusion.controlAxis;
-        glm::dvec3 x1 = extrusion.pivotPoint;
-        //glm::dvec3 x2 = x1 + d;
-
-
-        double maxDist2 = 0;
-        double minT = 10;
-        double maxT = -10;
-
-        //Only checks outer points
-        for(int i = 0; i < numProfiles; i++){
-            for(int j = 0; j < outerSize; j++){
-                int index = i*profileSize + j;
-
-                //cout << "point: " << points[index][0] << ", " << points[index][1] << ", " << points[index][2] << endl;
-                
-                //Gets distance from point to axis of rotation
-                //double dist2 = glm::length2(glm::cross(points[index] - x1, points[index] - x2));
-                double t = -glm::dot(x1 - points[index], d);
-
-                double dist2 = glm::length2(points[index] - (x1 + d*t));
-
-                //cout << "closest point: " << (x1+d*t)[0] << ", " << (x1+d*t)[1] << ", " << (x1+d*t)[2] << endl;
-
-                //Finds min and max values
-                maxDist2 += (dist2 - maxDist2) * (dist2 > maxDist2);
-                minT += (t - minT) * (t < minT);
-                maxT += (t - maxT) * (t > maxT);
-
-            }
-        }
-
-        double maxDist = sqrt(maxDist2);
-        axisEndPoints[0] = x1 + minT * d;
-        axisEndPoints[1] = x1 + maxT * d;
-
-        //cout << "maxdist: " << maxDist << endl;
-        //cout << "minT: " << minT << ", maxT: " << maxT << endl;
-        //cout << "axis end points: " << axisEndPoints[0][0] << ", " << axisEndPoints[0][1] << ", " <<
-        //axisEndPoints[0][2] << " - " << axisEndPoints[1][0] << ", " << axisEndPoints[1][1] << ", " <<
-        //axisEndPoints[1][2] << endl;
-
-        //Gets adjustments that need to be made to each face of the bounding box
-        glm::dvec3 boundVec;
-        //Relative distance to be moved by each face is the dot product of the 
-        //rotation axis and the projection of the rotation axis onto that face
-        boundVec[0] = glm::dot(d, glm::dvec3(0, d[1], d[2]));
-        boundVec[1] = glm::dot(d, glm::dvec3(d[0], 0, d[2]));
-        boundVec[2] = glm::dot(d, glm::dvec3(d[0], d[1], 0));
-
-        //cout << "boundvec: " << boundVec[0] << ", " << boundVec[1] << ", " << boundVec[2] << endl;
-
-        boundingBox[0] = min(axisEndPoints[0], axisEndPoints[1]) - boundVec * maxDist;
-        boundingBox[1] = max(axisEndPoints[0], axisEndPoints[1]) + boundVec * maxDist;
-
-
-        //cout << "initial part bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
-        //    << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
-    }*/
-
 
     int adjSize = numProfiles*profileSize;
     vector<char> profileAdjMatrix = partProfile.adjacencyMatrix;

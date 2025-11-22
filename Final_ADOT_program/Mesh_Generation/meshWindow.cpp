@@ -92,7 +92,7 @@ void meshWindow::draw2D(vector<glm::dvec2> &points, vector<char> adjMatrix) {
     }
 }
 
-void meshWindow::draw3DSingle(vector<glm::dvec3> &points, vector<char> adjMatrix, float dist){
+void meshWindow::draw3DSingle(vector<glm::dvec3> &points, vector<char> adjMatrix, double dist){
 
     //Finds bounding box of shape
     glm::dvec3 minPos = points[0];
@@ -164,7 +164,7 @@ void meshWindow::draw3DSingle(vector<glm::dvec3> &points, vector<char> adjMatrix
 
 //Internl function used to draw any mesh
 void meshWindow::draw3DMesh(vector<glm::dvec3> points, vector<char> adjMatrix,  
-    float distToScreen, float realScreenWidth){
+    double distToScreen, double realScreenWidth){
 
     int numPoints = points.size();
     vector<glm::ivec2> displayPoints;
@@ -180,9 +180,8 @@ void meshWindow::draw3DMesh(vector<glm::dvec3> points, vector<char> adjMatrix,
         float screenXPos = transformedPoint[0]  * (distToScreen / transformedPoint[1]) / (realScreenDim[0]);
         float screenYPos = transformedPoint[2]  * (distToScreen / transformedPoint[1]) / (realScreenDim[1]);
 
-        displayPoints[i][0] = (float)round(SCREEN_WIDTH * (0.5 + screenXPos));
-        displayPoints[i][1] = (float)round(SCREEN_HEIGHT * (0.5 - screenYPos));
-
+        displayPoints[i][0] = round(SCREEN_WIDTH * (0.5 + screenXPos));
+        displayPoints[i][1] = round(SCREEN_HEIGHT * (0.5 - screenYPos));
 
     }
 
@@ -221,7 +220,7 @@ void meshWindow::clear(){
 }
 
 //Draws multiple meshes at once
-void meshWindow::draw3D(vector<vector<glm::dvec3>>& points, vector<vector<char>> adjMatrices, float dist){
+void meshWindow::draw3D(vector<vector<glm::dvec3>>& points, vector<vector<char>> adjMatrices, double dist){
 
 
     //Finds bounding box of shapes

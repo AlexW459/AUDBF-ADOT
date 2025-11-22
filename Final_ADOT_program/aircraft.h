@@ -16,9 +16,11 @@
 #include "Mesh_Generation/profile.h"
 #include "Mesh_Generation/surfaceMeshGen.h"
 #include "Mesh_Generation/extrusionGen.h"
+#include "Aerodynamics_Simulation/calculateForces.h"
 #include "readCSV.h"
 
-
+#define RHO 1.225
+#define G_CONSTANT 9.81
 
 using namespace std;
 
@@ -37,7 +39,7 @@ class aircraft{
         int findPart(string partName);
 
         void calculateVals(vector<double> paramValues, vector<int> discreteVals, double volMeshRes, double surfMeshRes,
-            double &mass, glm::dvec3 &COM, glm::dmat3 &MOI);
+            double &mass, vector<glm::dvec3> &COM, vector<glm::dmat3> &MOI);
 
 
         void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVals, double volMeshRes);
@@ -53,12 +55,19 @@ class aircraft{
         //Gets relational matrix used in translation of MOI. Returns relational matrix
         glm::dmat3 constructRelationMatrix(glm::dvec3 r) const;
 
+        //Gets COMs and MOIs at every position
+        //Parameter positionVariables follows same format as
+        pair<vector<glm::dvec3>, vector<glm::dmat3>> getPhysVals(vector<vector<double>> positionVariables,
+            double staticMass, glm::dvec3 staticCOM, glm::dmat3 staticMOI, vector<double> controlMasses, 
+            vector<glm::dvec3> controlPivots, vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlCOMs,
+            vector<glm::dmat3> controlMOIs);
+
         //Gets the aerodynamic forces (net force, torque) on the aircraft for a range of configurations of the aircraft
         //The first two columns in positonVariables are values of pitch and yaw, the rest are control surface positnios
         vector<pair<glm::dvec3, glm::dvec3>> getAeroVals(vector<vector<double>> positionVariables, 
             const vector<double>& staticSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ,
-            const vector<profile>& profiles, vector<extrusionData> extrusions, 
-            vector<glm::dvec3> controlPivots, vector<glm::dvec3> controlAxes,
+            const vector<profile>& profiles, vector<extrusionData> extrusions, vector<glm::dvec3> controlAxes,
+            vector<glm::dvec3> controlPivots, vector<glm::dvec3> totalCOMs, 
             const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, double surfMeshRes);
 
         void getFlightPerformance();

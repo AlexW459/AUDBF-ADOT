@@ -73,6 +73,7 @@
         "span": "cpp",
         "regex": "cpp",
         "u": "cpp",
-        "k": "cpp"
+        "k": "cpp",
+        "cutplane": "cpp"
     }
 }

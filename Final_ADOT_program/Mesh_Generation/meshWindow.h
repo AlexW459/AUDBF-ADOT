@@ -18,9 +18,9 @@ class meshWindow{
         
         void draw2D(vector<glm::dvec2> &points, vector<char> adjMatrix);
 
-        void draw3DSingle(vector<glm::dvec3> &points, vector<char> adjMatrix, float dist);
+        void draw3DSingle(vector<glm::dvec3> &points, vector<char> adjMatrix, double dist);
 
-        void draw3D(vector<vector<glm::dvec3>> &points, vector<vector<char>> adjMatrices, float dist);
+        void draw3D(vector<vector<glm::dvec3>> &points, vector<vector<char>> adjMatrices, double dist);
 
         void clear();
 
@@ -29,7 +29,7 @@ class meshWindow{
         SDL_Renderer* renderer;
 
         void draw3DMesh(vector<glm::dvec3> points, vector<char> adjMatrix,  
-                float distToScreen, float realScreenWidth);
+                double distToScreen, double realScreenWidth);
 
         int SCREEN_WIDTH;
         int SCREEN_HEIGHT;
