@@ -149,9 +149,8 @@ double getParam(string param, const vector<double>& paramVals, const vector<stri
     int index = distance(paramNames.begin(), find(paramNames.begin(), 
         paramNames.end(), param));
 
-
     if(index == (int)paramNames.size()){
-        throw std::runtime_error("Could not find variable \"" + param + "\" in variable list");
+        throw std::runtime_error("Could not find variable \"" + param + "\" in parameter list");
         return 0.0;
     }else{
         return paramVals[index];

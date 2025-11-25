@@ -38,20 +38,20 @@ class aircraft{
 
         int findPart(string partName);
 
-        void calculateVals(vector<double> paramValues, vector<int> discreteVals, double volMeshRes, double surfMeshRes,
+        void calculateVals(vector<double> paramVals, vector<int> discreteVals, double volMeshRes, double surfMeshRes,
             double &mass, vector<glm::dvec3> &COM, vector<glm::dmat3> &MOI);
 
 
-        void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVals, double volMeshRes);
+        void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
 
     private:
 
         //Finds the variables associated with the volumetric mesh, including the bounding box of each part
-        void findVolVals(const profile& partProfile, const extrusionData& extrusion, double& volume, glm::dvec3& COM, 
-            glm::dmat3& MOI, glm::dmat2x3& boundingBox) const;
+        void getVolVals(const profile& partProfile, const extrusionData& extrusion, double density,
+            double& mass, glm::dvec3& COM, glm::dmat3& MOI, glm::dmat2x3& boundingBox) const;
         
         void getExtrusionData(vector<profile>& profiles, vector<extrusionData>& extrusions, 
-            vector<double> paramValues, double volMeshRes) const;
+            vector<double> paramVals, vector<int> discreteVals, double volMeshRes) const;
         //Gets relational matrix used in translation of MOI. Returns relational matrix
         glm::dmat3 constructRelationMatrix(glm::dvec3 r) const;
 

@@ -14,13 +14,14 @@ int main(){
     //Gets maximum and minimun values of each parameter
     dataTable paramRanges = readCSV(planeModel + "/paramRanges.csv");
     dataTable motorTable = readCSV(planeModel + "/motorSelection.csv");
+    dataTable batteryTable = readCSV(planeModel + "/batterySelection.csv");
 
     vector<double> paramVals;
     paramVals.resize(paramRanges.rows.size());
     vector<string> paramNames;
     paramNames.resize(paramRanges.rows.size());
 
-    vector<dataTable> discreteTables = {motorTable};
+    vector<dataTable> discreteTables = {motorTable, batteryTable};
     vector<int> discreteVals;
     discreteVals.resize(discreteTables.size());
     
@@ -64,10 +65,11 @@ int main(){
     MULEaircraft.addPart("leftWing", "fuselage", false, 1000, extrudeLeftWing, 1);
     //MULEaircraft.addPart("elevatorRight", "rightWing", true, 1000, extrudeRightElevator, 3);
 
+
     MULEaircraft.calculateVals(paramVals, discreteVals, 50.0, 100.0, mass, COMs, MOIs);
 
 
-    MULEaircraft.plot(500, 500, paramVals, 50.0);
+    MULEaircraft.plot(500, 500, paramVals, discreteVals, 50.0);
 
     //Quit SDL
     SDL_Quit();

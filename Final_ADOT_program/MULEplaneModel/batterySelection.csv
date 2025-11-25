@@ -1,8 +1,8 @@
-﻿Name,Voltage,Weight,Capacity,Crating,Price,,,
-Tattu_R-Line,22.2,270,1400,130,59.95,,,
-ZOP_Power,22.2,565,4500,100,83,,,
-ZOP_Power,14.8,448,6500,30,58,,,
-Limskey,14.8,500,6500,60,48.19,,,
-CODDAR,14.8,500,6500,60,74,,,
-Ovonic_(Now_sold_out),14.8,573,6000,100,69,,,
-Ovonic_(2pack),14.8,610,6700,120,72.25/pc,,,
+﻿Name,Voltage,Weight,Capacity,Crating,Price
+Tattu_R-Line,22.2,270,1400,130,59.95
+ZOP_Power,22.2,565,4500,100,83
+ZOP_Power,14.8,448,6500,30,58
+Limskey,14.8,500,6500,60,48.19
+CODDAR,14.8,500,6500,60,74
+Ovonic_(Now_sold_out),14.8,573,6000,100,69
+Ovonic_(2pack),14.8,610,6700,120,72.25

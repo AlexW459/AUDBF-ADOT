@@ -37,8 +37,8 @@ geometry
     refinementBox
     {
         type searchableBox;
-        min (-0.343860 -0.728144 -0.157192);
-        max (1.120871 0.728144 0.157192);
+        min (-0.428150 -0.428741 -0.195057);
+        max (0.887975 0.428741 0.164224);
     }
 };
 
@@ -157,7 +157,7 @@ castellatedMeshControls
 
     // After refinement patches get added for all refinementSurfaces and
     // all cells intersecting the surfaces get put into these patches. The
-    insidePoint (-.342860 0.001 0.001);
+    insidePoint (-.427150 0.001 0.001);
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
 

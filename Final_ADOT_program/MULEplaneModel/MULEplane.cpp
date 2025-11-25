@@ -17,6 +17,8 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
 
     double motorMass = getParam("Weight", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames);
 
+    double batteryMass = 1000*getParam("Weight", discreteTables[1].rows[discreteVals[1]].second, discreteTables[1].colNames);
+
     double elevatorSweep = wingSweep- 0.5*wingRootChord*wingScale*(1-wingScale);
 
 
@@ -25,9 +27,9 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
 
 
     vector<double> newParamVals = {wingXPos, motorWidth, motorMass, elevatorSweep,
-                                   elevatorRadius};
+                                   elevatorRadius, batteryMass};
     vector<string> newParamNames = {"wingXPos", "motorWidth", "motorMass", "elevatorSweep",
-                                   "elevatorRadius"};
+                                   "elevatorRadius", "batteryMass"};
 
     //Adds new parameters to list
     paramVals.insert(paramVals.end(), newParamVals.begin(), newParamVals.end());
@@ -84,8 +86,10 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
     double noseconeOffset = getParam("noseconeOffset", paramVals, paramNames);
     double tailconeLength = getParam("tailconeLength", paramVals, paramNames);
     double tailconeTipScale = getParam("tailconeTipScale", paramVals, paramNames);
+    double batteryMass = getParam("batteryMass", paramVals, paramNames);
+    double batteryPos = getParam("batteryPos", paramVals, paramNames);
 
-    extrusionData extrusion;
+
 
     double tailconeTipHeight = tailconeTipScale*fuselageHeight;
     double noseconeTipHeight = noseconeTipScale*fuselageHeight;
@@ -96,10 +100,11 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
     int tailconeNumT = ceil(0.5*meshRes*tailQ2zPos);
     int noseconeNumT = ceil(0.5*meshRes*noseQ2zPos);
 
-
-    extrusion.zSampleVals.resize(noseconeNumT + 2 + tailconeNumT);
-    extrusion.posVals.resize(noseconeNumT + 2 + tailconeNumT);
-    extrusion.scaleVals.resize(noseconeNumT + 2 + tailconeNumT);
+    vector<double> zSampleVals;
+    vector<glm::dvec2> posVals, scaleVals;
+    zSampleVals.resize(noseconeNumT + 2 + tailconeNumT);
+    posVals.resize(noseconeNumT + 2 + tailconeNumT);
+    scaleVals.resize(noseconeNumT + 2 + tailconeNumT);
 
 
     glm::dvec2 Q2 = glm::dvec2(-tailconeLength-0.5*tailQ2zPos, fuselageHeight*0.5);
@@ -115,20 +120,20 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
         glm::dvec2 upperPoint = tVal*tVal*Q1+2.0*(1-tVal)*tVal*Q2+(1-tVal)*(1-tVal)*Q3;
 
         //Flips to account for reverse direction
-        extrusion.zSampleVals[tailconeNumT - i - 1] = upperPoint[0];
-        extrusion.posVals[tailconeNumT - i - 1] = glm::dvec2(0, (upperPoint[1]+lowerPoint[1])/2);
-        extrusion.scaleVals[tailconeNumT - i - 1] = glm::dvec2((upperPoint[1]-lowerPoint[1])/fuselageHeight, (upperPoint[1]-lowerPoint[1])/fuselageHeight);
+        zSampleVals[tailconeNumT - i - 1] = upperPoint[0];
+        posVals[tailconeNumT - i - 1] = glm::dvec2(0, (upperPoint[1]+lowerPoint[1])/2);
+        scaleVals[tailconeNumT - i - 1] = glm::dvec2((upperPoint[1]-lowerPoint[1])/fuselageHeight, (upperPoint[1]-lowerPoint[1])/fuselageHeight);
 
     }
 
 
     //Straight section of fuselage
-    extrusion.zSampleVals[tailconeNumT] = 0;
-    extrusion.zSampleVals[tailconeNumT + 1] = fuselageLength;
-    extrusion.posVals[tailconeNumT] = glm::dvec2(0, 0);
-    extrusion.posVals[tailconeNumT + 1] = glm::dvec2(0, 0);
-    extrusion.scaleVals[tailconeNumT] = glm::dvec2(1, 1);
-    extrusion.scaleVals[tailconeNumT + 1] = glm::dvec2(1, 1);
+    zSampleVals[tailconeNumT] = 0;
+    zSampleVals[tailconeNumT + 1] = fuselageLength;
+    posVals[tailconeNumT] = glm::dvec2(0, 0);
+    posVals[tailconeNumT + 1] = glm::dvec2(0, 0);
+    scaleVals[tailconeNumT] = glm::dvec2(1, 1);
+    scaleVals[tailconeNumT + 1] = glm::dvec2(1, 1);
     
     double noseconeStraightLength = noseconeLength - 0.5*noseQ2zPos;
 
@@ -146,18 +151,23 @@ extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVal
         glm::dvec2 lowerPoint = (1-tVal)*(1-tVal)*Q1+2.0*(1-tVal)*tVal*Q2+tVal*tVal*Q3;
         glm::dvec2 upperPoint = tVal*tVal*Q1+2.0*(1-tVal)*tVal*Q2+(1-tVal)*(1-tVal)*Q3;
 
-        extrusion.zSampleVals[tailconeNumT + 2 + i] = fuselageLength + upperPoint[0];
-        extrusion.posVals[tailconeNumT + 2 + i] = glm::dvec2(0, (upperPoint[1]+lowerPoint[1])/2);
-        extrusion.scaleVals[tailconeNumT + 2 + i] = glm::dvec2((upperPoint[1]-lowerPoint[1])/fuselageHeight, (upperPoint[1]-lowerPoint[1])/fuselageHeight);
+        zSampleVals[tailconeNumT + 2 + i] = fuselageLength + upperPoint[0];
+        posVals[tailconeNumT + 2 + i] = glm::dvec2(0, (upperPoint[1]+lowerPoint[1])/2);
+        scaleVals[tailconeNumT + 2 + i] = glm::dvec2((upperPoint[1]-lowerPoint[1])/fuselageHeight, (upperPoint[1]-lowerPoint[1])/fuselageHeight);
 
     }
 
-    extrusion.translation = glm::dvec3(0.0, 0.0, 0.0);
+    glm::dvec3 translation(0.0, 0.0, 0.0);
 
-    extrusion.pivotPoint = {0.0, 0.0, 0.0};
-    extrusion.rotation = glm::dquat(glm::dvec3(0.5*M_PI, 0.0, 0.5*M_PI));
-    extrusion.isControl = false;
+    glm::dvec3 pivotPoint(0.0, 0.0, 0.0);
+    glm::dquat rotation(glm::dvec3(0.5*M_PI, 0.0, 0.5*M_PI));
 
+    //Adds battery point mass
+    double pointMass = batteryMass;
+    glm::dvec3 massLocation(0.0, 0.0, batteryPos*fuselageLength);
+
+    extrusionData extrusion(zSampleVals, posVals, scaleVals, rotation, translation, 
+        pivotPoint, pointMass, massLocation);
 
     return extrusion;
 }
@@ -186,17 +196,17 @@ extrusionData extrudeLeftWing(vector<string> paramNames, vector<double> paramVal
     double wingSweep = getParam("wingSweep", paramVals, paramNames);
     double wingXPos = getParam("wingXPos", paramVals, paramNames);
 
-    extrusionData extrusion;
 
-    extrusion.zSampleVals = {0.0, wingLength};
-    extrusion.scaleVals = {glm::dvec2(1, 1), glm::dvec2(wingScale, wingScale)};
-    extrusion.posVals = {glm::dvec2(0, 0), glm::dvec2(wingSweep, 0)};
+    vector<double> zSampleVals = {0.0, wingLength};
+    vector<glm::dvec2> scaleVals = {glm::dvec2(1, 1), glm::dvec2(wingScale, wingScale)};
+    vector<glm::dvec2> posVals{glm::dvec2(0, 0), glm::dvec2(wingSweep, 0)};
+
+    glm::dvec3 pivotPoint(0.0, 0.0, 0.0);
+    glm::dquat rotation(glm::dvec3(0.0, 0.5*M_PI, 0.0));
+    glm::dvec3 translation(0.0, 0.0, wingXPos);
 
 
-    extrusion.pivotPoint = glm::dvec3(0.0, 0.0, 0.0);
-    extrusion.rotation = glm::dquat(glm::dvec3(0.0, 0.5*M_PI, 0.0));
-    extrusion.translation = glm::dvec3(0.0, 0.0, wingXPos);
-    extrusion.isControl = false;
+    extrusionData extrusion(zSampleVals, posVals, scaleVals, rotation, translation, pivotPoint);
 
     return extrusion;
 }
@@ -209,17 +219,16 @@ extrusionData extrudeRightWing(vector<string> paramNames, vector<double> paramVa
     double wingXPos = getParam("wingXPos", paramVals, paramNames);
 
 
-    extrusionData extrusion;
-
-    extrusion.zSampleVals = {0.0, -wingLength};
-    extrusion.scaleVals = {glm::dvec2(1, 1), glm::dvec2(wingScale, wingScale)};
-    extrusion.posVals = {glm::dvec2(0, 0), glm::dvec2(wingSweep, 0)};
+    vector<double> zSampleVals = {0.0, -wingLength};
+    vector<glm::dvec2> scaleVals = {glm::dvec2(1, 1), glm::dvec2(wingScale, wingScale)};
+    vector<glm::dvec2> posVals = {glm::dvec2(0, 0), glm::dvec2(wingSweep, 0)};
 
 
-    extrusion.pivotPoint = glm::dvec3(0.0, 0.0, 0.0);
-    extrusion.rotation = glm::dquat(glm::dvec3(0.0, 0.5*M_PI, 0.0));
-    extrusion.translation = glm::dvec3(0.0, 0.0, wingXPos);
-    extrusion.isControl = false;
+    glm::dvec3 pivotPoint = glm::dvec3(0.0, 0.0, 0.0);
+    glm::dquat rotation = glm::dquat(glm::dvec3(0.0, 0.5*M_PI, 0.0));
+    glm::dvec3 translation = glm::dvec3(0.0, 0.0, wingXPos);
+
+    extrusionData extrusion(zSampleVals, posVals, scaleVals, rotation, translation, pivotPoint);
 
     return extrusion;
 }
@@ -281,22 +290,21 @@ extrusionData extrudeRightElevator(vector<string> paramNames, vector<double> par
     double elevatorRadius = getParam("elevatorRadius", paramVals, paramNames);
     double elevatorPivot = -elevatorRadius + 0.5*elevatorChord;
 
-    extrusionData extrusion;
 
-    extrusion.zSampleVals = {0.0, -wingLength};
-    extrusion.scaleVals = {glm::dvec2(1.0, 1.0), glm::dvec2(1.0, 1.0)};
-    extrusion.posVals = {glm::dvec2(0.0, 0.0), glm::dvec2(0.2, 0.0)};
+    vector<double> zSampleVals = {0.0, -wingLength};
+    vector<glm::dvec2> scaleVals = {glm::dvec2(1.0, 1.0), glm::dvec2(1.0, 1.0)};
+    vector<glm::dvec2> posVals = {glm::dvec2(0.0, 0.0), glm::dvec2(0.2, 0.0)};
 
-    extrusion.pivotPoint = glm::dvec3(elevatorPivot, 0.0, 0.0);
+    glm::dvec3 pivotPoint(elevatorPivot, 0.0, 0.0);
 
 
-    extrusion.rotation = glm::dquat(glm::dvec3(0.0, 0.0, 0.0));
-    extrusion.translation = glm::dvec3(0.5*wingRootChord, 0.5, 0.0);
-    extrusion.isControl = true;
-    //extrusion.controlAxis = glm::dvec3(elevatorSweep, 0.0, wingLength);
-    extrusion.controlAxis = glm::dvec3(elevatorSweep, 0.0, -wingLength);
-    extrusion.controlAxis /= glm::length(extrusion.controlAxis);
+    glm::dquat rotation(glm::dvec3(0.0, 0.0, 0.0));
+    glm::dvec3 translation(0.5*wingRootChord, 0.5, 0.0);
+    //glm::dvec3 controlAxis = glm::dvec3(elevatorSweep, 0.0, wingLength);
+    glm::dvec3 controlAxis = glm::dvec3(elevatorSweep, 0.0, -wingLength);
+    controlAxis /= glm::length(controlAxis);
 
+    extrusionData extrusion(zSampleVals, posVals, scaleVals, rotation, translation, pivotPoint, controlAxis);
 
     return extrusion;
 }
