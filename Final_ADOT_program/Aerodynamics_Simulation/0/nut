@@ -20,10 +20,13 @@ internalField   uniform 0;
 
 boundaryField
 {
-    "(front|back)"
+    front
     {
-        type            calculated;
-        value           uniform 0;
+        type            zeroGradient;
+    }
+    back
+    {
+        type            zeroGradient;
     }
     inlet
     {
@@ -37,18 +40,18 @@ boundaryField
     }
     upper
     {
-        type            calculated;
-        value           uniform 0;
+        type            zeroGradient;
     }
     lower
     {
-        type            calculated;
-        value           uniform 0;
+        type            zeroGradient;
     }
     aircraftModel
     {
-        type            nutUSpaldingWallFunction;
+        type            nutkWallFunction;
         value           uniform 0;
+        Ks              0.000500;
+        Cs              0.5;
     }
     "proc.*"
     {

@@ -19,7 +19,7 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
 
     double batteryMass = 1000*getParam("Weight", discreteTables[1].rows[discreteVals[1]].second, discreteTables[1].colNames);
 
-    double elevatorSweep = wingSweep- 0.5*wingRootChord*wingScale*(1-wingScale);
+    double elevatorSweep = wingSweep - 0.5*wingRootChord*wingScale*(1-wingScale);
 
 
     //Position of elevator pivot point in x direction
@@ -284,24 +284,23 @@ profile elevatorProfile(vector<string> paramNames, vector<double> paramVals, dou
 
 extrusionData extrudeRightElevator(vector<string> paramNames, vector<double> paramVals, double meshRes){
     double wingRootChord = getParam("wingRootChord", paramVals, paramNames);
-    double elevatorChord = getParam("wingRootChord", paramVals, paramNames);
+    double elevatorChord = getParam("elevatorChord", paramVals, paramNames);
     double wingLength = getParam("wingLength", paramVals, paramNames);
     double elevatorSweep = getParam("elevatorSweep", paramVals, paramNames);
     double elevatorRadius = getParam("elevatorRadius", paramVals, paramNames);
-    double elevatorPivot = -elevatorRadius + 0.5*elevatorChord;
+    double elevatorPivot = elevatorRadius - 0.5*elevatorChord;
 
 
     vector<double> zSampleVals = {0.0, -wingLength};
     vector<glm::dvec2> scaleVals = {glm::dvec2(1.0, 1.0), glm::dvec2(1.0, 1.0)};
-    vector<glm::dvec2> posVals = {glm::dvec2(0.0, 0.0), glm::dvec2(0.2, 0.0)};
+    vector<glm::dvec2> posVals = {glm::dvec2(0.0, 0.0), glm::dvec2(elevatorSweep, 0.0)};
 
     glm::dvec3 pivotPoint(elevatorPivot, 0.0, 0.0);
 
 
     glm::dquat rotation(glm::dvec3(0.0, 0.0, 0.0));
-    glm::dvec3 translation(0.5*wingRootChord, 0.5, 0.0);
-    //glm::dvec3 controlAxis = glm::dvec3(elevatorSweep, 0.0, wingLength);
-    glm::dvec3 controlAxis = glm::dvec3(elevatorSweep, 0.0, -wingLength);
+    glm::dvec3 translation(0.5*wingRootChord - elevatorPivot, 0.0, 0.0);
+    glm::dvec3 controlAxis(elevatorSweep, 0.0, -wingLength);
     controlAxis /= glm::length(controlAxis);
 
     extrusionData extrusion(zSampleVals, posVals, scaleVals, rotation, translation, pivotPoint, controlAxis);

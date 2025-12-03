@@ -7,13 +7,14 @@
 aircraft::aircraft(vector<string> _paramNames, vector<dataTable> _discreteTables,
     function<void(vector<string>&, vector<double>&, const vector<dataTable>& discreteTables, 
     vector<int>)> _derivedParamsFunc,
-    vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions){
+    vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions, double _roughnessHeight){
     
     //Set class variables
     parameterNames = _paramNames;
     derivedParamsFunc = _derivedParamsFunc;
     profileFunctions = _profileFunctions;
     discreteTables = _discreteTables;
+    roughnessHeight = _roughnessHeight;
 }
 
 void aircraft::addPart(string partName, double density, 
@@ -67,7 +68,8 @@ int aircraft::findPart(string partName){
 
 
 void aircraft::calculateVals(vector<double> paramVals, vector<int> discreteVals, 
-    double volMeshRes, double surfMeshRes, double &mass, vector<glm::dvec3> &COMs, vector<glm::dmat3> &MOIs){
+    double volMeshRes, double surfMeshRes, double &mass, vector<glm::dvec3> &COMs, 
+    vector<glm::dmat3> &MOIs, vector<vector<double>> positionVariables){
 
     //Variables to store information required to construct extrusions
     //vector<string> paramNames = parameterNames;
@@ -122,6 +124,7 @@ void aircraft::calculateVals(vector<double> paramVals, vector<int> discreteVals,
             partAxis = extrusions[i].controlAxis;
         }
 
+        //Applies transformations to part
         for(int p = 0; p < (int)transformIndices.size(); p++){
             int tIndex = transformIndices[p];
 
@@ -224,7 +227,6 @@ void aircraft::calculateVals(vector<double> paramVals, vector<int> discreteVals,
 
 
     //Gets aerodynamic forces
-    vector<vector<double>> positionVariables = {{0.0, 0.0}};
     pair<vector<glm::dvec3>, vector<glm::dmat3>> physVals = getPhysVals(positionVariables, staticMass, staticCOM,
          staticMOI, controlMasses, controlPivotPoints, controlAxes, controlCOMs, controlMOIs);
 
@@ -376,7 +378,7 @@ void aircraft::getExtrusionData(vector<profile>& profiles, vector<extrusionData>
 vector<pair<glm::dvec3, glm::dvec3>> aircraft::getAeroVals(vector<vector<double>> positionVariables, 
     const vector<double>& staticSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
     const vector<profile>& profiles, vector<extrusionData> extrusions,
-    vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlPivots,vector<glm::dvec3> totalCOMs, 
+    vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlPivots, vector<glm::dvec3> totalCOMs, 
     const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, double surfMeshRes){
 
     vector<double> SDF = staticSDF;
@@ -393,7 +395,7 @@ vector<pair<glm::dvec3, glm::dvec3>> aircraft::getAeroVals(vector<vector<double>
     forceVals.resize(numPositions);
 
 
-    double testVelocity = 40.0;
+
     for(int i = 0; i < numPositions; i++){
         vector<double> posVals = positionVariables[i];
 
@@ -417,35 +419,32 @@ vector<pair<glm::dvec3, glm::dvec3>> aircraft::getAeroVals(vector<vector<double>
                 int surfaceIndex = controlSurfaces[c];
                 extrusions[surfaceIndex].rotateAngle = posVals[c+2];
 
-                glm::dmat2x3 boundingBox = adjustedBoundingBoxes[surfaceIndex];
-                cout << "initial bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
-                    << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
+                //cout << "initial bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
+                //    << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
         
-                cout << "initial total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
-                    << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
+                //cout << "initial total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
+                //    << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
                 
                 //Rotates bounding box
                 glm::dquat rotation = glm::angleAxis(extrusions[surfaceIndex].rotateAngle, controlAxes[c]);
-                cout << "axis: " << controlAxes[c][0] << ", " << controlAxes[c][1] << ", " << controlAxes[c][2] << endl;
+                //glm::dquat rotation = glm::angleAxis(0.0, controlAxes[c]);
+                //cout << "axis: " << controlAxes[c][0] << ", " << controlAxes[c][1] << ", " << controlAxes[c][2] << endl;
+                //cout << "pivot point: " << controlPivots[c][0] << ", " << controlPivots[c][1] << ", " << controlPivots[c][2] << endl;
                 glm::dmat2x3 adjustedBounds;
-                adjustedBounds[0] = rotation * (boundingBoxes[surfaceIndex][0] - controlPivots[c]) + controlPivots[c];
-                adjustedBounds[1] = rotation * (boundingBoxes[surfaceIndex][1] - controlPivots[c]) + controlPivots[c];
+                adjustedBounds[0] = rotation * (adjustedBoundingBoxes[surfaceIndex][0] - controlPivots[c]) + controlPivots[c];
+                adjustedBounds[1] = rotation * (adjustedBoundingBoxes[surfaceIndex][1] - controlPivots[c]) + controlPivots[c];
 
                 glm::dvec3 newMinBound = min(adjustedBounds[0], adjustedBounds[1]);
                 glm::dvec3 newMaxBound = max(adjustedBounds[0], adjustedBounds[1]);
 
                 adjustedBoundingBoxes[surfaceIndex] = glm::dmat2x3(newMinBound, newMaxBound);
 
-                adjustedTotBoundingBox[0] = min(adjustedTotBoundingBox[0], adjustedBoundingBoxes[surfaceIndex][0]);
-                adjustedTotBoundingBox[1] = max(adjustedTotBoundingBox[1], adjustedBoundingBoxes[surfaceIndex][1]);
+                adjustedTotBoundingBox[0] = min(adjustedTotBoundingBox[0], newMinBound);
+                adjustedTotBoundingBox[1] = max(adjustedTotBoundingBox[1], newMaxBound);
 
-                boundingBox = adjustedBoundingBoxes[surfaceIndex];
 
-                cout << "rotated bounding box: " << boundingBox[0][0] << ", " << boundingBox[0][1] << ", " << boundingBox[0][2] << " - "
-                    << boundingBox[1][0] << ", " << boundingBox[1][1] << ", " << boundingBox[1][2] << endl;
-        
-                cout << "rotated total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
-                    << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
+                //cout << "rotated total bounding box: " << adjustedTotBoundingBox[0][0] << ", " << adjustedTotBoundingBox[0][1] << ", " << adjustedTotBoundingBox[0][2] << " - "
+                //    << adjustedTotBoundingBox[1][0] << ", " << adjustedTotBoundingBox[1][1] << ", " << adjustedTotBoundingBox[1][2] << endl;
 
                 prevPosVals[c] = posVals[c+2];
             }
@@ -491,22 +490,44 @@ vector<pair<glm::dvec3, glm::dvec3>> aircraft::getAeroVals(vector<vector<double>
 
         }
 
-        glm::dvec3 velocity(-testVelocity*cos(pitch)*cos(yaw), -testVelocity*cos(yaw)*sin(pitch), -testVelocity*sin(pitch));
+        
+
+        //Gets turbulent dissipation rate
+        //https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions
+        double testVelocity = 40.0;
+        double turbulenceIntensity = 0.003;
+        double lengthScale = 0.5;
+        double turbulentEnergy = 1.5*(testVelocity*turbulenceIntensity)*(testVelocity*turbulenceIntensity);
+        double turbulentDissipationRate = pow(0.09, 0.75)*pow(turbulentEnergy, 1.5)/lengthScale;
+        double specificTurbulenceDissipationRate = turbulentDissipationRate/(0.09*turbulentEnergy);
+
+        glm::dvec3 velocity(-testVelocity*cos(pitch)*cos(yaw), testVelocity*sin(yaw)*sin(pitch), testVelocity*sin(pitch));
         int ySign = velocity[1] == 0 ? 0 : velocity[1] > 0 ? 1 :  -1;
         int zSign = velocity[2] == 0 ? 0 : velocity[2] > 0 ? 1 :  -1;
 
 
-        string dictScriptCall = "./Aerodynamics_Simulation/updateDicts.sh " + to_string(velocity[0]) + " " + to_string(velocity[1]) +
-            " " + to_string(velocity[2]) + " " + to_string(ySign) + " " + to_string(zSign);
+        string dictScriptCall = "./Aerodynamics_Simulation/updateDicts.sh " + to_string(velocity[0]) +
+            " " + to_string(velocity[1]) + " " + to_string(velocity[2]) + " " + to_string(ySign) + "  " + to_string(zSign)
+            + " " + to_string(roughnessHeight) + " " + to_string(specificTurbulenceDissipationRate);
         int success = system(dictScriptCall.c_str());
         if(success) throw std::runtime_error("Setting air velocity failed");
 
-        ////Runs simulation
-        //success = system("./Aerodynamics_Simulation/runSim.sh");
-        //if(success) throw std::runtime_error("Aerodynamics simulation failed");
+        glm::dvec3 normalisedVel = velocity/testVelocity;
+        glm::dvec3 normalisedUp(sin(pitch)*cos(yaw), sin(yaw)*sin(pitch), cos(pitch));
+        string forceScriptCall = "./Aerodynamics_Simulation/updateForces.sh " + to_string(totalCOMs[i][0]) +
+            " " + to_string(totalCOMs[i][1]) + " " + to_string(totalCOMs[i][2]) + " " +
+            to_string(normalisedUp[0]) + " " + to_string(normalisedUp[1]) + " " + to_string(normalisedUp[2]) +
+            " " + to_string(normalisedVel[0]) + " " + to_string(normalisedVel[1]) + " " + to_string(normalisedVel[2]) +
+            " " + to_string(testVelocity);
+        success = system(forceScriptCall.c_str());
+        if(success) throw std::runtime_error("Setting force details failed");
+
+        //Runs simulation
+        success = system("./Aerodynamics_Simulation/runSim.sh");
+        if(success) throw std::runtime_error("Aerodynamics simulation failed");
 
         //Get aerodynamic forces
-        //forceVals[i] = calculateForces("Aerodynamics_Simulation/", totalCOMs[i], G_CONSTANT, RHO);
+        forceVals[i] = getForces("Aerodynamics_Simulation/", "0.4");
 
     }
 
@@ -539,7 +560,6 @@ pair<vector<glm::dvec3>, vector<glm::dmat3>> aircraft::getPhysVals(vector<vector
             //Rotates COM
             glm::dvec3 controlCOM = controlRot * (controlCOMs[c] - controlPivots[c]) + controlPivots[c];
             totalCOM += controlCOM*controlMasses[c];
-            totalMass += controlMasses[c];
 
             //Rotates MOI
             glm::dmat3 controlMOI = controlMOIs[c];

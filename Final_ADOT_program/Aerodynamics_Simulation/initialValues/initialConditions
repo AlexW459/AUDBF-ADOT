@@ -6,10 +6,12 @@
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 
-flowVelocity       (-40.000000 -0.000000 -0.000000);
+flowVelocity       (-40.000000 0.000000 0.000000);
 pressure             0;
-turbulentKE          0.24;
-turbulentOmega       1.78;
-waveNumber           0.05;
+nuTildaBoundary      4.5e-5;
+turbulentEnergy      0.0216;
+turbulentDissipationRate 1.043e-3;
+specificTurbulenceDissipationRate 0.536656;
+
 
 // ************************************************************************* //

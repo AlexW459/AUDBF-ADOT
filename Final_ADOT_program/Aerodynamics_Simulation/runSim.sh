@@ -1,13 +1,13 @@
 #!/bin/bash
 
 #Cleans mesh
-#surfaceCheck aircraftMesh/aircraftModelRaw.obj -splitNonManifold
-#mv aircraftModelRaw*.obj splitPatches
+surfaceCheck aircraftMesh/aircraftModelRaw.obj -splitNonManifold
+mv aircraftModelRaw*.obj splitPatches
 
 #Only retains largest mesh
-#largestFile=$(wc -l *splitPatches/aircraftModelRaw*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
-#cp $largestFile aircraftMesh/aircraftModelSplit.obj
-#rm splitPatches/*
+largestFile=$(wc -l *splitPatches/aircraftModelRaw*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
+cp $largestFile aircraftMesh/aircraftModelSplit.obj
+rm splitPatches/*
 
 cd Aerodynamics_Simulation
 
@@ -52,7 +52,9 @@ cp -r constant/polyMesh 0/
 
 #mpirun potentialFoam -initialiseUBCs -parallel -writep
 
-potentialFoam -initialiseUBCs -writep
+#potentialFoam -initialiseUBCs -writep
+
+simpleFoam
 
 #reconstructPar -withZero
 

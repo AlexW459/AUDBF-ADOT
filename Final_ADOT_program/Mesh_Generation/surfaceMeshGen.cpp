@@ -189,10 +189,10 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     //Adds control surface rotation if required
     if(extrusions[partIndex].isControl){
         //Rotates control surface
-        glm::dquat controlRot = glm::angleAxis(extrusions[partIndex].rotateAngle, extrusions[partIndex].controlAxis);
-        pivotPoints.insert(pivotPoints.begin(), extrusions[partIndex].pivotPoint);
-        translations.insert(translations.begin(), extrusions[partIndex].pivotPoint);
-        rotations.insert(rotations.begin(), glm::inverse(controlRot));
+        glm::dquat controlRot = glm::angleAxis(-extrusions[partIndex].rotateAngle, extrusions[partIndex].controlAxis);
+        pivotPoints.insert(pivotPoints.end(), extrusions[partIndex].pivotPoint);
+        translations.insert(translations.end(), extrusions[partIndex].pivotPoint);
+        rotations.insert(rotations.end(), controlRot);
 
         numTransformations++;
     }

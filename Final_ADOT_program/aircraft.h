@@ -16,7 +16,7 @@
 #include "Mesh_Generation/profile.h"
 #include "Mesh_Generation/surfaceMeshGen.h"
 #include "Mesh_Generation/extrusionGen.h"
-#include "Aerodynamics_Simulation/calculateForces.h"
+#include "Aerodynamics_Simulation/getForces.h"
 #include "readCSV.h"
 
 #define RHO 1.225
@@ -29,7 +29,7 @@ class aircraft{
     public:
         aircraft(vector<string> _paramNames, vector<dataTable> _discreteTables,
             function<void(vector<string>&, vector<double>&, const vector<dataTable>& discreteTables, vector<int>)> _derivedParamsFunc, 
-            vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions);
+            vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions, double _roughnessHeight);
 
         void addPart(string partName, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
@@ -39,7 +39,7 @@ class aircraft{
         int findPart(string partName);
 
         void calculateVals(vector<double> paramVals, vector<int> discreteVals, double volMeshRes, double surfMeshRes,
-            double &mass, vector<glm::dvec3> &COM, vector<glm::dmat3> &MOI);
+            double &mass, vector<glm::dvec3> &COM, vector<glm::dmat3> &MOI, vector<vector<double>> positionVariables);
 
 
         void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
@@ -93,5 +93,8 @@ class aircraft{
         vector<double> partDensities;
 
         vector<int> controlSurfaces;
+
+        //Describes the surface height deviation
+        double roughnessHeight;
 
 };

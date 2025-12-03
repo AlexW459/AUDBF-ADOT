@@ -9,12 +9,12 @@ FoamFile
 {
     format      ascii;
     class       volScalarField;
-    location    "0";
     object      p;
+    location    "0";
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include        "initialConditions"
+#include        "initialConditions";
 
 dimensions      [0 2 -2 0 0 0 0];
 
@@ -26,11 +26,13 @@ boundaryField
     {
         type            zeroGradient;
 
+
     }
 
     outlet
     {
         type            fixedValue;
+        inletValue      uniform 0;
         value           uniform 0;
     }
     
@@ -40,17 +42,15 @@ boundaryField
         inletValue     uniform 0;
         value          uniform 0;
     }
-
     upper
     {
         type           inletOutlet;
         inletValue     uniform 0;
         value          uniform 0;
     }
-
     aircraftModel
     {
-        type            zeroGradient;
+        type           zeroGradient;
     }
 
     front
@@ -65,11 +65,9 @@ boundaryField
         inletValue     uniform 0;
         value          uniform 0;
     }
-
-    
     "proc.*"
     {
-        type            processor;
+        type              processor;
     }
 }
 

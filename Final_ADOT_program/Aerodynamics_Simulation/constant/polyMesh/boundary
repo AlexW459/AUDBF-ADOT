@@ -20,44 +20,44 @@ FoamFile
     {
         type            patch;
         nFaces          600;
-        startFace       233250;
+        startFace       417537;
     }
     back
     {
         type            patch;
         nFaces          600;
-        startFace       233850;
+        startFace       418137;
     }
     inlet
     {
         type            patch;
-        nFaces          225;
-        startFace       234450;
+        nFaces          450;
+        startFace       418737;
     }
     outlet
     {
         type            patch;
-        nFaces          225;
-        startFace       234675;
+        nFaces          450;
+        startFace       419187;
     }
     lower
     {
         type            patch;
-        nFaces          600;
-        startFace       234900;
+        nFaces          1200;
+        startFace       419637;
     }
     upper
     {
         type            patch;
-        nFaces          600;
-        startFace       235500;
+        nFaces          1200;
+        startFace       420837;
     }
     aircraftModel
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          12190;
-        startFace       236100;
+        nFaces          22609;
+        startFace       422037;
     }
 )
 

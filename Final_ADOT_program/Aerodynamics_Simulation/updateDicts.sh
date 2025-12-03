@@ -1,9 +1,10 @@
 #!/bin/bash
 
-# First 3 arguments are direction of velocity
-# Next 2 arguments are the sign of velocity in the y and z directions
-
-
+# First 3 arguments are velocity in x and z direction
+# Next argument is the sign of velocity in the y direciton
+# Next argument is the sign of velocity in the z directions
+# Next argument is the surface height deviation
+# Next argument is the specific turbulence dissipation rate
 
 #Updates inlet velocity
 velocityLineNum="$(grep -n "flowVelocity" Aerodynamics_Simulation/initialValues/initialConditions | head -n 1 | cut -d: -f1)"
@@ -15,46 +16,6 @@ sed -i "$((velocityLineNum))s/.*/$newVelocity/" Aerodynamics_Simulation/initialV
 #Outlets are type inletOutlet for velocity (use inlet velocity as value), and type fixed value for pressure (use 0)
 #Patches parallel to fluid flow should be treated as an outlet, but with (0, 0, 0) as the value
 
-UfrontlineNum="$(grep -n "front" Aerodynamics_Simulation/initialValues/U | head -n 1 | cut -d: -f1)"
-UbacklineNum="$(grep -n "back" Aerodynamics_Simulation/initialValues/U | head -n 1 | cut -d: -f1)"
-pfrontlineNum="$(grep -n "front" Aerodynamics_Simulation/initialValues/p | head -n 1 | cut -d: -f1)"
-pbacklineNum="$(grep -n "back" Aerodynamics_Simulation/initialValues/p | head -n 1 | cut -d: -f1)"
-
-if [ $(echo "$4 > 0" | bc) ]; then
-    #Set front to outlet
-    sed -i "$((UfrontlineNum+2))s/.*/        type           inletOutlet;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UfrontlineNum+3))s/.*/        inletValue     uniform \$flowVelocity;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UfrontlineNum+4))s/.*/        value          uniform \$flowVelocity;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((pfrontlineNum+2))s/.*/        type           inletOutlet;/" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pfrontlineNum+3))s/.*/        inletValue     uniform 0;/" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pfrontlineNum+4))s/.*/        value          uniform 0;/" Aerodynamics_Simulation/initialValues/p
-else
-    #Set front to inlet
-    sed -i "$((UfrontlineNum+2))s/.*/        type           fixedValue;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UfrontlineNum+3))s/.*/        value          uniform \$flowVelocity;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UfrontlineNum+4))s/.*/ /" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((pfrontlineNum+2))s/.*/        type           zeroGradient;/" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pfrontlineNum+3))s/.*/ /" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pfrontlineNum+4))s/.*/ /" Aerodynamics_Simulation/initialValues/p
-fi
-
-if [ $(echo "$4 < 0" | bc) ]; then
-#Set back to outlet
-    sed -i "$((UbacklineNum+2))s/.*/        type           inletOutlet;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UbacklineNum+3))s/.*/        inletValue     uniform \$flowVelocity;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UbacklineNum+4))s/.*/        value          uniform \$flowVelocity;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((pbacklineNum+2))s/.*/        type           inletOutlet;/" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pbacklineNum+3))s/.*/        inletValue     uniform 0;/" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pbacklineNum+4))s/.*/        value          uniform 0;/" Aerodynamics_Simulation/initialValues/p
-else
-    #Set back to inlet
-    sed -i "$((UbacklineNum+2))s/.*/        type           fixedValue;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UbacklineNum+3))s/.*/        value          uniform \$flowVelocity;/" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((UbacklineNum+4))s/.*/ /" Aerodynamics_Simulation/initialValues/U
-    sed -i "$((pbacklineNum+2))s/.*/        type           zeroGradient;/" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pbacklineNum+3))s/.*/ /" Aerodynamics_Simulation/initialValues/p
-    sed -i "$((pbacklineNum+4))s/.*/ /" Aerodynamics_Simulation/initialValues/p
-fi
 
 UupperlineNum="$(grep -n "upper" Aerodynamics_Simulation/initialValues/U | head -n 1 | cut -d: -f1)"
 UlowerlineNum="$(grep -n "lower" Aerodynamics_Simulation/initialValues/U | head -n 1 | cut -d: -f1)"
@@ -96,3 +57,11 @@ else
     sed -i "$((plowerlineNum+3))s/.*/ /" Aerodynamics_Simulation/initialValues/p
     sed -i "$((plowerlineNum+4))s/.*/ /" Aerodynamics_Simulation/initialValues/p
 fi
+
+#Set surface roughness
+nutWallLineNum="$(grep -n "aircraftModel" Aerodynamics_Simulation/initialValues/nut | head -n 1 | cut -d: -f1)"
+sed -i "$((nutWallLineNum+4))s/.*/        Ks              $6;/" Aerodynamics_Simulation/initialValues/nut
+
+#Set specific turbulence dissipation rate
+omegaLineNum="$(grep -n "specificTurbulenceDissipationRate" Aerodynamics_Simulation/initialValues/initialConditions | head -n 1 | cut -d: -f1)"
+sed -i "$((omegaLineNum))s/.*/specificTurbulenceDissipationRate $7;/" Aerodynamics_Simulation/initialValues/initialConditions

@@ -57,19 +57,19 @@ int main(){
         {fuselageProfile, wingProfile, motorPodProfile, elevatorProfile};
     
 
-    aircraft MULEaircraft = aircraft(paramNames, discreteTables, calcDerivedParams, profileFunctions);
+    aircraft MULEaircraft = aircraft(paramNames, discreteTables, calcDerivedParams, profileFunctions, 0.0005);
 
 
     MULEaircraft.addPart("fuselage", 1000, extrudeFuselage, 0);
     MULEaircraft.addPart("rightWing", "fuselage", false, 1000, extrudeRightWing, 1);
     MULEaircraft.addPart("leftWing", "fuselage", false, 1000, extrudeLeftWing, 1);
-    //MULEaircraft.addPart("elevatorRight", "rightWing", true, 1000, extrudeRightElevator, 3);
+    MULEaircraft.addPart("elevatorRight", "rightWing", true, 1000, extrudeRightElevator, 3);
+
+    vector<vector<double>> positionVariables = {{0.0, 0.0, M_PI/4.0}};
+    MULEaircraft.calculateVals(paramVals, discreteVals, 75.0, 150.0, mass, COMs, MOIs, positionVariables);
 
 
-    MULEaircraft.calculateVals(paramVals, discreteVals, 50.0, 100.0, mass, COMs, MOIs);
-
-
-    MULEaircraft.plot(500, 500, paramVals, discreteVals, 50.0);
+    //MULEaircraft.plot(500, 500, paramVals, discreteVals, 50.0);
 
     //Quit SDL
     SDL_Quit();

@@ -1,0 +1,37 @@
+forces1
+{
+    // Mandatory entries
+    type            forces
+    libs            ("libforces.so");
+    patches         (aircraftModel);
+
+    // Store and write volume field representations of forces and moments
+    writeFields     yes;
+    
+    rhoInf          1.225;
+    rho             rhoInf;
+
+    // Centre of rotation for moment calculations
+    CofR            (0.304584 -0.000000 0.000000);
+
+    // Lift direction
+    liftDir         (0.000000 0.000000 1.000000);
+
+    // Drag direction
+    dragDir         (-1.000000 0.000000 0.000000);
+
+    // Pitch axis
+    pitchAxis       (0 1 0);
+
+    // Freestream velocity magnitude [m/s]
+    magUInf         40.000000;
+
+    // Reference length [m]
+    lRef            1;
+
+    // Reference area [m2]
+    Aref            1;
+
+    writeControl timeStep;
+    writeInterval 10;
+}
