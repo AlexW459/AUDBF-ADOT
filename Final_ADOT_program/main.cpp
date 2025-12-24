@@ -16,19 +16,15 @@ int main(){
     dataTable motorTable = readCSV(planeModel + "/motorSelection.csv");
     dataTable batteryTable = readCSV(planeModel + "/batterySelection.csv");
 
-    vector<double> paramVals;
-    paramVals.resize(paramRanges.rows.size());
-    vector<string> paramNames;
-    paramNames.resize(paramRanges.rows.size());
+    vector<double> paramVals(paramRanges.rows.size());
+    vector<string> paramNames(paramRanges.rows.size());
 
     vector<dataTable> discreteTables = {motorTable, batteryTable};
-    vector<int> discreteVals;
-    discreteVals.resize(discreteTables.size());
+    vector<int> discreteVals(discreteTables.size());
     
 
     //Finds random values of parameters within bounds
     for(int i = 0; i < (int)paramVals.size(); i++){
-
         double min = paramRanges.rows[i].second[0];
 
         double max = paramRanges.rows[i].second[1];
@@ -36,8 +32,8 @@ int main(){
         paramVals[i] = (double)rand()/RAND_MAX*(max-min)+min;
 
         paramNames[i] = paramRanges.rows[i].first;
-
     }
+
 
 
     //Finds random values of discrete parameters
@@ -48,32 +44,34 @@ int main(){
         discreteVals[i] = rand() % numChoices;
     }
 
-    vector<glm::dmat3> MOIs;
-    vector<glm::dvec3> COMs;
-    double mass;
-
 
     vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = 
-        {fuselageProfile, wingProfile, motorPodProfile, elevatorProfile};
+        {fuselageProfile, wingProfile, motorPodProfile, empennageBoomProfile, 
+            horizontalStabiliserProfile, elevatorProfile};
     
 
     aircraft MULEaircraft = aircraft(paramNames, discreteTables, calcDerivedParams, profileFunctions, 0.0005);
 
 
     MULEaircraft.addPart("fuselage", 1000, extrudeFuselage, 0);
-    MULEaircraft.addPart("rightWing", "fuselage", false, 1000, extrudeRightWing, 1);
-    MULEaircraft.addPart("leftWing", "fuselage", false, 1000, extrudeLeftWing, 1);
-    MULEaircraft.addPart("elevatorRight", "rightWing", true, 1000, extrudeRightElevator, 3);
+    MULEaircraft.addPart("rightWing", "fuselage", 1000, extrudeRightWing, 1);
+    MULEaircraft.addPart("leftWing", "fuselage", 1000, extrudeLeftWing, 1);
+    MULEaircraft.addPart("motorPodRight", "rightWing", 1000, extrudeRightMotorPod, 2);
+    MULEaircraft.addPart("motorPodLeft", "leftWing", 1000, extrudeLeftMotorPod, 2);
+    MULEaircraft.addPart("empennageBoomRight", "motorPodRight", 1000, extrudeEmpennageBoom, 3);
+    MULEaircraft.addPart("empennageBoomLeft", "motorPodLeft", 1000, extrudeEmpennageBoom, 3);
+    MULEaircraft.addPart("horizontalStabiliser", "empennageBoomRight", 1000, extrudeHorizontalStabiliser, 4);
+    MULEaircraft.addPart("elevator", "horizontalStabiliser", 1000, extrudeElevator, 5);
 
-    vector<vector<double>> positionVariables = {{0.0, 0.0, M_PI/4.0}};
-    MULEaircraft.calculateVals(paramVals, discreteVals, 75.0, 150.0, mass, COMs, MOIs, positionVariables);
+    //Rate aircraft performance
+    array<double, 3> aircraftConfig;
+    double score = MULEaircraft.calculateScore(paramVals, discreteVals, rateDesign, aircraftConfig, 75.0, 150.0);
 
 
     //MULEaircraft.plot(500, 500, paramVals, discreteVals, 50.0);
 
     //Quit SDL
     SDL_Quit();
-	exit(0);
-
+    
     return 0;
 }

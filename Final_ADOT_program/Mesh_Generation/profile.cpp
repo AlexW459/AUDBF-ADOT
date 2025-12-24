@@ -20,14 +20,8 @@ profile::profile(vector<glm::dvec2>& _vertexCoords, double _inset){
 
     int totalVerts = numVerts*2;
     //Adds adjacencies to adjacency matrix
-    adjacencyMatrix.resize(totalVerts*totalVerts);
+    adjacencyMatrix.resize(totalVerts*totalVerts, 0);
 
-    for(int i = 0; i < totalVerts; i++){
-        //Fill with zeroes initially
-        for(int j = 0; j < totalVerts; j++){
-            adjacencyMatrix[i*totalVerts + j] = 0;
-        }
-    }
 
     //Adds initial boundary connections to matrix
     for(int i = 0; i < numVerts-1; i++){
@@ -72,8 +66,8 @@ vector<glm::dvec2> profile::generateInset(const vector<glm::dvec2>& outerPoints)
     int numVerts = vertexCoords.size();
 
     //Finds vectors perpendicular to every edge in the polygon, pointing inwards
-    vector<glm::dvec2> perpVectors;
-    perpVectors.resize(numVerts);
+    vector<glm::dvec2> perpVectors(numVerts);
+
     //Rotates edge 90 degrees
     perpVectors[numVerts-1] = glm::vec2(-(vertexCoords[numVerts-1][1] - vertexCoords[0][1]), 
         vertexCoords[numVerts-1][0] - vertexCoords[0][0]);
@@ -85,12 +79,13 @@ vector<glm::dvec2> profile::generateInset(const vector<glm::dvec2>& outerPoints)
             vertexCoords[i][0] - vertexCoords[i+1][0]);
         perpVectors[i] /= sqrt(dot(perpVectors[i], perpVectors[i]));
     }
-    vector<glm::dvec2> newInsetCoords;
+
     //Finds vectors from each point to its corresponding inset point
     //by averaging the direction of the perp vectors on either side of the point
     glm::dvec2 insetVector = perpVectors[numVerts-1] + perpVectors[0];
     insetVector *= inset/sqrt(dot(insetVector, insetVector));
-    newInsetCoords.resize(numVerts);
+
+    vector<glm::dvec2> newInsetCoords(numVerts);
     newInsetCoords[0] = vertexCoords[0] + insetVector;
 
     for(int i = 1; i < numVerts; i++){
@@ -133,9 +128,9 @@ profile& profile::operator=(profile& Profile){
 void profile::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const{
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    vector<glm::dvec2> points;
+
     int numInnerPoints = vertexCoords.size();
-    points.resize(numInnerPoints + insetCoords.size());
+    vector<glm::dvec2> points(numInnerPoints + insetCoords.size());
     //points.insert(points.end(), insetCoords.begin(), insetCoords.end());
 
     for(int i = 0; i < numInnerPoints; i++){
@@ -164,9 +159,7 @@ int profile::triangulatePolygon(vector<glm::dvec2> vertexCoords, vector<char>& a
     int numVerts = vertexCoords.size();
     int adjSize = numVerts;
     //Stores indices of vertices even when some have been removed
-    vector<int> vertexIndices;
-    vertexIndices.resize(numVerts);
-
+    vector<int> vertexIndices(numVerts);
 
     for(int i = 0; i < adjSize; i++){
         //Fill with zeroes initially
@@ -314,13 +307,9 @@ vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamber
     numPoints = 2*numX - 2;
 
 
-    vector<glm::dvec2> airfoilPoints;
-    airfoilPoints.resize(numPoints);
-
-    vector<glm::dvec2> camberPoints;
-    camberPoints.resize(numX);
-    vector<glm::dvec2> diffXY;
-    diffXY.resize(numX); 
+    vector<glm::dvec2> airfoilPoints(numPoints);
+    vector<glm::dvec2> camberPoints(numX);
+    vector<glm::dvec2> diffXY(numX);
 
 
     for(int i = 0; i < numX; i++){
@@ -376,7 +365,8 @@ vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamber
 
     }
 
-
+    double yMax = 0.0;
+    double yMin = 0.0;
     //Gets airfoil points by adding thickness vectors onto camber line
     for(int i = 0; i < numX - 1; i++){
 
@@ -384,13 +374,22 @@ vector<glm::dvec2> generateNACAAirfoil(double maxCamberPercent, double maxCamber
         airfoilPoints[i][0] = camberPoints[i][0] + diffXY[i][0] - curvedLength/2.0;
         airfoilPoints[i][1] = camberPoints[i][1] + diffXY[i][1];
 
+
+        yMax = max(yMax, airfoilPoints[i][1]);
+
         airfoilPoints[numPoints - numX + 1 + i][0] = camberPoints[numX - i - 1][0] - diffXY[numX - i - 1][0] - curvedLength/2.0;
         airfoilPoints[numPoints - numX + 1 + i][1] = camberPoints[numX - i - 1][1] - diffXY[numX - i - 1][1];
 
+        yMin = min(yMax, airfoilPoints[numPoints - numX + 1 + i][1]);
+
     }
 
-    //Scales all points according to the airfoil chord
+    double yAvg = 0.5*(yMax + yMin);
+
+    //Centres all points vertically around 0 and Scales all points according to the airfoil chord
     for(int i = 0; i < (int) airfoilPoints.size(); i++){
+        airfoilPoints[i][1] -= yAvg;
+
         airfoilPoints[i] *= airfoilChord;
 
         //cout << "x: " << airfoilPoints[i][0] << " y: " << airfoilPoints[i][1] << endl;

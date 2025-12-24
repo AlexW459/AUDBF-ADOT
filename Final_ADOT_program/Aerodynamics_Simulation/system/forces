@@ -1,37 +1,65 @@
-forces1
+aeroForces
 {
-    // Mandatory entries
-    type            forces
-    libs            ("libforces.so");
-    patches         (aircraftModel);
 
-    // Store and write volume field representations of forces and moments
+    type            forces;
+    libs            ("libforces.so");
+    patch           aircraftModel;
+
     writeFields     yes;
     
+    //Air density
     rhoInf          1.225;
     rho             rhoInf;
 
-    // Centre of rotation for moment calculations
-    CofR            (0.304584 -0.000000 0.000000);
+    //COM1
+    CofR            (0.087216 -0.000038 0.000388);
 
-    // Lift direction
-    liftDir         (0.000000 0.000000 1.000000);
+    liftDir         (0.173648 0.000000 0.984808);
 
-    // Drag direction
-    dragDir         (-1.000000 0.000000 0.000000);
+    dragDir         (-0.984808 0.000000 0.173648);
 
-    // Pitch axis
     pitchAxis       (0 1 0);
 
-    // Freestream velocity magnitude [m/s]
+    //Velocity magnitude1
     magUInf         40.000000;
 
-    // Reference length [m]
     lRef            1;
 
-    // Reference area [m2]
     Aref            1;
 
-    writeControl timeStep;
-    writeInterval 10;
+    writeControl outputTime;
+    writeInterval 1;
+}
+
+tailAeroForces
+{
+
+    type            forces;
+    libs            ("libforces.so");
+    patch           horizontalStabiliser;
+
+    writeFields     yes;
+    
+    //Air density
+    rhoInf          1.225;
+    rho             rhoInf;
+
+    //COM2
+    CofR            (0.087216 -0.000038 0.000388);
+
+    liftDir         (0.173648 0.000000 0.984808);
+
+    dragDir         (-1.0 0.0 0.0);
+
+    pitchAxis       (0 1 0);
+
+    //Velocity magnitude2
+    magUInf         40.000000;
+
+    lRef            1;
+
+    Aref            1;
+
+    writeControl outputTime;
+    writeInterval 1;
 }

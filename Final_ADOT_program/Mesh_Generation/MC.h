@@ -341,11 +341,57 @@ namespace MC
 #endif
 }
 
+//Finds intersection points between a line segment and a mesh
+vector<glm::dvec3> findIntersections(glm::dvec3 vert1, glm::dvec3 vert2, MC::mcMesh mesh){
+    int numFaces = mesh.indices.size()/3;
 
+    vector<glm::dvec3> intersectionPoints;
+
+    for(int i = 0; i < numFaces*3; i += 3){
+                
+        //Gets vertices of triangle
+        glm::dvec3 triVert1(mesh.vertices[mesh.indices[i]][0],
+                mesh.vertices[mesh.indices[i]][1],
+                mesh.vertices[mesh.indices[i]][2]);
+        glm::dvec3 triVert2(mesh.vertices[mesh.indices[i+1]][0],
+                mesh.vertices[mesh.indices[i+1]][1],
+                mesh.vertices[mesh.indices[i+1]][2]);
+        glm::dvec3 triVert3(mesh.vertices[mesh.indices[i+2]][0],
+                mesh.vertices[mesh.indices[i+2]][1],
+                mesh.vertices[mesh.indices[i+2]][2]);
+
+        //Check for intersection using: https://stackoverflow.com/questions/42740765/intersection-between-line-and-triangle-in-3d
+        //SignedVolume(a,b,c,d) = (1.0/6.0)*dot(cross(b-a,c-a),d-a);
+
+        double signedVol1 = glm::dot(glm::cross(triVert1-vert1, triVert2-vert1), triVert3-vert1)/6.0;
+        double signedVol2 = glm::dot(glm::cross(triVert1-vert2, triVert2-vert2), triVert3-vert2)/6.0;
+
+        double signedVol3 = glm::dot(glm::cross(vert2-vert1, triVert1-vert1), triVert2-vert1)/6.0;
+        double signedVol4 = glm::dot(glm::cross(vert2-vert1, triVert2-vert1), triVert3-vert1)/6.0;
+        double signedVol5 = glm::dot(glm::cross(vert2-vert1, triVert3-vert1), triVert1-vert1)/6.0;
+
+        //Checks if points are on opposite sides of the triangle, and that the long passes through the triangle
+        if((signbit(signedVol1) != signbit(signedVol2)) && ((signedVol3 == signedVol4) && (signedVol4 == signedVol5))){
+            //Finds specific point of intersection
+
+            glm::dvec3 N = glm::cross(triVert2-triVert1, triVert3-triVert1);
+            //Parametric value of intersection along line
+            double t = -glm::dot(vert1-triVert1,N)/glm::dot(vert2-vert1,N);
+            glm::dvec3 intersectionPoint = vert1 + t*(vert2-vert1);
+            intersectionPoints.push_back(intersectionPoint);
+        }
+
+    }
+
+    return intersectionPoints;
+}
+
+//Writes MC::mcmesh to obj file
 void writeMeshToObj(std::string filename, MC::mcMesh mesh){
 
 	std::ofstream out;
 	out.open(filename);
+
 	if (out.is_open() == false)
 		return;
 	out << "g " << "Obj" << std::endl;

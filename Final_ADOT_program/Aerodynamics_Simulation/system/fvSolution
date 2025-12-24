@@ -7,6 +7,7 @@
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
+    version     2.0;
     format      ascii;
     class       dictionary;
     location    "system";
@@ -23,6 +24,10 @@ solvers
         tolerance       1e-7;
         relTol          0.01;
         smoother        GaussSeidel;
+    }
+
+    Phi{
+        $p;
     }
 
     pFinal
@@ -62,9 +67,9 @@ solvers
 PIMPLE
 {
     correctPhi          yes;
-    nOuterCorrectors    1;
+    nOuterCorrectors    3;
     nCorrectors         2;
-    nNonOrthogonalCorrectors 0;
+    nNonOrthogonalCorrectors 2;
 }
 
 
@@ -76,20 +81,13 @@ potentialFlow
 }
 
 
-PIMPLE
-{
-    correctPhi          no;
-    nOuterCorrectors    1;
-    nCorrectors         2;
-    nNonOrthogonalCorrectors 0;
-}
-
 
 relaxationFactors
 {
     fields
     {
         p               0.3;
+        U               0.65;
     }
     equations
     {

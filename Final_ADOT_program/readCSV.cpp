@@ -43,12 +43,19 @@ dataTable readCSV(string fileName){
         //Fills up columns in row
         int col = 0;
 
+
         while(getline(row, val, ',')){
+            //Checks if string is whitespace, because error detection doesn't always work properly in this case
+            if(isspace(val[0])){
+                throw std::runtime_error("Entry in row " + to_string(rowNum+1) + 
+                ", column " + to_string(col+1) + " in table \'" + fileName + "\' is empty");
+            }
+
             try{
                 csvContents.rows[rowNum].second.push_back( stod(val));
-            } catch(int e){
-                throw std::runtime_error("Invalid table data in row " + to_string(rowNum+1) + ", column " + 
-                    to_string(col) + ". " + val + " is not a valid value.Must be a number");
+            } catch(invalid_argument& e){
+                throw std::runtime_error("Invalid data in row " + to_string(rowNum+1) + ", column " + 
+                    to_string(col+1) + " in table \'" + fileName + "\'. " + val + " is not a valid value. Must be a number");
             }
             col++;
         }
@@ -57,6 +64,7 @@ dataTable readCSV(string fileName){
     }
 
     csvFile.close();
+
 
     return csvContents;
 } 

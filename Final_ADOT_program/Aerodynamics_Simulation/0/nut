@@ -50,9 +50,17 @@ boundaryField
     {
         type            nutkWallFunction;
         value           uniform 0;
-        Ks              0.000500;
+        Ks              0;
         Cs              0.5;
     }
+    horizontalStabiliser
+    {
+        type            nutkWallFunction;
+        value           uniform 0;
+        Ks              0;
+        Cs              0.5;
+    }
+    
     "proc.*"
     {
         type            processor;

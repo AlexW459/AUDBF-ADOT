@@ -3,7 +3,8 @@
 using namespace std;
 
 
-pair<glm::dvec3, glm::dvec3> getForces(string filePath, string latestTime){
+pair<glm::dvec3, glm::dvec3> getForces(string filePath, double& tailVelMag, glm::dvec3& tailForce, 
+    glm::dvec3& tailTorque, double latestTime){
 
     glm::dvec3 pressureForce, viscousForce, pressureTorque, viscousTorque;
 
@@ -15,10 +16,10 @@ pair<glm::dvec3, glm::dvec3> getForces(string filePath, string latestTime){
 
     //Open file
     ifstream forceFile;
-    string forceFileName = "postProcessing/forces1/0/forces.dat";
+    string forceFileName = "postProcessing/aeroForces/0/forces.dat";
     forceFile.open(filePath + forceFileName);
 
-    if(!forceFile) throw std::runtime_error("Could not open file \"" + forceFileName + "\" in file \"getForces.cpp\"");
+    if(!forceFile) throw runtime_error("Could not open file \"" + forceFileName + "\" in file \"getForces.cpp\"");
 
     //Skip past header
     string forceLine;
@@ -28,14 +29,15 @@ pair<glm::dvec3, glm::dvec3> getForces(string filePath, string latestTime){
     getline(forceFile, forceLine);
 
 
-    cout << forceLine << endl;
-
     smatch forceInfo;
     regex_search(forceLine, forceInfo, forceMatch);
-    while(forceInfo.str(1) != latestTime){
-        //cout << forceInfo.str(1) << endl;
+    while(abs(stod(forceInfo.str(1)) - latestTime) > 1.0e-6){
         getline(forceFile, forceLine);
         regex_search(forceLine, forceInfo, forceMatch);
+
+        if(forceInfo.str(1) == "" || latestTime - stod(forceInfo.str(1)) < -1.0e-6){
+            throw runtime_error("Specified time " + to_string(latestTime) + "s is not present in " + filePath + forceFileName);
+        }
     }
 
     forceFile.close();
@@ -57,15 +59,96 @@ pair<glm::dvec3, glm::dvec3> getForces(string filePath, string latestTime){
     viscousTorque[1] = stod(forceInfo.str(12));
     viscousTorque[2] = stod(forceInfo.str(13));
 
+
+    //Open file
+    ifstream tailForceFile;
+    string tailForceFileName = "postProcessing/tailAeroForces/0/forces.dat";
+    tailForceFile.open(filePath + tailForceFileName);
+
+    if(!tailForceFile) throw runtime_error("Could not open file \"" + tailForceFileName + "\" in file \"getForces.cpp\"");
+
+    //Skip past header
+    string tailForceLine;
+    getline(tailForceFile, tailForceLine);
+    getline(tailForceFile, tailForceLine);
+    getline(tailForceFile, tailForceLine);
+    getline(tailForceFile, tailForceLine);
+
+    smatch tailForceInfo;
+    regex_search(tailForceLine, tailForceInfo, forceMatch);
+    while(abs(stod(tailForceInfo.str(1)) - latestTime) > 1.0e-6){
+
+        getline(tailForceFile, tailForceLine);
+        regex_search(tailForceLine, tailForceInfo, forceMatch);
+
+        if(tailForceInfo.str(1) == "" || latestTime - stod(tailForceInfo.str(1)) < -1.0e-6){
+            throw runtime_error("Specified time " + to_string(latestTime) + "s is not present in " + filePath + tailForceFileName);
+        }
+    }
+
+    tailForceFile.close();
+
+    glm::dvec3 tailPressureForce, tailViscousForce, tailPressureTorque, tailViscousTorque;
+
+    tailPressureForce[0] = stod(forceInfo.str(2));
+    tailPressureForce[1] = stod(forceInfo.str(3));
+    tailPressureForce[2] = stod(forceInfo.str(4));
+
+    tailViscousForce[0] = stod(forceInfo.str(5));
+    tailViscousForce[1] = stod(forceInfo.str(6));
+    tailViscousForce[2] = stod(forceInfo.str(7));
+
+    tailPressureTorque[0] = stod(forceInfo.str(8));
+    tailPressureTorque[1] = stod(forceInfo.str(9));
+    tailPressureTorque[2] = stod(forceInfo.str(10));
+
+    tailViscousTorque[0] = stod(forceInfo.str(11));
+    tailViscousTorque[1] = stod(forceInfo.str(12));
+    tailViscousTorque[2] = stod(forceInfo.str(13));
+
+    tailForce = tailPressureForce + tailViscousForce;
+    tailTorque = tailPressureTorque + tailViscousTorque;
+
+
     glm::dvec3 totalForce = pressureForce + viscousForce;
     glm::dvec3 totalTorque = pressureTorque + viscousTorque;
 
     cout << "Force: " << totalForce[0] << ", " << totalForce[1] << ", " << totalForce[2] << endl;
     cout << "Torque: " << totalTorque[0] << ", " << totalTorque[1] << ", " << totalTorque[2] << endl;
 
+    //Get velocity magnitude in front of tail
+    ifstream magUtFile;
+    string magUtFileName = "postProcessing/tailUpstreamVelocity/0/volFieldValue.dat";
+    magUtFile.open(filePath + magUtFileName);
+
+    if(!magUtFile) throw runtime_error("Could not open file \"" + magUtFileName + "\" in file \"getForces.cpp\"");
+
+    //Skip past header
+    string magUtLine;
+    getline(magUtFile, magUtLine);
+    getline(magUtFile, magUtLine);
+    getline(magUtFile, magUtLine);
+    getline(magUtFile, magUtLine);
+    getline(magUtFile, magUtLine);
+
+    regex magUtMatch("(\\d+(?:\\.\\d+)?) +	(\\d+\\.\\d+e[\\+\\-]\\d\\d)");
+
+    smatch magUtInfo;
+    regex_search(magUtLine, magUtInfo, magUtMatch);
+    while(abs(stod(magUtInfo.str(1)) - latestTime) > 1.0e-6){
+        getline(magUtFile, magUtLine);
+        regex_search(magUtLine, magUtInfo, magUtMatch);
+
+        if(magUtInfo.str(1) == "" || latestTime - stod(magUtInfo.str(1)) < -1.0e-6){
+            throw runtime_error("Specified time " + to_string(latestTime) + "s is not present in " + filePath + magUtFileName);
+        }
+    }
+
+    magUtFile.close();
+
+    tailVelMag = stod(magUtInfo.str(2));
 
     return make_pair(totalForce, totalTorque);
-
 }
 
 /*

@@ -63,4 +63,9 @@ boundaryField
         type omegaWallFunction;
         value uniform $specificTurbulenceDissipationRate;
     }
+    horizontalStabiliser
+    {
+        type omegaWallFunction;
+        value uniform $specificTurbulenceDissipationRate;
+    }
 }

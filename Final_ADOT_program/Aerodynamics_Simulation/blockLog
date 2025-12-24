@@ -1,0 +1,76 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 13-cde978a97c93
+Exec   : blockMesh
+Date   : Dec 24 2025
+Time   : 10:42:45
+Host   : "Laptopawelke"
+PID    : 10629
+I/O    : uncollated
+Case   : /home/a1922573/ADOT/AUDBF-ADOT/Final_ADOT_program/Aerodynamics_Simulation
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Reading "blockMeshDict"
+
+Creating block mesh from
+    "system/blockMeshDict"
+Creating block edges
+No non-planar block faces defined
+Creating topology blocks
+Creating topology patches
+
+Creating block mesh topology
+
+Basic statistics
+    Number of internal faces : 0
+    Number of boundary faces : 6
+    Number of defined boundary faces : 6
+    Number of undefined boundary faces : 0
+
+Checking topology
+Creating block offsets
+Creating merge list .
+
+Creating polyMesh from blockMesh
+Creating patches
+Creating cells
+Creating points with scale 1
+    Block 0 cell size :
+        i : 0.03798281669 .. 0.05770518827
+        j : 0.03145436039 .. 0.03145436039
+        k : 0.03528938485 .. 0.03528938485
+
+No patch pairs to merge
+
+Writing polyMesh
+----------------
+Mesh Information
+----------------
+  boundingBox: (-2.811397 -0.912736 -0.515871) (1.369538 0.912736 0.515871)
+  nPoints: 43911
+  nCells: 40000
+  nFaces: 123800
+  nInternalFaces: 116200
+----------------
+Patches
+----------------
+  patch 0 (start: 116200 size: 1000) name: front
+  patch 1 (start: 117200 size: 1000) name: back
+  patch 2 (start: 118200 size: 800) name: inlet
+  patch 3 (start: 119000 size: 800) name: outlet
+  patch 4 (start: 119800 size: 2000) name: lower
+  patch 5 (start: 121800 size: 2000) name: upper
+
+End
+

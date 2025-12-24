@@ -33,12 +33,18 @@ geometry
         file "aircraftModel.obj";
     }
 
+    horizontalStabiliser
+    {
+        type triSurfaceMesh;
+        file "horizontalStabiliser.obj";
+    }
+
     // Analytical shape; cylinder, sphere
     refinementBox
     {
         type searchableBox;
-        min (-0.416297 -0.596287 -0.070529);
-        max (0.830067 0.587870 0.070529);
+        min (-1.111397 -0.712736 -0.315871);
+        max (1.169538 0.712736 0.315871);
     }
 };
 
@@ -53,14 +59,14 @@ castellatedMeshControls
     // If local number of cells is >= maxLocalCells on any processor
     // switches from from refinement followed by balancing
     // (current method) to (weighted) balancing before refinement.
-    maxLocalCells 20000;
+    maxLocalCells 40000;
 
     // Overall cell limit (approximately). Refinement will stop immediately
     // upon reaching this number so a refinement level might not complete.
     // Note that this is the number of cells before removing the part which
     // is not 'visible' from the keepPoint. The final number of cells might
     // actually be a lot less.
-    maxGlobalCells 100000;
+    maxGlobalCells 120000;
 
     // The surface refinement loop might spend lots of iterations refining just a
     // few cells. This setting will cause refinement to stop if <= minimumRefine
@@ -92,11 +98,20 @@ castellatedMeshControls
     (
         {
             file "aircraftModel.eMesh";
-            level 2;
+            level 3;
         }
 
+    );
+
+    features
+    (
+        {
+            file "horizontalStabiliser.eMesh";
+            level 3;
+        }
 
     );
+
 
 
     // Surface based refinement
@@ -111,6 +126,18 @@ castellatedMeshControls
     refinementSurfaces
     {
         aircraftModel
+        {
+            // Surface-wise min and max refinement level
+            level (2 3);
+            
+            patchInfo
+            {
+                type wall;
+            }
+
+        }
+
+        horizontalStabiliser
         {
             // Surface-wise min and max refinement level
             level (2 3);
@@ -147,7 +174,7 @@ castellatedMeshControls
         refinementBox
         {
             mode    inside;
-            levels ((1E15 4));
+            levels ((1E15 3));
         }
     }
 
@@ -157,7 +184,7 @@ castellatedMeshControls
 
     // After refinement patches get added for all refinementSurfaces and
     // all cells intersecting the surfaces get put into these patches. The
-    insidePoint (-.415297 0.001 0.001);
+    insidePoint (-1.106397 -.707736 -.310871);
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
 
@@ -175,7 +202,7 @@ snapControls
 {
     //- Number of patch smoothing iterations before finding correspondence
     //  to surface
-    nSmoothPatch 5;
+    nSmoothPatch 10;
 
     //- Relative distance for points to be attracted by surface feature point
     //  or edge. True distance is this factor times local
@@ -183,11 +210,11 @@ snapControls
     tolerance 2.0;
 
     //- Number of mesh displacement relaxation iterations.
-    nSolveIter 30;
+    nSolveIter 50;
 
     //- Maximum number of snapping relaxation iterations. Should stop
     //  before upon reaching a correct mesh.
-    nRelaxIter 5;
+    nRelaxIter 10;
 
     // Feature snapping
 
@@ -221,7 +248,15 @@ addLayersControls
     {
         "aircraftModel"
         {
-            nSurfaceLayers 1;
+            nSurfaceLayers 3;
+        }
+    }
+
+        layers
+    {
+        "horizontalStabiliser"
+        {
+            nSurfaceLayers 3;
         }
     }
 

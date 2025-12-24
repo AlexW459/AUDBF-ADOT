@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  12
+    \\  /    A nd           | Version:  13
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -14,50 +14,57 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-7
+8
 (
     front
     {
         type            patch;
-        nFaces          600;
-        startFace       417537;
+        nFaces          1000;
+        startFace       885315;
     }
     back
     {
         type            patch;
-        nFaces          600;
-        startFace       418137;
+        nFaces          1000;
+        startFace       886315;
     }
     inlet
     {
         type            patch;
-        nFaces          450;
-        startFace       418737;
+        nFaces          800;
+        startFace       887315;
     }
     outlet
     {
         type            patch;
-        nFaces          450;
-        startFace       419187;
+        nFaces          800;
+        startFace       888115;
     }
     lower
     {
         type            patch;
-        nFaces          1200;
-        startFace       419637;
+        nFaces          2000;
+        startFace       888915;
     }
     upper
     {
         type            patch;
-        nFaces          1200;
-        startFace       420837;
+        nFaces          2000;
+        startFace       890915;
     }
     aircraftModel
     {
         type            wall;
         inGroups        List<word> 1(wall);
-        nFaces          22609;
-        startFace       422037;
+        nFaces          21657;
+        startFace       892915;
+    }
+    horizontalStabiliser
+    {
+        type            wall;
+        inGroups        List<word> 1(wall);
+        nFaces          7038;
+        startFace       914572;
     }
 )
 

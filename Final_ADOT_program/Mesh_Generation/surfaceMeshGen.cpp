@@ -37,12 +37,10 @@ glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 to
     XYZ.resize(totalSDFSize);
 
     //Fills meshgrids
-    vector<glm::dvec3> xVals;
-    xVals.resize(SDFSize[0]);
-    vector<glm::dvec3> yVals;
-    yVals.resize(SDFSize[1]);
-    vector<glm::dvec3> zVals;
-    zVals.resize(SDFSize[2]);
+    vector<glm::dvec3> xVals(SDFSize[0]);
+    vector<glm::dvec3> yVals(SDFSize[1]);
+    vector<glm::dvec3> zVals(SDFSize[2]);
+
     for(int i = 0; i < SDFSize[0]; i++){
         xVals[i] = glm::dvec3(totalBoundingBox[0][0] + i*interval, 0, 0);
     }
@@ -62,27 +60,27 @@ glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 to
     }
 
     //Initialises SDF by assuming all points are well outside the model
-    SDF.resize(totalSDFSize);
-    for(int i = 0; i < totalSDFSize; i++){
-        SDF[i] = 50.0;
+    SDF.resize(totalSDFSize, 20.0);
 
-    }
     
     return SDFSize;
 }
 
 
 
-vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, const vector<profile>& profiles, 
-    vector<int> profileIndices, const vector<extrusionData>& extrusions, const vector<vector<int>>& parentIndices,
-    const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, double surfMeshRes){
+vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
+    const vector<profile>& profiles, vector<int> profileIndices, const vector<extrusionData>& extrusions, 
+    const vector<vector<int>>& parentIndices, const vector<glm::dmat2x3>& boundingBoxes, 
+    glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, double surfMeshRes){
 
+    //cout << "hi" << endl;
 
     int numParts = meshSurfaces.size();
 
     //cout << "SDF size: " << SDFSize[0] << ", " << SDFSize[1] << ", " << SDFSize[2] << endl;
 
     glm::dvec3 boundSize = totalBoundingBox[1] - totalBoundingBox[0];
+
 
     //Gets SDF of each part
     for(int p = 0; p < numParts; p++){
@@ -124,6 +122,8 @@ vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const ve
         }
     }
 
+    //cout << "hi" << endl;
+
     return initialSDF;
 }
 
@@ -144,8 +144,8 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
 
     //Copies coordinates from within bounding box to local variables
-    vector<glm::dvec3> XYZ;
-    XYZ.resize(totalPartSDFSize);
+    //cout << "XYZ size: " << totalPartSDFSize << endl;
+    vector<glm::dvec3> XYZ(totalPartSDFSize);
 
 
     for(int i = 0; i < partSDFSize[0]; i++){
@@ -165,12 +165,10 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
     //Gets transformations to be applied to coordinates
     int numParents = parentIndices.size();
-    vector<glm::dvec3> translations;
-    translations.resize(numParents + 1);
-    vector<glm::dquat> rotations;
-    rotations.resize(numParents + 1);
-    vector<glm::dvec3> pivotPoints;
-    pivotPoints.resize(numParents + 1);
+    //cout << "num transformations: " << numParents + 1 << endl;
+    vector<glm::dvec3> translations(numParents + 1);
+    vector<glm::dquat> rotations(numParents + 1);
+    vector<glm::dvec3> pivotPoints(numParents + 1);
 
     //Adds part transformations to list
     vector<int> transformIndices = {partIndex};
@@ -226,22 +224,20 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     double endZ = maxZ - fmod(maxZ - minZ, interval) + interval;
     double tableZRange = endZ - minZ;
 
-    vector<glm::dvec3> scaleTable;
-    scaleTable.resize(numZ);
-    vector<glm::dvec3> posTable;
-    posTable.resize(numZ);
+    //cout << "numZ: " << numZ << endl;
+    vector<glm::dvec3> scaleTable(numZ);
+    vector<glm::dvec3> posTable(numZ);
 
     
     //Inserts values into vector with the start and end values added on to either side
-    vector<double> zSample;
-    vector<glm::dvec3> scaleVals, posVals;//xPosVals, yPosVals;
     int numVals = extrusions[partIndex].zSampleVals.size() + 2;
-    zSample.resize(numVals); 
+    //cout << "numVals: " << numVals << endl;
+    vector<double> zSample(numVals);
     copy(extrusions[partIndex].zSampleVals.begin(), extrusions[partIndex].zSampleVals.end(), zSample.begin()+1);
 
     //Copies values into vectors
-    posVals.resize(numVals);
-    scaleVals.resize(numVals);
+    vector<glm::dvec3> scaleVals(numVals);
+    vector<glm::dvec3> posVals(numVals);
     for(int i = 1; i < numVals - 1; i++){
         scaleVals[i] = glm::dvec3(extrusions[partIndex].scaleVals[i - 1], 1.0);
         posVals[i] = glm::dvec3(extrusions[partIndex].posVals[i - 1], 0.0);
@@ -270,12 +266,8 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     zSample[0] = minZ - 1e-3;
     zSample[numVals-1] = endZ + 1e-3;
 
-
-    vector<int> segmentNums;
-    segmentNums.resize(numZ);
-    vector<double> zTable;
-
-    zTable.resize(numZ);
+    vector<int> segmentNums(numZ);
+    vector<double> zTable(numZ);
 
     for(int i = 0; i < numZ; i++){
         zTable[i] = minZ + (double)i * interval;
@@ -321,17 +313,15 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     //Point outside model
     glm::dvec2 pOut = glm::dvec2(200.245, 150.245);
 
-
-    vector<double> a1, b1, c1, d2, l2;
-    vector<glm::dvec2> v2;
-    vector<glm::dvec2> diff;
-    v2.resize(numVerts);
-    l2.resize(numVerts);
-    diff.resize(numVerts);
-    a1.resize(numVerts);
-    b1.resize(numVerts);
-    c1.resize(numVerts);
-    d2.resize(numVerts);
+    //Variables involved in distance calcuations
+    //cout << "numverts: " << numVerts << endl;
+    vector<double> a1(numVerts);
+    vector<double> b1(numVerts);
+    vector<double> c1(numVerts);
+    vector<double> d2(numVerts);
+    vector<double> l2(numVerts);
+    vector<glm::dvec2> v2(numVerts);
+    vector<glm::dvec2> diff(numVerts);
 
     for(int i = 0; i < numVerts - 1; i++){
         v2[i] = v[i+1];
@@ -371,22 +361,15 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     glm::dvec2 tableXYRange = endXY - glm::dvec2(minX, minY);
 
 
-    vector<double> SDFTable;
     int tableSize = numXY[0]*numXY[1];
+    //cout << "table size: " << tableSize << endl;
+    vector<double> SDFTable(tableSize);
 
-    SDFTable.resize(tableSize);
+    vector<double> dist2s(numVerts);
+    vector<double> intersections(numVerts);
 
-
-    vector<double> dist2s;
-    vector<double> intersections;
-    dist2s.resize(numVerts);
-    intersections.resize(numVerts);
-
-
-    vector<double> xTable;
-    vector<double> yTable;
-    xTable.resize(numXY[0]);
-    yTable.resize(numXY[1]);
+    vector<double> xTable(numXY[0]);
+    vector<double> yTable(numXY[1]);
 
 
     //Gets x and y values
@@ -472,9 +455,8 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
     }
 
     //Finds SDF values for profile
-    vector<double> profileSDF;
-    profileSDF.resize(totalPartSDFSize);
-
+    //cout << "total part SDF size: " << totalPartSDFSize << endl;
+    vector<double> profileSDF(totalPartSDFSize);
     
     for(int i = 0; i < totalPartSDFSize; i++){
         //Gets location in table
@@ -517,11 +499,8 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         double endFace = (XYZ[i][2] - endPlaneZ) / sqrt(1 + endPlaneZ*endPlaneZ);
         double maxFace = endFace + (beginFace - endFace) * (beginFace > endFace);
 
-
-
         //Assigns overall maximum value to the SDF
         SDF[i] = maxFace + (profileSDF[i] - maxFace) * (profileSDF[i] > maxFace);
-
     }
 
 
@@ -533,8 +512,7 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
     glm::ivec3 shrunkSDFSize = SDFSize - glm::ivec3(2*r, 2*r, 2*r);
 
-    vector<float> kernelOuterRow;
-    kernelOuterRow.resize(r*2+1);
+    vector<float> kernelOuterRow(r*2+1);
     float kernelSum = 0;
 
     //vector describing edge row of nxnxn kernel
@@ -552,11 +530,10 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
 
     //multiplies kernel with SDF in row direction
-    vector<float> rowMults;
+    vector<float> rowMults(shrunkSDFSize[0] * SDFSize[1] * SDFSize[2]);
     //x direction is reduced as the row multiplication cannot be performed on elements 
     //near the edge of the SDF as they do not have a sufficient number of elements
     //To either side of them
-    rowMults.resize(shrunkSDFSize[0] * SDFSize[1] * SDFSize[2]);
     for(int i = 0; i < shrunkSDFSize[0]; i++){
         for(int j = 0; j < SDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){
@@ -580,8 +557,7 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
 
     
 
-    vector<float> colMults;
-    colMults.resize(shrunkSDFSize[0] * shrunkSDFSize[1] * SDFSize[2]);
+    vector<float> colMults(shrunkSDFSize[0] * shrunkSDFSize[1] * SDFSize[2]);
     for(int i = 0; i < shrunkSDFSize[0]; i++){
         for(int j = 0; j < shrunkSDFSize[1]; j++){
             for(int k = 0; k < SDFSize[2]; k++){

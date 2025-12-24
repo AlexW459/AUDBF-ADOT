@@ -17,9 +17,11 @@ using namespace std;
 
 int meshIndexTo1DIndex(int i, int j, int k, int sizeX, int sizeY);
 
+//Initialises SDF. Returns dimensions of SDF
 glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 totalBoundingBox, double surfMeshRes);
 
-//Gets SDF of entire aircraft. Returns dimensions of SDF
+
+//Returns updated SDF with all specified parts added
 vector<double> updateSDF(vector<double> SDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
     const vector<profile>& profiles, vector<int> profileIndices, const vector<extrusionData>& extrusions, 
     const vector<vector<int>>& parentIndices, const vector<glm::dmat2x3>& boundingBoxes,

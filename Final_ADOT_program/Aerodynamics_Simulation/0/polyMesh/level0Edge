@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     | Website:  https://openfoam.org
-    \\  /    A nd           | Version:  12
+    \\  /    A nd           | Version:  13
      \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -15,7 +15,7 @@ FoamFile
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 dimensions      [0 1 0 0 0 0 0];
-value           0.072805233;
+value           0.0178321422;
 
 
 

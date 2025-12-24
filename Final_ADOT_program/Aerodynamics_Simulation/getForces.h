@@ -10,4 +10,5 @@
 #include <glm/glm.hpp>
 
 //Returns net force and net torque on aircraft, in that order
-std::pair<glm::dvec3, glm::dvec3> getForces(std::string filePath, std::string latestTime);
+std::pair<glm::dvec3, glm::dvec3> getForces(std::string filePath, double& tailVelMag, 
+    glm::dvec3& tailForce, glm::dvec3& tailTorque, double latestTime);

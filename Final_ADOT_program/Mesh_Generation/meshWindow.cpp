@@ -113,9 +113,8 @@ void meshWindow::draw3DSingle(vector<glm::dvec3> &points, vector<char> adjMatrix
     double yPos = dist;
     double distToScreen = 0.3;
 
-    vector<glm::dvec3> transformedPoints;
-    transformedPoints.resize(numPoints);
-    
+    vector<glm::dvec3> transformedPoints(numPoints);
+
     //Caps framerate
     SDL_Delay(16);
 
@@ -167,8 +166,7 @@ void meshWindow::draw3DMesh(vector<glm::dvec3> points, vector<char> adjMatrix,
     double distToScreen, double realScreenWidth){
 
     int numPoints = points.size();
-    vector<glm::ivec2> displayPoints;
-    displayPoints.resize(numPoints);
+    vector<glm::ivec2> displayPoints(numPoints);
 
     glm::dvec2 realScreenDim(realScreenWidth, realScreenWidth*SCREEN_HEIGHT/SCREEN_WIDTH);
 
@@ -247,8 +245,7 @@ void meshWindow::draw3D(vector<vector<glm::dvec3>>& points, vector<vector<char>>
     double distToScreen = 0.3;
 
     //Assigns memory to store transformed points
-    vector<vector<glm::dvec3>> transformedPoints;
-    transformedPoints.resize(numMeshes);
+    vector<vector<glm::dvec3>> transformedPoints(numMeshes);
     for(int i = 0; i < numMeshes; i++){
         transformedPoints[i].resize(points[i].size());
     }

@@ -40,11 +40,16 @@ boundaryField
         type            noSlip;
     }
 
+    horizontalStabiliser
+    {
+        type            noSlip;
+    }
+
     lower
     {
-        type           inletOutlet;
-        inletValue     uniform $flowVelocity;
+        type           fixedValue;
         value          uniform $flowVelocity;
+ 
     }
 
     upper

@@ -17,9 +17,7 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
 
     points.resize(numProfiles*profileSize);
 
-    vector<glm::dvec2> newPoints;
-    newPoints.resize(profileSize);
-
+    vector<glm::dvec2> newPoints(profileSize);
 
     //Finds positions of profiles
     for(int i = 0; i < numProfiles; i++){
@@ -54,54 +52,48 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
 
     //if(!extrusion.isControl){
 
-        //Initialises bounding box
+    //Initialises bounding box
 
-        //Checks for reverse order extrusions
-        if(extrusion.zSampleVals[0] < extrusion.zSampleVals[1]){
-            boundingBox[0][2] = extrusion.zSampleVals[0];
-            boundingBox[1][2] = extrusion.zSampleVals.back();
-        }else{
-            boundingBox[0][2] = extrusion.zSampleVals.back();
-            boundingBox[1][2] = extrusion.zSampleVals[0];
+    //Checks for reverse order extrusions
+    if(extrusion.zSampleVals[0] < extrusion.zSampleVals[1]){
+        boundingBox[0][2] = extrusion.zSampleVals[0];
+        boundingBox[1][2] = extrusion.zSampleVals.back();
+    }else{
+        boundingBox[0][2] = extrusion.zSampleVals.back();
+        boundingBox[1][2] = extrusion.zSampleVals[0];
+    }
+
+
+    boundingBox[0][0] = 10.0;
+    boundingBox[0][1] = 10.0;
+    boundingBox[1][0] = -10.0;
+    boundingBox[1][1] = -10.0;
+
+    //Only checks outer points
+    for(int i = 0; i < numProfiles; i++){
+        for(int j = 0; j < outerSize; j++){
+            int index = i*profileSize + j;
+
+            //cout << "point: " << points[index][0] << ", " << points[index][1] << ", " << points[index][2] << endl;
+            
+            //Updates bounding box with new minimums and maximums
+            boundingBox[0][0] += (points[index][0] - boundingBox[0][0]) *  (points[index][0] < boundingBox[0][0]);
+            boundingBox[0][1] += (points[index][1] - boundingBox[0][1]) *  (points[index][1] < boundingBox[0][1]);
+            
+            boundingBox[1][0] += (points[index][0] - boundingBox[1][0]) *  (points[index][0] > boundingBox[1][0]);
+            boundingBox[1][1] += (points[index][1] - boundingBox[1][1]) *  (points[index][1] > boundingBox[1][1]);
+
+
         }
-
-
-        boundingBox[0][0] = 10.0;
-        boundingBox[0][1] = 10.0;
-        boundingBox[1][0] = -10.0;
-        boundingBox[1][1] = -10.0;
-
-        //Only checks outer points
-        for(int i = 0; i < numProfiles; i++){
-            for(int j = 0; j < outerSize; j++){
-                int index = i*profileSize + j;
-
-                //cout << "point: " << points[index][0] << ", " << points[index][1] << ", " << points[index][2] << endl;
-                
-                //Updates bounding box with new minimums and maximums
-                boundingBox[0][0] += (points[index][0] - boundingBox[0][0]) *  (points[index][0] < boundingBox[0][0]);
-                boundingBox[0][1] += (points[index][1] - boundingBox[0][1]) *  (points[index][1] < boundingBox[0][1]);
-                
-                boundingBox[1][0] += (points[index][0] - boundingBox[1][0]) *  (points[index][0] > boundingBox[1][0]);
-                boundingBox[1][1] += (points[index][1] - boundingBox[1][1]) *  (points[index][1] > boundingBox[1][1]);
-
-
-            }
-        }
+    }
 
         
 
     int adjSize = numProfiles*profileSize;
     vector<char> profileAdjMatrix = partProfile.adjacencyMatrix;
 
-    //Initialises adjacency matrix
-    adjMatrix.resize(adjSize*adjSize);
-    for(int i = 0; i < adjSize; i++){
-        //Fills with zeros initially
-        for(int j = 0; j < adjSize; j++){
-            adjMatrix[i*adjSize + j] = 0;
-        }
-    }
+    //Initialises adjacency matrix, filling it with zeroes
+    adjMatrix.resize(adjSize*adjSize, 0);
 
     //Adds profile adjacency matrix to adjacency matrix
     for(int p = 0; p < numProfiles; p++){

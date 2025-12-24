@@ -38,9 +38,9 @@ boundaryField
     
     lower
     {
-        type           inletOutlet;
-        inletValue     uniform 0;
-        value          uniform 0;
+        type           zeroGradient;
+ 
+ 
     }
     upper
     {
@@ -51,6 +51,11 @@ boundaryField
     aircraftModel
     {
         type           zeroGradient;
+    }
+
+    horizontalStabiliser
+    {
+        type            zeroGradient;
     }
 
     front
