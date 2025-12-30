@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <functional>
-#include <mpi/mpi.h>
+#include <mpi.h>
 
 #include "Mesh_Generation/meshWindow.h"
 #include "Mesh_Generation/profile.h"

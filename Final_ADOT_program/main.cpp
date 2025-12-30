@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
 
     int nModels = nNodes;
     
-
+cout << "entering optimisation loop on rank " << nodeRank << endl;
     //Optimisation loop
     int numGenerations = 4;
     for(int generation = 0; generation < numGenerations; generation++){

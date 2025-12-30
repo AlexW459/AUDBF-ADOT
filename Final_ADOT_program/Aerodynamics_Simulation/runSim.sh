@@ -26,9 +26,9 @@ sed -i "/numberOfSubdomains/c\numberOfSubdomains       $4;" system/decomposeParD
 
 decomposePar -force
 
-mpirun -np $4 potentialFoam -writep -parallel > potentialLog
+srun -n $4 potentialFoam -writep -parallel > potentialLog
 
-mpirun -np $4 foamRun -solver incompressibleFluid -parallel > simLog
+srun -n $4 foamRun -solver incompressibleFluid -parallel > simLog
 
 #reconstructPar -withZero
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
-#include <mpi/mpi.h>
+#include <mpi.h>
 #include <random>
 
 
