@@ -61,9 +61,17 @@ int aircraft::findPart(string partName){
 
 
 double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVals, 
-    function<double(array<double, 3>, double, double, double,
-    vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig,
-    double volMeshRes, double surfMeshRes){
+    function<double(array<double, 3>, double, glm::dvec3, double, double, double,
+    double, vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig,
+    double volMeshRes, double surfMeshRes, int nodeRank, int nProcs){
+
+
+    //Creates a unique case directory
+    string copyBash = "cp -r Aerodynamics_Simulation Aerodynamics_Simulation_" + to_string(nodeRank);
+    int failure = system(copyBash.c_str());
+    if(failure) throw runtime_error("Failed to copy simulation directory for case " + to_string(nodeRank));
+
+    //cout << "made a copy!" << endl;
 
     //Gets derived parameter values. Values and names are inserted onto the end of argument vectors
     vector<string> paramNames = parameterNames;
@@ -78,7 +86,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     //https://courses.cit.cornell.edu/mae5070/Caughey_2011_04.pdf pg 20
     double wingMeanAeroChord = wingRootChord*(2.0/3.0)*((1.0 + wingScale + wingScale*wingScale)/(1.0+wingScale));
     double totWingArea = wingLength*wingRootChord*(1.0 + wingScale);
-    double wingAspectRatio = 2*wingLength*wingLength/totWingArea;
+    double wingAspectRatio = (4.0*wingLength*wingLength)/totWingArea;
 
 
 
@@ -192,8 +200,8 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
         boundingBox[0] = newMinBound;
         boundingBox[1] = newMaxBound;
 
-        //Adds 10% in every direction to bounding box
-        double margin = 0.1;
+        //Adds 5% in every direction to bounding box
+        double margin = 0.05;
         glm::dvec3 boundSize = boundingBox[1] - boundingBox[0];
         boundingBox[0] -= boundSize*margin;
         boundingBox[1] += boundSize*margin;
@@ -255,7 +263,6 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     double staticMass = staticMassSoFar;
     glm::dvec3 staticCOM = COMSoFar/staticMass;
     glm::dmat3 staticMOI = MOISoFar;
-
 
     //Gets SDF
     //staticSurfaces.insert(staticSurfaces.end(), controlSurfaces.begin(), controlSurfaces.end());
@@ -322,7 +329,8 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     pair<vector<glm::dvec3>, vector<glm::dvec3>> aeroTable = getAeroVals(positionVariables, 
         staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
         controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
-        COMs, boundingBoxes, totalBoundingBox, dummyVar, tailForceList, tailTorqueList, surfMeshRes);
+        COMs, boundingBoxes, totalBoundingBox, dummyVar, tailForceList, tailTorqueList, 
+        surfMeshRes, nodeRank, nProcs);
 
 
     vector<glm::dvec3> netAeroForces(nPositions);
@@ -525,7 +533,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
                 staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
                 controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
                 COMs, boundingBoxes, totalBoundingBox, tEfficiencyFactors, tailForces, tailTorques, 
-                surfMeshRes);
+                surfMeshRes, nodeRank, nProcs);
 
             vector<glm::dvec3> aeroForces = pointAeroTable.first;
             vector<glm::dvec3> aeroTorques = pointAeroTable.second;
@@ -568,18 +576,22 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             //https://www.sciencedirect.com/topics/engineering/aerodynamic-center
             //A more generalised formula can be used about the COM instead of the quarter chord
 
+            double Qref = 0.5*RHO*velocity*velocity;
             double tailLeverArm;
             {
                 //Derivative of pitching moment with respect to alpha
-                double dMdalphaWing = (torqueUpper[1] - torqueLower[1])/dAlpha;
-                double dMdalphaTail = (tailTorqueUpper[1] - tailTorqueLower[1])/dAlpha;
+                //Includes non-dimensionalisation
+                double dCMdalphaWing = (torqueUpper[1] - torqueLower[1])/(dAlpha * Qref *  totWingArea * wingMeanAeroChord);
+                double dCMdalphaTail = (tailTorqueUpper[1] - tailTorqueLower[1])/(dAlpha * Qref * totWingArea * wingMeanAeroChord);
 
                 //Derivative of lift with respect to alpha
-                double dLdalphaWing = (forceUpper[2] - forceLower[2])/dAlpha;
-                double dLdalphaTail = (tailForceUpper[2] - tailForceLower[2])/dAlpha;
+                double dCLdalphaWing = (forceUpper[2] - forceLower[2])/(dAlpha * Qref * totWingArea);
+                double dCLdalphaTail = (tailForceUpper[2] - tailForceLower[2])/(dAlpha * Qref * totWingArea);
 
-                double aeroCentreWingX = pointCOMs[1][0] - dMdalphaWing/dLdalphaWing;
-                double aeroCentreTailX = pointCOMs[1][0] - dMdalphaTail/dLdalphaTail;
+                //Adds distance from reference point as fraction of wing aero chord, multiplied by wing aero chord,
+                //to the reference point
+                double aeroCentreWingX = pointCOMs[1][0] - wingMeanAeroChord*dCMdalphaWing/dCLdalphaWing;
+                double aeroCentreTailX = pointCOMs[1][0] - wingMeanAeroChord*dCMdalphaTail/dCLdalphaTail;
 
                 tailLeverArm = aeroCentreWingX - aeroCentreTailX;
             }
@@ -590,7 +602,6 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             double dMdAlpha = (torqueUpper[1]+tailTorqueUpper[1]-torqueLower[1]-tailTorqueLower[1])/dAlpha;
 
             //Nondimensionalises forces
-            double Qref = 0.5*RHO*velocity*velocity;
             double tailLiftCoeffLower = tailForceLower[2]/(Qref*tailHorizArea);
             double tailLiftCoeffUpper = tailForceUpper[2]/(Qref*tailHorizArea);
 
@@ -630,20 +641,20 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             
             double score = 0.0;
             array<double, 3> currentConfig = {alpha, elevator, throttle};
+            glm::dvec3 pointAeroForce = (aeroForces[1] + tailForces[1])*velocity*velocity;
 
             if(dMdAlpha < 0.0){
                 double omega_n = sqrt(-dMdAlpha/Iyy);
                 double zeta = -(Mq + MalphaDot)/(2*Iyy*omega_n );
                 
                 //Calls score function
-                score = scoreFunc(currentConfig, omega_n, zeta, dMdAlpha, paramNames, paramVals);
+                score = scoreFunc(currentConfig, velocity, pointAeroForce, omega_n, zeta, dMdAlpha, totalMass, paramNames, paramVals);
             }
 
             if(score > bestScore){
                 bestScore = score;
                 bestConfiguration = currentConfig;
             }
-
 
         }
 
@@ -653,6 +664,13 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     << ", throttle: " << bestConfiguration[2] << endl;
 
     bestConfig = bestConfiguration;
+
+    //Deletes folder
+    string deleteDirBash = "rm -r Aerodynamics_Simulation_" + to_string(nodeRank);
+    failure = system(deleteDirBash.c_str());
+    if(failure) throw runtime_error("Failed to clean case directory " + to_string(nodeRank) + " after simulations");
+
+
     return bestScore;
 }
 
@@ -836,7 +854,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
     int elevatorPart, const vector<double>& horizontalStabiliserSDF, vector<glm::dvec3> totalCOMs, 
     const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, 
     vector<double>& tEfficiencyFactors, vector<glm::dvec3>& tailForces, 
-    vector<glm::dvec3>& tailTorques, double surfMeshRes){
+    vector<glm::dvec3>& tailTorques, double surfMeshRes, int nodeRank, int nProcs){
 
     vector<double> SDF = staticSDF;
 
@@ -852,14 +870,16 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
     //cout << numPositions << endl;
 
-    //Makes a list of non-elevator control surfaces
+    string caseDir = "Aerodynamics_Simulation_" + to_string(nodeRank);
+
+    //Makes a list of non-elevator control surfaces, as elevator is meshed separately 
+    //with the horizontal stabiliser
     vector<int> flapSurfaces;
     for(int i = 0; i < numControl; i++){
         if(controlSurfaces[i] != elevatorPart){
             flapSurfaces.push_back(controlSurfaces[i]);
         }
     }
-
 
     for(int i = 0; i < numPositions; i++){
         vector<double> posVals = positionVariables[i];
@@ -931,7 +951,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
                 mesh.vertices[p].z = newPoint[2];
             }
             
-            writeMeshToObj("Aerodynamics_Simulation/aircraftMesh/aircraftModelRaw.obj", mesh);
+            writeMeshToObj(caseDir + "/aircraftMesh/aircraftModelRaw.obj", mesh);
 
 
             //Writes horizontal stabiliser to obj
@@ -953,7 +973,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
                 horizontalStabiliserMesh.vertices[p].z = newPoint[2];
             }
 
-            writeMeshToObj("Aerodynamics_Simulation/aircraftMesh/horizontalStabiliserRaw.obj", horizontalStabiliserMesh);
+            writeMeshToObj(caseDir + "/aircraftMesh/horizontalStabiliserRaw.obj", horizontalStabiliserMesh);
 
 
             glm::dmat2x3 widerAdjustedTotBoundingBox = totalBoundingBox;
@@ -962,8 +982,8 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
             //cout << "meshing" << endl;
 
-            //Writes correct bounding box and meshes the obj
-            string scriptCall = "./Aerodynamics_Simulation/meshObj.sh " + to_string(widerAdjustedTotBoundingBox[0][0]) + " " +
+            //Writes correct bounding box
+            string scriptCall = "./Aerodynamics_Simulation/updateBounds.sh " + to_string(widerAdjustedTotBoundingBox[0][0]) + " " +
                 to_string(widerAdjustedTotBoundingBox[0][1]) + " " + to_string(widerAdjustedTotBoundingBox[0][2]) + " " +
                 to_string(widerAdjustedTotBoundingBox[1][0]) + " " + to_string(widerAdjustedTotBoundingBox[1][1]) + " " +
                 to_string(widerAdjustedTotBoundingBox[1][2]) + " " + 
@@ -972,11 +992,16 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
                 to_string(totalBoundingBox[1][1]) + " " + to_string(totalBoundingBox[1][2]) + " " +
                 to_string(horizontalStabiliserBounds[0][0]) + " " + to_string(horizontalStabiliserBounds[0][1]) + " " +
                 to_string(horizontalStabiliserBounds[0][2]) + " " + to_string(horizontalStabiliserBounds[1][0]) + " " +
-                to_string(horizontalStabiliserBounds[1][1]) + " " + to_string(horizontalStabiliserBounds[1][2]);
-
+                to_string(horizontalStabiliserBounds[1][1]) + " " + to_string(horizontalStabiliserBounds[1][2]) + " " +
+                to_string(nodeRank);
 
             int failure = system(scriptCall.c_str());
-            if(failure)throw std::runtime_error("Meshing obj failed");
+            if(failure) throw std::runtime_error("Setting bounds failed in case " + to_string(nodeRank));
+
+            scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(nodeRank);
+            failure = system(scriptCall.c_str());
+            if(failure) throw runtime_error("Meshing failed in case " + to_string(nodeRank));
+
         }
 
 
@@ -990,14 +1015,12 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         double specificTurbulenceDissipationRate = turbulentDissipationRate/(0.09*turbulentEnergy);
 
         glm::dvec3 velocity(-testVelocity*cos(pitch)*cos(yaw), testVelocity*sin(yaw)*sin(pitch), testVelocity*sin(pitch));
-        int ySign = velocity[1] == 0 ? 0 : velocity[1] > 0 ? 1 :  -1;
-        int zSign = velocity[2] == 0 ? 0 : velocity[2] > 0 ? 1 :  -1;
-
 
         //Sets boundary conditions based on velocity direciton
         string dictScriptCall = "./Aerodynamics_Simulation/updateDicts.sh " + to_string(velocity[0]) +
-            " " + to_string(velocity[1]) + " " + to_string(velocity[2]) + " " + to_string(ySign) + "  " + to_string(zSign)
-            + " " + to_string(roughnessHeight) + " " + to_string(specificTurbulenceDissipationRate);
+            " " + to_string(velocity[1]) + " " + to_string(velocity[2]) + " " + 
+            to_string(roughnessHeight) + " " + to_string(specificTurbulenceDissipationRate) + " " +
+            to_string(nodeRank);
         int failure = system(dictScriptCall.c_str());
         if(failure) throw std::runtime_error("Setting air velocity failed");
 
@@ -1010,22 +1033,26 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             " " + to_string(totalCOMs[i][1]) + " " + to_string(totalCOMs[i][2]) + " " +
             to_string(normalisedUp[0]) + " " + to_string(normalisedUp[1]) + " " + to_string(normalisedUp[2]) +
             " " + to_string(normalisedVel[0]) + " " + to_string(normalisedVel[1]) + " " + to_string(normalisedVel[2]) +
-            " " + to_string(testVelocity);
+            " " + to_string(testVelocity) + " " + to_string(nodeRank);
         failure = system(forceScriptCall.c_str());
         if(failure) throw std::runtime_error("Setting force details failed");
 
         //Runs simulation
-        double endTime = 0.2;
-        double deltaT = 0.001;
-        string simScriptCall = "./Aerodynamics_Simulation/runSim.sh " + to_string(endTime) + " " + to_string(deltaT);
+        double endTime = 0.3;
+        double deltaT = 0.00075;
+        string simScriptCall = "./Aerodynamics_Simulation/runSim.sh " + to_string(endTime) + " " + to_string(deltaT) + " " +
+            to_string(nodeRank);
         failure = system(simScriptCall.c_str());
-        if(failure) throw std::runtime_error("Aerodynamics simulation failed");
+        cout << failure << endl;
+        if(failure) throw std::runtime_error("Runnning simulation failed");
+
+
 
         //Get aerodynamic forces
         double tailUpstreamVelocity;
         pair<glm::dvec3, glm::dvec3> forceVals;
         glm::dvec3 tailForce, tailTorque;
-        forceVals = getForces("Aerodynamics_Simulation/", tailUpstreamVelocity, tailForce, tailTorque, endTime);
+        forceVals = getForces(caseDir + "/", tailUpstreamVelocity, tailForce, tailTorque, endTime);
 
         //Rotate forces back into correct position according to aircraft direction
         glm::dquat pitchRot = glm::angleAxis(-pitch, glm::dvec3(sin(yaw), cos(yaw), 0.0));

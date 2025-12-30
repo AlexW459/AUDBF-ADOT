@@ -3,8 +3,11 @@
 # First 3 arguments are velocity in x, y and z direction
 # Next argument is the surface height deviation
 # Next argument is the specific turbulence dissipation rate
+# Final argument is the case number
 
-cd Aerodynamics_Simulation
+#Enters case
+caseNum="Aerodynamics_Simulation_$6"
+cd $caseNum
 
 #Updates inlet velocity
 velocityLineNum="$(grep -n "flowVelocity" initialValues/initialConditions | head -n 1 | cut -d: -f1)"

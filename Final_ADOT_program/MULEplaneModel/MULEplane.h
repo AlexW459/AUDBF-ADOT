@@ -12,8 +12,8 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
     const vector<dataTable>& discreteTables, vector<int> discreteVals, double& wingRootChord, 
     double& wingLength, double& wingScale, double& tailHorizArea);
 
-double rateDesign(array<double, 3>, double oscillationFreq, double dampingCoeff,
-    double dMdAlpha, vector<string> fullParamNames, vector<double> fullParamVals);
+double rateDesign(array<double, 3> bestConfig, double velocity, glm::dvec3 aeroForces, double oscillationFreq, double dampingCoeff,
+    double dMdAlpha, double mass, vector<string> fullParamNames, vector<double> fullParamVals);
     
 profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes);
 

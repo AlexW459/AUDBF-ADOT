@@ -19,10 +19,10 @@ tailconeLength,0.2,0.5
 tailconeTipScale,0.1,0.9
 batteryPos,0,1
 horizontalStabiliserWidth,0.1,1
-horizontalStabiliserAirfoilMaxThickness,20,40
-horizontalStabiliserAirfoilMaxCamber,5,9
-horizontalStabiliserAirfoilMaxCamberPos,3,7
-horizontalStabiliserChord,0.2,0.4
+horizontalStabiliserAirfoilMaxThickness,10,30
+horizontalStabiliserAirfoilMaxCamber,0,5
+horizontalStabiliserAirfoilMaxCamberPos,2,7
+horizontalStabiliserChord,0.2,0.3
 empennageLength,0.2,0.6
 elevatorChord,0.1,0.15
 elevatorAirfoilMaxThickness,25,50

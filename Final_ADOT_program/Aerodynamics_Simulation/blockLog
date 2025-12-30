@@ -7,10 +7,10 @@
 \*---------------------------------------------------------------------------*/
 Build  : 13-cde978a97c93
 Exec   : blockMesh
-Date   : Dec 24 2025
-Time   : 10:42:45
+Date   : Dec 29 2025
+Time   : 13:04:02
 Host   : "Laptopawelke"
-PID    : 10629
+PID    : 3034
 I/O    : uncollated
 Case   : /home/a1922573/ADOT/AUDBF-ADOT/Final_ADOT_program/Aerodynamics_Simulation
 nProcs : 1
@@ -47,9 +47,9 @@ Creating patches
 Creating cells
 Creating points with scale 1
     Block 0 cell size :
-        i : 0.03798281669 .. 0.05770518827
-        j : 0.03145436039 .. 0.03145436039
-        k : 0.03528938485 .. 0.03528938485
+        i : 0.03593157643 .. 0.05458885263
+        j : 0.03097889343 .. 0.03097889343
+        k : 0.03278252791
 
 No patch pairs to merge
 
@@ -57,7 +57,7 @@ Writing polyMesh
 ----------------
 Mesh Information
 ----------------
-  boundingBox: (-2.811397 -0.912736 -0.515871) (1.369538 0.912736 0.515871)
+  boundingBox: (-2.765555 -0.898939 -0.479225) (1.189591 0.898939 0.479225)
   nPoints: 43911
   nCells: 40000
   nFaces: 123800

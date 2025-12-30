@@ -67,7 +67,7 @@ solvers
 PIMPLE
 {
     correctPhi          yes;
-    nOuterCorrectors    3;
+    nOuterCorrectors    1;
     nCorrectors         2;
     nNonOrthogonalCorrectors 2;
 }
@@ -75,7 +75,7 @@ PIMPLE
 
 potentialFlow
 {
-    nNonOrthogonalCorrectors 10;
+    nNonOrthogonalCorrectors 20;
     PhiRefCell 0;
     PhiRefValue 0.0;
 }

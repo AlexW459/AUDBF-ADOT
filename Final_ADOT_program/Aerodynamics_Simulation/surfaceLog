@@ -7,10 +7,10 @@
 \*---------------------------------------------------------------------------*/
 Build  : 13-cde978a97c93
 Exec   : surfaceFeatures
-Date   : Dec 24 2025
-Time   : 10:42:45
+Date   : Dec 29 2025
+Time   : 13:04:02
 Host   : "Laptopawelke"
-PID    : 10640
+PID    : 3035
 I/O    : uncollated
 Case   : /home/a1922573/ADOT/AUDBF-ADOT/Final_ADOT_program/Aerodynamics_Simulation
 nProcs : 1
@@ -28,9 +28,9 @@ Surface            : "aircraftModel.obj"
 
 Feature line extraction is only valid on closed manifold surfaces.
 Statistics:
-Triangles    : 90560
-Vertices     : 45282
-Bounding Box : (-0.832848 -0.46505 -0.0959352) (0.852095 0.464947 0.0979072)
+Triangles    : 58228
+Vertices     : 29116
+Bounding Box : (-0.80312 -0.477416 -0.07063) (0.735421 0.477352 0.074169)
 
 
 Constructing feature set from included angle 3.141592654
@@ -39,27 +39,27 @@ Removing all non-manifold edges (edges with > 2 connected faces) unless they cro
 Removing all open edges (edges with 1 connected face)
 
 Initial feature set:
-    feature points : 45282
-    feature edges  : 135840
+    feature points : 29116
+    feature edges  : 87342
     of which
         region edges   : 0
-        external edges : 80700
-        internal edges : 55140
+        external edges : 55519
+        internal edges : 31823
 
 
 Final feature set:
-points      : 45282
-edges       : 135840
-boundingBox : (-0.832848 -0.46505 -0.0959352) (0.852095 0.464947 0.0979072)
+points      : 29116
+edges       : 87342
+boundingBox : (-0.80312 -0.477416 -0.07063) (0.735421 0.477352 0.074169)
 point classification :
-    convex feature points          :      432
-    concave feature points         :       90
-    mixed feature points           :    44760
+    convex feature points          :      362
+    concave feature points         :       25
+    mixed feature points           :    28729
     other (non-feature) points     :        0
 edge classification :
-    external (convex angle) edges  :    21109
-    internal (concave angle) edges :     6088
-    flat region edges              :   108643
+    external (convex angle) edges  :    17996
+    internal (concave angle) edges :     3166
+    flat region edges              :    66180
     open edges                     :        0
     multiply connected edges       :        0
 
@@ -74,9 +74,9 @@ Surface            : "horizontalStabiliser.obj"
 
 Feature line extraction is only valid on closed manifold surfaces.
 Statistics:
-Triangles    : 21896
-Vertices     : 10950
-Bounding Box : (-0.86189 -0.30946 -0.0366505) (-0.596659 0.309475 0.046432)
+Triangles    : 18436
+Vertices     : 9220
+Bounding Box : (-0.833353 -0.289806 -0.0357622) (-0.594893 0.305386 0.0416861)
 
 
 Constructing feature set from included angle 3.141592654
@@ -85,27 +85,27 @@ Removing all non-manifold edges (edges with > 2 connected faces) unless they cro
 Removing all open edges (edges with 1 connected face)
 
 Initial feature set:
-    feature points : 10950
-    feature edges  : 32844
+    feature points : 9220
+    feature edges  : 27654
     of which
         region edges   : 0
-        external edges : 18724
-        internal edges : 14120
+        external edges : 14641
+        internal edges : 13013
 
 
 Final feature set:
-points      : 10950
-edges       : 32844
-boundingBox : (-0.86189 -0.30946 -0.0366505) (-0.596659 0.309475 0.046432)
+points      : 9220
+edges       : 27654
+boundingBox : (-0.833353 -0.289806 -0.0357622) (-0.594893 0.305386 0.0416861)
 point classification :
-    convex feature points          :       49
+    convex feature points          :       55
     concave feature points         :        0
-    mixed feature points           :    10901
+    mixed feature points           :     9165
     other (non-feature) points     :        0
 edge classification :
-    external (convex angle) edges  :     4053
-    internal (concave angle) edges :     1425
-    flat region edges              :    27366
+    external (convex angle) edges  :     3389
+    internal (concave angle) edges :     1371
+    flat region edges              :    22894
     open edges                     :        0
     multiply connected edges       :        0
 
@@ -115,7 +115,7 @@ Writing extendedEdgeMesh components to "/home/a1922573/ADOT/AUDBF-ADOT/Final_ADO
 
 Writing featureEdgeMesh to "constant/geometry/horizontalStabiliser.eMesh"
 
-ExecutionTime = 1.087464 s  ClockTime = 1 s
+ExecutionTime = 0.62551 s  ClockTime = 1 s
 
 End
 

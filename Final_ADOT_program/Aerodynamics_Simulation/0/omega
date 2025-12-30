@@ -1,13 +1,12 @@
 /*--------------------------------*- C++ -*----------------------------------*\
-| =========                 |                                                 |
-| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  plus                                  |
-|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
-|    \\/     M anipulation  |                                                 |
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
 \*---------------------------------------------------------------------------*/
 FoamFile
 {
-    version     2.0;
     format      ascii;
     class       volScalarField;
     location    "0";
@@ -15,57 +14,58 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-#include "initialConditions";
-
 dimensions      [0 0 -1 0 0 0 0];
 
-internalField uniform $specificTurbulenceDissipationRate;
+internalField   uniform 1;
 
 boundaryField
 {
+    front
+    {
+        type            inletOutlet;
+        inletValue      uniform 1;
+        value           uniform 1;
+    }
+    back
+    {
+        type            inletOutlet;
+        inletValue      uniform 1;
+        value           uniform 1;
+    }
     inlet
     {
         type            fixedValue;
-        value           uniform $specificTurbulenceDissipationRate;
+        value           uniform 1;
     }
     outlet
     {
         type            inletOutlet;
-        inletValue      uniform $specificTurbulenceDissipationRate;
-        value           uniform $specificTurbulenceDissipationRate;
-    }
-    upper
-    {
-        type inletOutlet;
-        inletValue  uniform $specificTurbulenceDissipationRate;
-        value       uniform $specificTurbulenceDissipationRate;
+        inletValue      uniform 1;
+        value           uniform 1;
     }
     lower
     {
-        type inletOutlet;
-        inletValue  uniform $specificTurbulenceDissipationRate;
-        value       uniform $specificTurbulenceDissipationRate;
+        type            inletOutlet;
+        inletValue      uniform 1;
+        value           uniform 1;
     }
-    front
+    upper
     {
-        type inletOutlet;
-        inletValue  uniform $specificTurbulenceDissipationRate;
-        value       uniform $specificTurbulenceDissipationRate;
-    }
-    back
-    {
-        type inletOutlet;
-        inletValue  uniform $specificTurbulenceDissipationRate;
-        value       uniform $specificTurbulenceDissipationRate;
+        type            inletOutlet;
+        inletValue      uniform 1;
+        value           uniform 1;
     }
     aircraftModel
     {
-        type omegaWallFunction;
-        value uniform $specificTurbulenceDissipationRate;
+        type            omegaWallFunction;
+        value           uniform 1;
     }
     horizontalStabiliser
     {
-        type omegaWallFunction;
-        value uniform $specificTurbulenceDissipationRate;
+        type            omegaWallFunction;
+        value           uniform 1;
     }
 }
+
+
+// ************************************************************************* //

@@ -1,11 +1,14 @@
+
+
 # Compiler
-CXX = g++
+CXX = mpicxx
 
 # Compiler flags
 CXXFLAGS = -Wall -g -std=c++20 -march=x86-64 -msse2 -O3 #-fopt-info-vec-missed -fno-inline
 
 # Target executable
 TARGET = Main
+
 
 # For deleting the target
 TARGET_DEL = Main.exe
@@ -32,8 +35,8 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Rule to run the executable
-run: $(TARGET)
-	$(TARGET) 
+run: mpirun $(TARGET) 0 1 4
+
 
 # Clean rule to remove generated files
 clean:

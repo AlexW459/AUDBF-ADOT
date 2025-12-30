@@ -22,9 +22,9 @@ startFrom       startTime;
 
 startTime       0;
 
-endTime         0.200000;
+endTime         0.3;
 
-deltaT          0.001000;
+deltaT          0.00075;
 
 writeControl    timeStep;
 
