@@ -1134,7 +1134,7 @@ void aircraft::getPhysVals(vector<vector<double>> positionVariables, double stat
 
 
 
-void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramValues, vector<int> discreteVals, double volMeshRes){
+/*void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramValues, vector<int> discreteVals, double volMeshRes){
 
 
     //Gets profiles
@@ -1191,5 +1191,5 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNam
 
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
     window.draw3D(totalPoints, adjMatrices, 1.5);
-}
+}*/
 

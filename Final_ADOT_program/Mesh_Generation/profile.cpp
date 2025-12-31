@@ -125,7 +125,7 @@ profile& profile::operator=(profile& Profile){
     return *this;
 }
 
-void profile::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const{
+/*void profile::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const{
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 
@@ -142,7 +142,7 @@ void profile::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const{
     }
 
     window.draw2D(points, adjacencyMatrix);
-}
+}*/
 
 bool profile::pointInTriangle(glm::dvec2 point, glm::dvec2 vert1, glm::dvec2 vert2, glm::dvec2 vert3) const{
 

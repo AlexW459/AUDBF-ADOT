@@ -56,7 +56,7 @@ class aircraft{
             double volMeshRes, double surfMeshRes, int nodeNum, int nProcs);
 
 
-        void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
+        //void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
 
     private:
 

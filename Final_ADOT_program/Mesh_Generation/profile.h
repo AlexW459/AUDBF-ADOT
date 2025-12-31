@@ -25,7 +25,7 @@ struct profile{
     vector<glm::dvec2> generateInset(const vector<glm::dvec2>& outerPoints) const;
     
 
-    void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const;
+    //void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const;
 
     //Only contains outer coordinates
     vector<glm::dvec2> vertexCoords;

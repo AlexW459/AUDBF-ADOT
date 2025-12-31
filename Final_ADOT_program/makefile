@@ -14,9 +14,9 @@ TARGET = Main
 TARGET_DEL = Main.exe
 
 # Source files
-SRCS = main.cpp aircraft.cpp readCSV.cpp Mesh_Generation/profile.cpp Mesh_Generation/meshWindow.cpp \
+SRCS = main.cpp aircraft.cpp readCSV.cpp Mesh_Generation/profile.cpp  \
 	MULEplaneModel/MULEplane.cpp Mesh_Generation/extrusionGen.cpp Mesh_Generation/surfaceMeshGen.cpp \
-	Aerodynamics_Simulation/getForces.cpp
+	Aerodynamics_Simulation/getForces.cpp #Mesh_Generation/meshWindow.cpp
 
 
 
@@ -28,7 +28,7 @@ SDL_INCLUDE = -lSDL2
 
 # Rule to link object files into the target executable
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(SDL_INCLUDE)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) //$(SDL_INCLUDE)
 
 # Rule to compile .cpp files into .o files
 %.o: %.cpp

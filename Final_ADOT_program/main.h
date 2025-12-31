@@ -14,10 +14,10 @@
 #include <glm/gtx/quaternion.hpp>
 
 
-#include "SDL2/SDL.h"
+//#include "SDL2/SDL.h"
 #include "readCSV.h"
 #include "aircraft.h"
-#include "Mesh_Generation/meshWindow.h"
+//#include "Mesh_Generation/meshWindow.h"
 #include "MULEplaneModel/MULEplane.h"
 
 

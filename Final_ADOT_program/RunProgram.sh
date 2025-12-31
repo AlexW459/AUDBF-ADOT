@@ -14,6 +14,6 @@ spack load openfoam
 
 
 
-/opt/slurm/bin/srun -n1 --export=ALL ./Main 1 2 & spack load sdl2
+/opt/slurm/bin/srun -n1 ./Main 1 2 & spack load sdl2
 
 #https://stackoverflow.com/questions/38905391/how-can-i-run-mpi-job-in-multiple-nodes-multinode-mpi-job-execution
