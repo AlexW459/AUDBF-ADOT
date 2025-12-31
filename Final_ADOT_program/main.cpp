@@ -5,13 +5,18 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 
+    MPI_Init(&argc, &argv);
+
     //Gets rank of node that program is being run on, the number of processes available 
     //to the program, and the total number of nodes
-    int nodeRank = atoi(argv[1]);
-    int nProcs = atoi(argv[2]);
-    int nNodes = atoi(argv[3]);
+    int nNodes;
+    int nodeRank;
+    MPI_Comm_size(MPI_COMM_WORLD, &nNodes);
+    MPI_Comm_rank(MPI_COMM_WORLD, &nodeRank);
 
-    MPI_Init(&argc, &argv);
+    int nProcs = atoi(argv[1]);
+
+    cout << "Running process" << nodeRank << endl;
 
     //Initialise rand()
     srand (time(0));
@@ -84,6 +89,9 @@ int main(int argc, char *argv[]) {
 
         discreteVals[i] = discreteDist(rndNumGenerator);
     }
+
+    MPI_Finalize();
+    exit(0);
 
     int nModels = nNodes;
     
