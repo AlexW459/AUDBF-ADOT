@@ -7,7 +7,6 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
-#include "meshWindow.h"
 
 using namespace std;
 

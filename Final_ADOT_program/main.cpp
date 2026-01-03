@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
 
     int nProcs = atoi(argv[1]);
 
-    cout << "Running process" << nodeRank << endl;
+    cout << "Running process " << nodeRank << " of " << nNodes << endl;
 
     //Initialise rand()
     srand (time(0));
@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
         discreteVals[i] = discreteDist(rndNumGenerator);
     }
 
+    cout << "ending process " << nodeRank << endl;
     MPI_Finalize();
     exit(0);
 

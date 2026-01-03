@@ -13,7 +13,6 @@
 #include <functional>
 #include <mpi.h>
 
-#include "Mesh_Generation/meshWindow.h"
 #include "Mesh_Generation/profile.h"
 #include "Mesh_Generation/surfaceMeshGen.h"
 #include "Mesh_Generation/extrusionGen.h"

@@ -28,7 +28,7 @@ SDL_INCLUDE = -lSDL2
 
 # Rule to link object files into the target executable
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) //$(SDL_INCLUDE)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) #$(SDL_INCLUDE)
 
 # Rule to compile .cpp files into .o files
 %.o: %.cpp
