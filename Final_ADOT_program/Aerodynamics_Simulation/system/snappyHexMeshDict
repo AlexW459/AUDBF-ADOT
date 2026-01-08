@@ -16,7 +16,7 @@ FoamFile
 // Which of the steps to run
 castellatedMesh true;
 snap            true;
-addLayers       false;
+addLayers       true;
 
 log             true;
 
@@ -62,20 +62,20 @@ castellatedMeshControls
     // If local number of cells is >= maxLocalCells on any processor
     // switches from from refinement followed by balancing
     // (current method) to (weighted) balancing before refinement.
-    maxLocalCells 40000;
+    maxLocalCells 50000;
 
     // Overall cell limit (approximately). Refinement will stop immediately
     // upon reaching this number so a refinement level might not complete.
     // Note that this is the number of cells before removing the part which
     // is not 'visible' from the keepPoint. The final number of cells might
     // actually be a lot less.
-    maxGlobalCells 120000;
+    maxGlobalCells 100000;
 
     // The surface refinement loop might spend lots of iterations refining just a
     // few cells. This setting will cause refinement to stop if <= minimumRefine
     // are selected for refinement. Note: it will at least do one iteration
     // (unless the number of cells to refine is 0)
-    minRefinementCells 10;
+    minRefinementCells 5;
 
     // Allow a certain level of imbalance during refining
     // (since balancing is quite expensive)
@@ -109,7 +109,7 @@ castellatedMeshControls
     (
         {
             file "horizontalStabiliser.eMesh";
-            level 3;
+            level 2;
         }
 
     );
@@ -130,7 +130,7 @@ castellatedMeshControls
         aircraftModel
         {
             // Surface-wise min and max refinement level
-            level (2 3);
+            level (3 4);
             
             patchInfo
             {
@@ -142,7 +142,7 @@ castellatedMeshControls
         horizontalStabiliser
         {
             // Surface-wise min and max refinement level
-            level (1 2);
+            level (2 4);
             
             patchInfo
             {
@@ -175,7 +175,7 @@ castellatedMeshControls
         refinementBox
         {
             mode    inside;
-            levels ((1E15 3));
+            levels ((1E15 4));
         }
     }
 
@@ -203,7 +203,7 @@ snapControls
 {
     //- Number of patch smoothing iterations before finding correspondence
     //  to surface
-    nSmoothPatch 10;
+    nSmoothPatch 3;
 
     //- Relative distance for points to be attracted by surface feature point
     //  or edge. True distance is this factor times local
@@ -211,11 +211,11 @@ snapControls
     tolerance 2.0;
 
     //- Number of mesh displacement relaxation iterations.
-    nSolveIter 50;
+    nSolveIter 30;
 
     //- Maximum number of snapping relaxation iterations. Should stop
     //  before upon reaching a correct mesh.
-    nRelaxIter 10;
+    nRelaxIter 5;
 
     // Feature snapping
 
@@ -249,15 +249,11 @@ addLayersControls
     {
         "aircraftModel"
         {
-            nSurfaceLayers 3;
+            nSurfaceLayers 1;
         }
-    }
-
-        layers
-    {
         "horizontalStabiliser"
         {
-            nSurfaceLayers 3;
+            nSurfaceLayers 1;
         }
     }
 
@@ -328,10 +324,10 @@ addLayersControls
 meshQualityControls
 {
     //- Maximum non-orthogonality allowed. Set to 180 to disable.
-    maxNonOrtho 65;
+    maxNonOrtho 50;
 
     //- Max skewness allowed. Set to <0 to disable.
-    maxBoundarySkewness 20;
+    maxBoundarySkewness 3;
     maxInternalSkewness 4;
 
     //- Max concaveness allowed. Is angle (in degrees) below which concavity

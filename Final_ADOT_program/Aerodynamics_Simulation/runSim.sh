@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#First argument is endTime, second argument is timeStep, 
-#Next argument is the case number
-#Final argument is the number of processes
+# First argument is endTime
+# Second argument is timeStep, 
+# Next argument is the case number
+# Final argument is the number of processes
 
 #Enters case
 caseNum="Aerodynamics_Simulation_$3"
@@ -17,19 +18,19 @@ sed -i "$((deltaTLineNum))s/.*/deltaT          $2;/" system/controlDict
 
 
 #Replaces files in zero directory
-rm -r 0/*
+rm -r -f 0/*
 cp initialValues/* 0/
 cp -r constant/polyMesh 0/
 
 #Updates number of processes
 sed -i "/numberOfSubdomains/c\numberOfSubdomains       $4;" system/decomposeParDict
 
-decomposePar -force
+decomposePar -force > decomposeLog 
 
-srun -n $4 potentialFoam -writep -parallel > potentialLog
+srun -N 1 -n $4 potentialFoam -writep -parallel > potentialLog
+srun -N 1 -n $4 foamRun -solver incompressibleFluid -parallel > simLog
 
-srun -n $4 foamRun -solver incompressibleFluid -parallel > simLog
+#potentialFoam -writep > potentialLog
+#foamRun -solver incompressibleFluid > simLog
 
-#reconstructPar -withZero
-
-rm -r processor*
+rm -r -f processor*

@@ -91,7 +91,7 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
 double rateDesign(array<double, 3> bestConfig, double velocity, glm::dvec3 aeroForces,
     double oscillationFreq, double dampingCoeff, double dMdAlpha, double mass, vector<string> fullParamNames, vector<double> fullParamVals){
     
-    return 1.0;
+    return dampingCoeff*(1.0/oscillationFreq)*(-1.0/aeroForces[0]);
 };
 
 profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
@@ -488,16 +488,13 @@ extrusionData extrudeElevator(vector<string> paramNames, vector<double> paramVal
     double elevatorRadius = getParam("elevatorRadius", paramVals, paramNames);
     double elevatorChord = getParam("elevatorChord", paramVals, paramNames);
     double stabiliserChord = getParam("horizontalStabiliserChord", paramVals, paramNames);
-    double horizontalStabiliserAirfoilMaxThickness = getParam("horizontalStabiliserAirfoilMaxThickness", paramVals, paramNames);
-    double horizontalStabiliserChord = getParam("horizontalStabiliserChord", paramVals, paramNames);
-    double horizontalStabiliserThickness = horizontalStabiliserAirfoilMaxThickness*horizontalStabiliserChord*0.01;
-
+    double boomRodThickness = getParam("boomRodThickness", paramVals, paramNames);
 
     double elevatorPivot = elevatorRadius - 0.5*elevatorChord;
 
     double xPos = 0.5*stabiliserChord - 0.5*elevatorRadius;
 
-    vector<double> zSampleVals = {0.0, elevatorWidth - horizontalStabiliserThickness};
+    vector<double> zSampleVals = {0.0, elevatorWidth - boomRodThickness};
     vector<glm::dvec2> scaleVals = {glm::dvec2(1.0, 1.0), glm::dvec2(1.0, 1.0)};
     vector<glm::dvec2> posVals = {glm::dvec2(0.0, 0.0), glm::dvec2(0.0, 0.0)};
 

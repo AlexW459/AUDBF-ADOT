@@ -29,6 +29,7 @@ aeroForces
 
     writeControl outputTime;
     writeInterval 1;
+    writeFormat     ascii;
 }
 
 tailAeroForces
@@ -45,9 +46,9 @@ tailAeroForces
     rho             rhoInf;
 
     //COM2
-    CofR            (-0.041740 0.001118 -0.055878);
+    CofR            (0.0 0.0 0.0);
 
-    liftDir         (0.173648 0.000000 0.984808);
+    liftDir         (0.0 0.0 1.0);
 
     dragDir         (-1.0 0.0 0.0);
 
@@ -62,4 +63,5 @@ tailAeroForces
 
     writeControl outputTime;
     writeInterval 1;
+    writeFormat     ascii;
 }

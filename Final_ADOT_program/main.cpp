@@ -9,14 +9,14 @@ int main(int argc, char *argv[]) {
 
     //Gets rank of node that program is being run on, the number of processes available 
     //to the program, and the total number of nodes
-    int nNodes;
-    int nodeRank;
-    MPI_Comm_size(MPI_COMM_WORLD, &nNodes);
-    MPI_Comm_rank(MPI_COMM_WORLD, &nodeRank);
+    int nRanks;
+    int localRank;
+    MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
+    MPI_Comm_rank(MPI_COMM_WORLD, &localRank);
 
-    int nProcs = atoi(argv[1]);
+    int nProcsPerRank = atoi(argv[1]);
 
-    cout << "Running process " << nodeRank << " of " << nNodes << endl;
+    cout << "Running process " << localRank << " of " << nRanks << endl;
 
     //Initialise rand()
     srand (time(0));
@@ -90,20 +90,20 @@ int main(int argc, char *argv[]) {
         discreteVals[i] = discreteDist(rndNumGenerator);
     }
 
-    cout << "ending process " << nodeRank << endl;
-    MPI_Finalize();
-    exit(0);
+    //cout << "ending process " << localRank << endl;
+    //MPI_Finalize();
+    //exit(0);
 
-    int nModels = nNodes;
+    int nModels = nRanks;
     
-cout << "entering optimisation loop on rank " << nodeRank << endl;
+    cout << "Entering optimisation loop on rank " << localRank << endl;
     //Optimisation loop
     int numGenerations = 4;
     for(int generation = 0; generation < numGenerations; generation++){
 
 
         //Cleans up folders if needed
-        if(nodeRank == 0) {
+        if(localRank == 0) {
             int failure = system("rm -r -f Aerodynamics_Simulation_*");
             if(failure) throw runtime_error("Failed checking for and cleaning files");
         }
@@ -113,9 +113,9 @@ cout << "entering optimisation loop on rank " << nodeRank << endl;
         //Rate aircraft performance
         array<double, 3> aircraftConfig;
         double score = MULEaircraft.calculateScore(paramVals, discreteVals, rateDesign, aircraftConfig, 
-            75.0, 150.0, nodeRank, nProcs);
+            75.0, 150.0, localRank, nProcsPerRank);
 
-        cout << "score" << endl;
+        cout << "score on rank " << localRank << ": " << score << endl;
 
         //Wait until all nodes are finished
         MPI_Barrier(MPI_COMM_WORLD);
@@ -126,8 +126,9 @@ cout << "entering optimisation loop on rank " << nodeRank << endl;
         vector<double> secondParentParamVals(nParams);
         vector<int>    secondParentDiscreteVals(nParams);
 
+        if(localRank != 0){
 
-        if(nodeRank != 0){
+            cout << "Sending score and parameters to head rank from rank " << localRank << endl;
 
             //Send info to controller node
             MPI_Send(&score, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
@@ -139,6 +140,8 @@ cout << "entering optimisation loop on rank " << nodeRank << endl;
             MPI_Recv(secondParentParamVals.data(), nParams, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(firstParentDiscreteVals.data(), nDiscrete, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             MPI_Recv(secondParentDiscreteVals.data(), nDiscrete, MPI_INT, 0, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            cout << "Rank " << localRank << " received new parameters" << endl;
 
         }else{
 
@@ -159,6 +162,7 @@ cout << "entering optimisation loop on rank " << nodeRank << endl;
                 MPI_Recv(allDiscreteVals[i].data(), nDiscrete, MPI_DOUBLE, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 interval[i] = (double)i;
             }
+            cout << "Head rank received score and parameter data" << endl;
 
             //Find pairs of parents using weighted random
             vector<pair<int, int>> parentPairs(nModels);

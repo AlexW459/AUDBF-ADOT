@@ -35,7 +35,7 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Rule to run the executable
-run: mpirun $(TARGET) 0 1 4
+run: mpirun --use-hwthread-cpus -n 2 $(TARGET) 2
 
 
 # Clean rule to remove generated files

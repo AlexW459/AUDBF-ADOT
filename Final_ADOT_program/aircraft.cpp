@@ -63,13 +63,19 @@ int aircraft::findPart(string partName){
 double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVals, 
     function<double(array<double, 3>, double, glm::dvec3, double, double, double,
     double, vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig,
-    double volMeshRes, double surfMeshRes, int nodeRank, int nProcs){
+    double volMeshRes, double surfMeshRes, int procRank, int nCPUsPerRank){
 
+
+    string deleteDirBash = "rm -r -f Aerodynamics_Simulation_*" + to_string(procRank);
+    int failure = system(deleteDirBash.c_str());
+    if(failure) throw runtime_error("Failed to clean old case directories on " + to_string(procRank) + " before simulations");
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     //Creates a unique case directory
-    string copyBash = "cp -r Aerodynamics_Simulation Aerodynamics_Simulation_" + to_string(nodeRank);
-    int failure = system(copyBash.c_str());
-    if(failure) throw runtime_error("Failed to copy simulation directory for case " + to_string(nodeRank));
+    string copyBash = "cp -r Aerodynamics_Simulation Aerodynamics_Simulation_" + to_string(procRank);
+    failure = system(copyBash.c_str());
+    if(failure) throw runtime_error("Failed to copy simulation directory for case " + to_string(procRank));
 
     //cout << "made a copy!" << endl;
 
@@ -124,7 +130,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     int horizontalStabiliserPart = 0;
     int elevatorPart = 0;
 
-    //cout << "Getting vol vals" << endl;
+    cout << "Getting vol vals on rank " << procRank << endl;
     for(int i = 0; i < numParts; i++){
 
         //Calculate variables based on profile and extrusion data
@@ -286,7 +292,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
 
 
     //Specify the different values to be tested
-    array<double, 2> alphaRange = {M_PI/18.0, 3*M_PI/18.0};
+    array<double, 2> alphaRange = {-M_PI/18.0, 3*M_PI/18.0};
     int nAlpha= 4;
     array<double, 2> elevatorRange = {-M_PI/6.0, M_PI/6.0};
     int nElevator = 4;
@@ -322,15 +328,15 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
         controlPivotPoints, controlAxes, controlCOMs, controlMOIs, COMs, MOIs);
 
 
-    //cout << "Getting aerovals" << endl;
+    cout << "Getting table of aerovals on rank " << procRank << endl;
     //Use getAeroVals to get force coefficients of each configuration (force divided by velocity squared)
     vector<double> dummyVar;
-    vector<glm::dvec3> tailForceList, tailTorqueList;
+    vector<glm::dvec3> tailForceList, tailTorqueList;\
     pair<vector<glm::dvec3>, vector<glm::dvec3>> aeroTable = getAeroVals(positionVariables, 
         staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
         controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
         COMs, boundingBoxes, totalBoundingBox, dummyVar, tailForceList, tailTorqueList, 
-        surfMeshRes, nodeRank, nProcs);
+        surfMeshRes, procRank, nCPUsPerRank);
 
 
     vector<glm::dvec3> netAeroForces(nPositions);
@@ -363,7 +369,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             double velocity = calculateVelocity(extrusions, motorParts, throttle, 
                 netAeroForces[i][0], motorThrustDirs, alpha, yaw);
             
-            cout << "velocity: " << velocity << endl; 
+            //cout << "velocity: " << velocity << endl; 
 
             //Finds net force and torque based on velocity
             glm::dvec3 netAeroForce = netAeroForces[i]*velocity*velocity;
@@ -389,7 +395,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
 
                 //Uses linear model to estimate actual thrust based on velocity
                 glm::dvec3 actualThrust = glm::dvec3(-thrust*cos(motorPitch)*cos(motorYaw), 
-                            thrust*sin(motorYaw)*sin(motorPitch), 
+                            -thrust*sin(motorYaw)*sin(motorPitch), 
                             thrust*sin(motorPitch))*(1 - velocity/(pitchSpeed/(cos(motorPitch)*cos(motorYaw))));
                 glm::dvec3 actualTorque = glm::cross(propellersPos[m]-COMs[i], actualThrust);
 
@@ -500,7 +506,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
 
     }
 
-    cout << "Intersections: " << intersectionPoints.size() << endl;
+    cout << "Intersections on rank " << procRank << ": " << intersectionPoints.size() << endl;
 
     double bestScore = 0.0;
     //First element is pitch, then elevator deflection, then throttle
@@ -533,7 +539,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
                 staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
                 controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
                 COMs, boundingBoxes, totalBoundingBox, tEfficiencyFactors, tailForces, tailTorques, 
-                surfMeshRes, nodeRank, nProcs);
+                surfMeshRes, procRank, nCPUsPerRank);
 
             vector<glm::dvec3> aeroForces = pointAeroTable.first;
             vector<glm::dvec3> aeroTorques = pointAeroTable.second;
@@ -666,9 +672,8 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     bestConfig = bestConfiguration;
 
     //Deletes folder
-    string deleteDirBash = "rm -r Aerodynamics_Simulation_" + to_string(nodeRank);
     failure = system(deleteDirBash.c_str());
-    if(failure) throw runtime_error("Failed to clean case directory " + to_string(nodeRank) + " after simulations");
+    if(failure) throw runtime_error("Failed to clean case directory " + to_string(procRank) + " after simulations");
 
 
     return bestScore;
@@ -854,7 +859,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
     int elevatorPart, const vector<double>& horizontalStabiliserSDF, vector<glm::dvec3> totalCOMs, 
     const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, 
     vector<double>& tEfficiencyFactors, vector<glm::dvec3>& tailForces, 
-    vector<glm::dvec3>& tailTorques, double surfMeshRes, int nodeRank, int nProcs){
+    vector<glm::dvec3>& tailTorques, double surfMeshRes, int procRank, int nCPUsPerRank){
 
     vector<double> SDF = staticSDF;
 
@@ -870,7 +875,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
     //cout << numPositions << endl;
 
-    string caseDir = "Aerodynamics_Simulation_" + to_string(nodeRank);
+    string caseDir = "Aerodynamics_Simulation_" + to_string(procRank);
 
     //Makes a list of non-elevator control surfaces, as elevator is meshed separately 
     //with the horizontal stabiliser
@@ -890,8 +895,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         //Checks whether mesh needs to be regenerated
         int controlSameCount = 0;
         for(int c = 0; c < numControl; c++){
-            if(prevPosVals[c] == posVals[i+2]) controlSameCount++;
+            if(prevPosVals[c] == posVals[c+2]) controlSameCount++;
         }
+
 
         if(controlSameCount < numControl || i == 0){
 
@@ -980,8 +986,8 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             widerAdjustedTotBoundingBox[1] += glm::dvec3(0.2, 0.2, 0.2);
             widerAdjustedTotBoundingBox[0] += glm::dvec3(-1.7, -0.2, -0.2);
 
-            //cout << "meshing" << endl;
-
+            cout << "Setting bounds on rank " << procRank << endl;
+            
             //Writes correct bounding box
             string scriptCall = "./Aerodynamics_Simulation/updateBounds.sh " + to_string(widerAdjustedTotBoundingBox[0][0]) + " " +
                 to_string(widerAdjustedTotBoundingBox[0][1]) + " " + to_string(widerAdjustedTotBoundingBox[0][2]) + " " +
@@ -993,16 +999,26 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
                 to_string(horizontalStabiliserBounds[0][0]) + " " + to_string(horizontalStabiliserBounds[0][1]) + " " +
                 to_string(horizontalStabiliserBounds[0][2]) + " " + to_string(horizontalStabiliserBounds[1][0]) + " " +
                 to_string(horizontalStabiliserBounds[1][1]) + " " + to_string(horizontalStabiliserBounds[1][2]) + " " +
-                to_string(nodeRank);
+                to_string(procRank);
 
             int failure = system(scriptCall.c_str());
-            if(failure) throw std::runtime_error("Setting bounds failed in case " + to_string(nodeRank));
+            if(failure) throw std::runtime_error("Setting bounds failed in case " + to_string(procRank));
 
-            scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(nodeRank);
+            MPI_Finalize();
+            exit(0);
+
+
+            cout << "Meshing on rank " << procRank << endl;
+
+            scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(procRank) + " " + to_string(nCPUsPerRank);
             failure = system(scriptCall.c_str());
-            if(failure) throw runtime_error("Meshing failed in case " + to_string(nodeRank));
+            if(failure) throw runtime_error("Meshing failed in case " + to_string(procRank));
+
+            cout << "Completed meshing on rank " << procRank << endl;
+
 
         }
+
 
 
         //Gets turbulent dissipation rate
@@ -1016,15 +1032,15 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
         glm::dvec3 velocity(-testVelocity*cos(pitch)*cos(yaw), testVelocity*sin(yaw)*sin(pitch), testVelocity*sin(pitch));
 
+        
         //Sets boundary conditions based on velocity direciton
         string dictScriptCall = "./Aerodynamics_Simulation/updateDicts.sh " + to_string(velocity[0]) +
             " " + to_string(velocity[1]) + " " + to_string(velocity[2]) + " " + 
             to_string(roughnessHeight) + " " + to_string(specificTurbulenceDissipationRate) + " " +
-            to_string(nodeRank);
+            to_string(procRank);
         int failure = system(dictScriptCall.c_str());
         if(failure) throw std::runtime_error("Setting air velocity failed");
 
-        //exit(0);
 
         //Sets lift and drag directions based on velocity direction
         glm::dvec3 normalisedVel = velocity/testVelocity;
@@ -1033,20 +1049,21 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             " " + to_string(totalCOMs[i][1]) + " " + to_string(totalCOMs[i][2]) + " " +
             to_string(normalisedUp[0]) + " " + to_string(normalisedUp[1]) + " " + to_string(normalisedUp[2]) +
             " " + to_string(normalisedVel[0]) + " " + to_string(normalisedVel[1]) + " " + to_string(normalisedVel[2]) +
-            " " + to_string(testVelocity) + " " + to_string(nodeRank);
+            " " + to_string(testVelocity) + " " + to_string(procRank);
         failure = system(forceScriptCall.c_str());
         if(failure) throw std::runtime_error("Setting force details failed");
 
         //Runs simulation
+        cout << "Running simulation on rank " << procRank << ", utilising " << nCPUsPerRank << 
+            " vCPUs, with config AOA: " << posVals[0] << ", elevator: " << posVals[2] << endl;
         double endTime = 0.3;
-        double deltaT = 0.00075;
+        double deltaT = 0.002;
         string simScriptCall = "./Aerodynamics_Simulation/runSim.sh " + to_string(endTime) + " " + to_string(deltaT) + " " +
-            to_string(nodeRank);
+            to_string(procRank) + " " + to_string(nCPUsPerRank);
         failure = system(simScriptCall.c_str());
-        cout << failure << endl;
         if(failure) throw std::runtime_error("Runnning simulation failed");
 
-
+        
 
         //Get aerodynamic forces
         double tailUpstreamVelocity;
@@ -1055,7 +1072,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         forceVals = getForces(caseDir + "/", tailUpstreamVelocity, tailForce, tailTorque, endTime);
 
         //Rotate forces back into correct position according to aircraft direction
-        glm::dquat pitchRot = glm::angleAxis(-pitch, glm::dvec3(sin(yaw), cos(yaw), 0.0));
+        glm::dquat pitchRot = glm::angleAxis(-pitch, glm::dvec3(sin(yaw), -cos(yaw), 0.0));
         glm::dquat yawRot = glm::angleAxis(-yaw, normalisedUp);
         forceVals.first = yawRot * pitchRot * forceVals.first;
         forceVals.second = yawRot * pitchRot * forceVals.second;
@@ -1078,7 +1095,18 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         netForces.push_back(forceVals.first);
         netTorques.push_back(forceVals.second);
 
+        glm::dvec3 totalForce = forceVals.first + tailForce;
+        glm::dvec3 totalTorque = forceVals.second + tailTorque;
+
+        cout << "Force and torque from simulation " << i << " on rank " << procRank << ": " << 
+            "(" << totalForce[0] + tailForce[0] << ", " << totalForce[1] + tailForce[1]<< ", " <<
+            totalForce[2] + tailForce[2] << ") (" << totalTorque[0] + tailTorque[0] << ", " << 
+            totalTorque[1] + tailTorque[1] << ", " << totalTorque[2] + tailTorque[2] << ")" << endl;
+        
     }
+
+    MPI_Finalize();
+    exit(0);
 
     return make_pair(netForces, netTorques);
 }
