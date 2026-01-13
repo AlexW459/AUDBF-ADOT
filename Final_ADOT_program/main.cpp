@@ -167,9 +167,18 @@ int main(int argc, char *argv[]) {
             //Find pairs of parents using weighted random
             vector<pair<int, int>> parentPairs(nModels);
 
+            //Ensures that all scores are not equal to zero
+            if( std::adjacent_find( scores.begin(), scores.end(), std::not_equal_to<>() ) == scores.end()
+                && scores[0] == 0.0){
+                //Sets scores to 1, ensuring an equally weighted distribution
+                std::fill(scores.begin(), scores.end(), 1.0);
+
+                cout << "All ranks returned a score of zero" << endl;
+            }
+
             //Weighted distribution
             piecewise_constant_distribution weightedDist(interval.begin(), interval.end(), scores.begin());
-
+            
             //Pick first parent using weighted random, and then use weighted random on the remaining models to find the second
             for(int i = 0; i < nModels; i++){
                 parentPairs[i].first = weightedDist(rndNumGenerator);
@@ -177,6 +186,18 @@ int main(int argc, char *argv[]) {
                 //Generates second parent after first parent is excluded from pool
                 vector<double> tempScores = scores;
                 tempScores[parentPairs[i].first] = 0.0;
+
+                //Ensures that all scores are not equal to zero
+                if( std::adjacent_find( tempScores.begin(), tempScores.end(), std::not_equal_to<>() ) == tempScores.end()
+                    && tempScores[0] == 0.0){
+                    //Sets scores to 1, ensuring an equally weighted distribution except excluding the already
+                    //chosen parent
+                    std::fill(tempScores.begin(), tempScores.end(), 1.0);
+                    tempScores[parentPairs[i].first] = 0.0;
+
+                    cout << "Only one rank returned a non-zero score" << endl;
+                }
+
                 piecewise_constant_distribution weightedDist2(interval.begin(), interval.end(), tempScores.begin());
 
                 parentPairs[i].second = weightedDist2(rndNumGenerator);
@@ -203,7 +224,6 @@ int main(int argc, char *argv[]) {
         vector<double> crossParamVals(nParams);
         vector<int>    crossDiscreteVals(nDiscrete);
 
-        
         
         //Pick each parameter of child entirely randomly
         uniform_int_distribution binaryDist(0, 1);

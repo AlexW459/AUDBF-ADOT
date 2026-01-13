@@ -664,6 +664,10 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
 
         }
 
+    }else{
+        cout << "No configuration found that enables trim flight on rank " << procRank << endl;
+        bestScore = 0.0;
+        bestConfiguration = {0.0, 0.0, 0.0};
     }
 
     cout << "Best Config, alpha: " << bestConfiguration[0] << ", elevator: " << bestConfiguration[1]
