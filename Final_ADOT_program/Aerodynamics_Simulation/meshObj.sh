@@ -50,6 +50,12 @@ surfaceFeatures > surfaceLog
 
 decomposePar -force -constant > decomposeLog
 
+# Load the Intel oneAPI environment for the job
+source /opt/intel/oneapi/setvars.sh
+
+# Set the PMI library path for Slurm-MPI integration
+export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+
 srun -N 1 -n $2 snappyHexMesh -parallel -overwrite > meshLog
 #snappyHexMesh -overwrite > meshLog
 

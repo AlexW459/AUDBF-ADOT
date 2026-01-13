@@ -27,6 +27,12 @@ sed -i "/numberOfSubdomains/c\numberOfSubdomains       $4;" system/decomposeParD
 
 decomposePar -force > decomposeLog 
 
+# Load the Intel oneAPI environment for the job
+source /opt/intel/oneapi/setvars.sh
+
+# Set the PMI library path for Slurm-MPI integration
+export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+
 srun -N 1 -n $4 potentialFoam -writep -parallel > potentialLog
 srun -N 1 -n $4 foamRun -solver incompressibleFluid -parallel > simLog
 
