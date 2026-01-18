@@ -7,36 +7,40 @@
 caseNum="Aerodynamics_Simulation_$1"
 cd $caseNum
 
-. /opt/openfoam13/etc/bashrc
-
+#. /opt/openfoam13/etc/bashrc
+#/apps/spack/share/spack/setup-env.sh
+#spack load openfoam
 
 #Cleans mesh
 surfaceSplitByTopology aircraftMesh/aircraftModelRaw.obj splitPatches/aircraftModelSplit.obj > splitLog
 
 #Only retains largest mesh
-largestFile=$(wc -l *splitPatches/aircraftModelSplit_multiplePart_*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
-cp $largestFile aircraftMesh/aircraftModel.obj
-
+largestAircraftFile=$(wc -l *splitPatches/aircraftModelSplit_*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
+cp $largestAircraftFile aircraftMesh/aircraftModelSplit.obj
 rm splitPatches/*
 
-surfaceLambdaMuSmooth aircraftMesh/aircraftModelRaw.obj aircraftMesh/aircraftModel.obj 0.5 0.5 20 > smoothLog
+#Repeats for horizontal stabiliser
+surfaceSplitByTopology aircraftMesh/horizontalStabiliserRaw.obj splitPatches/horizontalStabiliserSplit.obj > splitLog2
+largestStabiliserFile=$(wc -l *splitPatches/horizontalStabiliserSplit_*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
+cp $largestStabiliserFile aircraftMesh/horizontalStabiliserSplit.obj
+rm splitPatches/*
+
+surfaceLambdaMuSmooth aircraftMesh/aircraftModelSplit.obj 0.5 0.5 20 aircraftMesh/aircraftModel.obj > smoothLog
 gzip aircraftMesh/aircraftModel.obj
 
-surfaceLambdaMuSmooth aircraftMesh/horizontalStabiliserRaw.obj aircraftMesh/horizontalStabiliser.obj 0.5 0.5 20 > smoothLog
+surfaceLambdaMuSmooth aircraftMesh/horizontalStabiliserSplit.obj 0.5 0.5 20 aircraftMesh/horizontalStabiliser.obj > smoothLog2
 gzip aircraftMesh/horizontalStabiliser.obj
 
 
-rm -f constant/geometry/aircraftModel.obj.gz
+rm -f constant/geometry/*
 cp aircraftMesh/aircraftModel.obj.gz constant/geometry
-
-rm -f constant/geometry/horizontalStabiliser.obj.gz
 cp aircraftMesh/horizontalStabiliser.obj.gz constant/geometry
 
 
-rm -r constant/polyMesh
+rm -r -f constant/polyMesh
 rm -r -f 0/*
 
-rm -r constant/extendedFeatureEdgeMesh
+rm -r -f constant/extendedFeatureEdgeMesh
 
 rm -f constant/geometry/aircraftModel.eMesh
 rm -f constant/geometry/horizontalStabiliser.eMesh
@@ -46,18 +50,24 @@ sed -i "/numberOfSubdomains/c\numberOfSubdomains       $2;" system/decomposeParD
 
 
 blockMesh > blockLog
-surfaceFeatures > surfaceLog
+surfaceFeatureExtract > surfaceLog
 
 decomposePar -force -constant > decomposeLog
 
+
 # Load the Intel oneAPI environment for the job
-source /opt/intel/oneapi/setvars.sh
+#source /opt/intel/oneapi/setvars.sh
 
 # Set the PMI library path for Slurm-MPI integration
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
+echo "Running snappyHexMesh in parallel on rank $1 on $2 vCPUs"
+
 srun -N 1 -n $2 snappyHexMesh -parallel -overwrite > meshLog
 #snappyHexMesh -overwrite > meshLog
+
+echo "Exiting meshing on rank $1"
+exit 0
 
 reconstructPar -constant > reconstructLog
 

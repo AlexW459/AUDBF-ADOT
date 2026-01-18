@@ -65,16 +65,19 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     double, vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig,
     double volMeshRes, double surfMeshRes, int procRank, int nCPUsPerRank){
 
+    if(procRank == 0) {
+        string deleteDirBash = "rm -r -f Aerodynamics_Simulation_*" + to_string(procRank);
+        int failure = system(deleteDirBash.c_str());
+    	if(failure) throw runtime_error("Failed to clean old case directories on " + to_string(procRank) + " before simulations");
 
-    string deleteDirBash = "rm -r -f Aerodynamics_Simulation_*" + to_string(procRank);
-    int failure = system(deleteDirBash.c_str());
-    if(failure) throw runtime_error("Failed to clean old case directories on " + to_string(procRank) + " before simulations");
+	cout << "cleaned old directories" << endl;
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     //Creates a unique case directory
     string copyBash = "cp -r Aerodynamics_Simulation Aerodynamics_Simulation_" + to_string(procRank);
-    failure = system(copyBash.c_str());
+    int failure = system(copyBash.c_str());
     if(failure) throw runtime_error("Failed to copy simulation directory for case " + to_string(procRank));
 
     //cout << "made a copy!" << endl;
@@ -676,6 +679,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     bestConfig = bestConfiguration;
 
     //Deletes folder
+    string deleteDirBash = "rm -r Aerodynamics_Simulation_" + to_string(procRank);
     failure = system(deleteDirBash.c_str());
     if(failure) throw runtime_error("Failed to clean case directory " + to_string(procRank) + " after simulations");
 
@@ -984,7 +988,10 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             }
 
             writeMeshToObj(caseDir + "/aircraftMesh/horizontalStabiliserRaw.obj", horizontalStabiliserMesh);
+		
 
+	    //MPI_Finalize();
+	    //exit(0);
 
             glm::dmat2x3 widerAdjustedTotBoundingBox = totalBoundingBox;
             widerAdjustedTotBoundingBox[1] += glm::dvec3(0.2, 0.2, 0.2);
@@ -1008,10 +1015,6 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             int failure = system(scriptCall.c_str());
             if(failure) throw std::runtime_error("Setting bounds failed in case " + to_string(procRank));
 
-            MPI_Finalize();
-            exit(0);
-
-
             cout << "Meshing on rank " << procRank << endl;
 
             scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(procRank) + " " + to_string(nCPUsPerRank);
@@ -1020,6 +1023,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
             cout << "Completed meshing on rank " << procRank << endl;
 
+	    MPI_Barrier(MPI_COMM_WORLD);
+	    MPI_Finalize();
+	    exit(0);
 
         }
 
@@ -1056,6 +1062,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             " " + to_string(testVelocity) + " " + to_string(procRank);
         failure = system(forceScriptCall.c_str());
         if(failure) throw std::runtime_error("Setting force details failed");
+
+	MPI_Finalize();
+	exit(0);
 
         //Runs simulation
         cout << "Running simulation on rank " << procRank << ", utilising " << nCPUsPerRank << 
@@ -1106,11 +1115,11 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             "(" << totalForce[0] + tailForce[0] << ", " << totalForce[1] + tailForce[1]<< ", " <<
             totalForce[2] + tailForce[2] << ") (" << totalTorque[0] + tailTorque[0] << ", " << 
             totalTorque[1] + tailTorque[1] << ", " << totalTorque[2] + tailTorque[2] << ")" << endl;
-        
+	
+	MPI_Finalize();
+	exit(0);
     }
 
-    MPI_Finalize();
-    exit(0);
 
     return make_pair(netForces, netTorques);
 }

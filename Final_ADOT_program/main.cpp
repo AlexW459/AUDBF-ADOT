@@ -7,6 +7,8 @@ int main(int argc, char *argv[]) {
 
     MPI_Init(&argc, &argv);
 
+   MPI_Barrier(MPI_COMM_WORLD);
+
     //Gets rank of node that program is being run on, the number of processes available 
     //to the program, and the total number of nodes
     int nRanks;
@@ -98,7 +100,7 @@ int main(int argc, char *argv[]) {
     
     cout << "Entering optimisation loop on rank " << localRank << endl;
     //Optimisation loop
-    int numGenerations = 4;
+    int numGenerations = 1;
     for(int generation = 0; generation < numGenerations; generation++){
 
 
