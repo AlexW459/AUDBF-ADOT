@@ -7,7 +7,7 @@ int main(int argc, char *argv[]) {
 
     MPI_Init(&argc, &argv);
 
-   MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     //Gets rank of node that program is being run on, the number of processes available 
     //to the program, and the total number of nodes
@@ -16,7 +16,10 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
     MPI_Comm_rank(MPI_COMM_WORLD, &localRank);
 
-    int nProcsPerRank = atoi(argv[1]);
+    //First argument is the number of nodes per simulation, second argument is the number of
+    //simulation tasks per node
+    int nSimNodes = atoi(argv[1]);
+    int nSimTasksPerNode = atoi(argv[2]);
 
     cout << "Running process " << localRank << " of " << nRanks << endl;
 
@@ -115,7 +118,7 @@ int main(int argc, char *argv[]) {
         //Rate aircraft performance
         array<double, 3> aircraftConfig;
         double score = MULEaircraft.calculateScore(paramVals, discreteVals, rateDesign, aircraftConfig, 
-            75.0, 150.0, localRank, nProcsPerRank);
+            75.0, 150.0, localRank, nSimNodes, nSimTasksPerNode);
 
         cout << "score on rank " << localRank << ": " << score << endl;
 

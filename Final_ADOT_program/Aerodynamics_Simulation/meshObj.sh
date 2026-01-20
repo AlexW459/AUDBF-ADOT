@@ -1,11 +1,15 @@
 #!/bin/bash
 
 #First argument is the case number
-#Second number is the number of processes
+#Second number is the number of nodes to run on
+#Third argument is the processes per node
 
 #Enters case
 caseNum="Aerodynamics_Simulation_$1"
 cd $caseNum
+
+#Gets total number of processes
+totalProcesses=$(($2*$3))
 
 #. /opt/openfoam13/etc/bashrc
 #/apps/spack/share/spack/setup-env.sh
@@ -46,7 +50,7 @@ rm -f constant/geometry/aircraftModel.eMesh
 rm -f constant/geometry/horizontalStabiliser.eMesh
 
 #Updates number of processes
-sed -i "/numberOfSubdomains/c\numberOfSubdomains       $2;" system/decomposeParDict
+sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/decomposeParDict
 
 
 blockMesh > blockLog
@@ -61,10 +65,17 @@ decomposePar -force -constant > decomposeLog
 # Set the PMI library path for Slurm-MPI integration
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
-echo "Running snappyHexMesh in parallel on rank $1 on $2 vCPUs"
+echo "Running snappyHexMesh in parallel on rank $1 on $totalProcesses processes across $2 nodes"
 
-srun -N 1 -n $2 snappyHexMesh -parallel -overwrite > meshLog
+#Sets up slurm script
+sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$1/" meshParallel.sh
+sed -i "$((3))s/.*/#SBATCH --nodes=$2/" meshParallel.sh
+sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$3/" meshParallel.sh
+
+
+#srun -N 1 -n $2 snappyHexMesh -parallel -overwrite > meshLog
 #snappyHexMesh -overwrite > meshLog
+sbatch --wait --wait-all-nodes meshParallel.sh > meshLog
 
 echo "Exiting meshing on rank $1"
 exit 0

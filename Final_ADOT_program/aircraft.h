@@ -52,7 +52,7 @@ class aircraft{
         double calculateScore(vector<double> paramVals, vector<int> discreteVals, 
             function<double(array<double, 3>, double, glm::dvec3, double, double, 
             double, double, vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig, 
-            double volMeshRes, double surfMeshRes, int procRank, int nCPUsPerRank);
+            double volMeshRes, double surfMeshRes, int procRank, int nSimNodes, int nSimTasksPerNode);
 
 
         //void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
@@ -88,7 +88,7 @@ class aircraft{
             vector<glm::dvec3> totalCOMs, const vector<glm::dmat2x3>& boundingBoxes, 
             glm::dmat2x3 totalBoundingBox, vector<double>& tEfficiencyFactors, 
             vector<glm::dvec3>& tailForce, vector<glm::dvec3>& tailTorques, double surfMeshRes,
-            int procRank, int nCPUsPerRank);
+            int procRank, int nSimNodes, int nSimTasksPerNode);
 
         //Finds the velocity at a given configuration
         double calculateVelocity(vector<extrusionData> extrusions, vector<int> motorParts, 

@@ -14,6 +14,6 @@
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 spack load openfoam
-/opt/slurm/bin/srun -N 4 -n2  ./Main 2
+/opt/slurm/bin/srun ./Main 2 2
 
 #https://stackoverflow.com/questions/38905391/how-can-i-run-mpi-job-in-multiple-nodes-multinode-mpi-job-execution

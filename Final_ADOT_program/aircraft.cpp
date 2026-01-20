@@ -63,7 +63,7 @@ int aircraft::findPart(string partName){
 double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVals, 
     function<double(array<double, 3>, double, glm::dvec3, double, double, double,
     double, vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig,
-    double volMeshRes, double surfMeshRes, int procRank, int nCPUsPerRank){
+    double volMeshRes, double surfMeshRes, int procRank, int nSimNodes, int nSimTasksPerNode){
 
     if(procRank == 0) {
         string deleteDirBash = "rm -r -f Aerodynamics_Simulation_*" + to_string(procRank);
@@ -339,7 +339,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
         staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
         controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
         COMs, boundingBoxes, totalBoundingBox, dummyVar, tailForceList, tailTorqueList, 
-        surfMeshRes, procRank, nCPUsPerRank);
+        surfMeshRes, procRank, nSimNodes, nSimTasksPerNode);
 
 
     vector<glm::dvec3> netAeroForces(nPositions);
@@ -542,7 +542,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
                 staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
                 controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
                 COMs, boundingBoxes, totalBoundingBox, tEfficiencyFactors, tailForces, tailTorques, 
-                surfMeshRes, procRank, nCPUsPerRank);
+                surfMeshRes, procRank, nSimNodes, nSimTasksPerNode);
 
             vector<glm::dvec3> aeroForces = pointAeroTable.first;
             vector<glm::dvec3> aeroTorques = pointAeroTable.second;
@@ -867,7 +867,8 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
     int elevatorPart, const vector<double>& horizontalStabiliserSDF, vector<glm::dvec3> totalCOMs, 
     const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, 
     vector<double>& tEfficiencyFactors, vector<glm::dvec3>& tailForces, 
-    vector<glm::dvec3>& tailTorques, double surfMeshRes, int procRank, int nCPUsPerRank){
+    vector<glm::dvec3>& tailTorques, double surfMeshRes, int procRank, int nSimNodes, 
+    int nSimTasksPerNode){
 
     vector<double> SDF = staticSDF;
 
@@ -1017,15 +1018,16 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
             cout << "Meshing on rank " << procRank << endl;
 
-            scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(procRank) + " " + to_string(nCPUsPerRank);
+            scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(procRank) + " " + 
+                to_string(nSimNodes) + " " + to_string(nSimTasksPerNode);
             failure = system(scriptCall.c_str());
             if(failure) throw runtime_error("Meshing failed in case " + to_string(procRank));
 
             cout << "Completed meshing on rank " << procRank << endl;
 
-	    MPI_Barrier(MPI_COMM_WORLD);
-	    MPI_Finalize();
-	    exit(0);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Finalize();
+            exit(0);
 
         }
 
@@ -1063,16 +1065,17 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         failure = system(forceScriptCall.c_str());
         if(failure) throw std::runtime_error("Setting force details failed");
 
-	MPI_Finalize();
-	exit(0);
+	    MPI_Finalize();
+	    exit(0);
 
         //Runs simulation
-        cout << "Running simulation on rank " << procRank << ", utilising " << nCPUsPerRank << 
-            " vCPUs, with config AOA: " << posVals[0] << ", elevator: " << posVals[2] << endl;
+        cout << "Running simulation on rank " << procRank << ", utilising " << nSimTasksPerNode <<
+            " processes across " << nSimNodes << " nodes  with config AOA: " 
+            << posVals[0] << ", elevator: " << posVals[2] << endl;
         double endTime = 0.3;
         double deltaT = 0.002;
         string simScriptCall = "./Aerodynamics_Simulation/runSim.sh " + to_string(endTime) + " " + to_string(deltaT) + " " +
-            to_string(procRank) + " " + to_string(nCPUsPerRank);
+            to_string(procRank) + " " + to_string(nSimNodes) + " " + to_string(nSimTasksPerNode);
         failure = system(simScriptCall.c_str());
         if(failure) throw std::runtime_error("Runnning simulation failed");
 
