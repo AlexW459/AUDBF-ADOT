@@ -75,10 +75,7 @@ sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$3/" meshParallel.sh
 
 #srun -N 1 -n $2 snappyHexMesh -parallel -overwrite > meshLog
 #snappyHexMesh -overwrite > meshLog
-sbatch --wait --wait-all-nodes meshParallel.sh > meshLog
-
-echo "Exiting meshing on rank $1"
-exit 0
+sbatch --wait --wait-all-nodes 1 meshParallel.sh
 
 reconstructPar -constant > reconstructLog
 

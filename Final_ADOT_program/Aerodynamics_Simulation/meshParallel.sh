@@ -12,4 +12,4 @@ source /opt/intel/oneapi/setvars.sh
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 spack load openfoam
-/opt/slurm/bin/srun snappyHexMesh -parallel -overwrite
+/opt/slurm/bin/srun snappyHexMesh -parallel -overwrite > meshLog
