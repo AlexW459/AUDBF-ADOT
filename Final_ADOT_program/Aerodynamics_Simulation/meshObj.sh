@@ -11,9 +11,8 @@ cd $caseNum
 #Gets total number of processes
 totalProcesses=$(($2*$3))
 
-#. /opt/openfoam13/etc/bashrc
-#/apps/spack/share/spack/setup-env.sh
-#spack load openfoam
+#Loads latest Openfoam version
+. /usr/lib/openfoam/openfoam2512/etc/bashrc
 
 #Cleans mesh
 surfaceSplitByTopology aircraftMesh/aircraftModelRaw.obj splitPatches/aircraftModelSplit.obj > splitLog
@@ -36,18 +35,15 @@ surfaceLambdaMuSmooth aircraftMesh/horizontalStabiliserSplit.obj 0.5 0.5 20 airc
 gzip aircraftMesh/horizontalStabiliser.obj
 
 
-rm -f constant/geometry/*
-cp aircraftMesh/aircraftModel.obj.gz constant/geometry
-cp aircraftMesh/horizontalStabiliser.obj.gz constant/geometry
+rm -f constant/triSurface/*
+cp aircraftMesh/aircraftModel.obj.gz constant/triSurface
+cp aircraftMesh/horizontalStabiliser.obj.gz constant/triSurface
 
 
-rm -r -f constant/polyMesh
+rm -r -f constant/polyMesh/*
 rm -r -f 0/*
 
-rm -r -f constant/extendedFeatureEdgeMesh
-
-rm -f constant/geometry/aircraftModel.eMesh
-rm -f constant/geometry/horizontalStabiliser.eMesh
+rm -r -f constant/extendedFeatureEdgeMesh/*
 
 #Updates number of processes
 sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/decomposeParDict
@@ -58,12 +54,11 @@ surfaceFeatureExtract > surfaceLog
 
 decomposePar -force -constant > decomposeLog
 
-
 # Load the Intel oneAPI environment for the job
-#source /opt/intel/oneapi/setvars.sh
+source /opt/intel/oneapi/setvars.sh
 
 # Set the PMI library path for Slurm-MPI integration
-export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+#export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 echo "Running snappyHexMesh in parallel on rank $1 on $totalProcesses processes across $2 nodes"
 
@@ -72,14 +67,13 @@ sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$1/" meshParallel.sh
 sed -i "$((3))s/.*/#SBATCH --nodes=$2/" meshParallel.sh
 sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$3/" meshParallel.sh
 
-
 #srun -N 1 -n $2 snappyHexMesh -parallel -overwrite > meshLog
 #snappyHexMesh -overwrite > meshLog
 sbatch --wait --wait-all-nodes 1 meshParallel.sh
 
-reconstructPar -constant > reconstructLog
+reconstructParMesh -constant > reconstructLog
 
-createZones > zoneLog
+topoSet > setLog
 
 renumberMesh -constant > renumberLog
 

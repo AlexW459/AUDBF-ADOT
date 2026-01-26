@@ -16,7 +16,7 @@
 #include "Mesh_Generation/profile.h"
 #include "Mesh_Generation/surfaceMeshGen.h"
 #include "Mesh_Generation/extrusionGen.h"
-#include "Aerodynamics_Simulation/getForces.h"
+#include "getForces.h"
 #include "readCSV.h"
 
 #define RHO 1.225

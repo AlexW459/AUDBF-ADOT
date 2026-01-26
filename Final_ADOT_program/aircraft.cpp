@@ -1016,6 +1016,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             int failure = system(scriptCall.c_str());
             if(failure) throw std::runtime_error("Setting bounds failed in case " + to_string(procRank));
 
+
             cout << "Meshing on rank " << procRank << endl;
 
             scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(procRank) + " " + 
@@ -1080,7 +1081,6 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         if(failure) throw std::runtime_error("Runnning simulation failed");
 
         
-
         //Get aerodynamic forces
         double tailUpstreamVelocity;
         pair<glm::dvec3, glm::dvec3> forceVals;

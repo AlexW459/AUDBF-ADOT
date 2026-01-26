@@ -11,18 +11,24 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    object      createZonesDict;
+    object      topoSetDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 
-//Thin box to measure velocity in front of tail
-box
-{
-    name        upstreamTailZone;
-    zoneType    cell;
-    //TailUpstreamBox
-    box (-.570258 -0.317780 0.012011) (-.537167 0.317780 0.038650);
-}
+actions
+(
+
+    //Thin box to measure velocity in front of tail
+    {
+        name   tailUpstreamBoxSet;
+        type   cellSet;
+        action new;
+        source boxToCell;
+        //TailUpstreamBox
+        box (-.897315 -0.525497 -0.031964) (-.859583 0.525497 0.011218);
+    }
+
+);
 
 

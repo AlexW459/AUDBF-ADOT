@@ -3,7 +3,7 @@ aeroForces
 
     type            forces;
     libs            ("libforces.so");
-    patch           aircraftModel;
+    patches         (aircraftModel);
 
     writeFields     yes;
     
@@ -37,7 +37,7 @@ tailAeroForces
 
     type            forces;
     libs            ("libforces.so");
-    patch           horizontalStabiliser;
+    patches         (horizontalStabiliser);
 
     writeFields     yes;
     

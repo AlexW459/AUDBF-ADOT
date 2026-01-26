@@ -40,24 +40,25 @@ sed -i "$((refinementBoxLineNum+3))s/.*/$minRefine/" system/snappyHexMeshDict
 sed -i "$((refinementBoxLineNum+4))s/.*/$maxRefine/" system/snappyHexMeshDict
 
 #Sets the location of the inside point
-insidePointLineNum="$(grep -n "insidePoint" system/snappyHexMeshDict | head -n 1 | cut -d: -f1)"
-insidePointX=$(echo "$7+0.005" | bc)
-insidePointY=$(echo "$8+0.005" | bc)
-insidePointZ=$(echo "$9+0.005" | bc)
-insidePoint="    insidePoint ($insidePointX $insidePointY $insidePointZ);"
-sed -i "$((insidePointLineNum))s/.*/$insidePoint/" system/snappyHexMeshDict
+inMeshLineNum="$(grep -n "locationInMesh" system/snappyHexMeshDict | head -n 1 | cut -d: -f1)"
+inMeshPointX=$(echo "$7+0.005" | bc)
+inMeshPointY=$(echo "$8+0.005" | bc)
+inMeshPointZ=$(echo "$9+0.005" | bc)
+inMeshPoint="    locationInMesh ($inMeshPointX $inMeshPointY $inMeshPointZ);"
+sed -i "$((inMeshLineNum))s/.*/$inMeshPoint/" system/snappyHexMeshDict
 
 #Sets the bounds of the box enclosing the horizontal stabiliser
-tailBoundsLineNum="$(grep -n "TailBounds" system/createZonesDict | head -n 1 | cut -d: -f1)"
-minTailBounds="(${13} ${14} ${15})"
-maxTailBounds="(${16} ${17} ${18})"
+#tailBoundsLineNum="$(grep -n "TailBounds" system/topoSetDict | head -n 1 | cut -d: -f1)"
+#minTailBounds="(${13} ${14} ${15})"
+#maxTailBounds="(${16} ${17} ${18})"
+#sed -i "$((tailBoundsLineNum+1))s/.*/    box $minTailBoundsBox $maxTailBoundsBox;/" system/topoSetDict
 
 
 #Sets the bounds of the box that measures tail upstream velocity
-tailUpstreamBoxLineNum="$(grep -n "TailUpstreamBox" system/createZonesDict | head -n 1 | cut -d: -f1)"
+tailUpstreamBoxLineNum="$(grep -n "TailUpstreamBox" system/topoSetDict | head -n 1 | cut -d: -f1)"
 minUpstreamX=$(echo "${16}+0.05*(${16}-(${13}))" | bc)
 maxUpstreamX=$(echo "${16}+0.2*(${16}-(${13}))" | bc)
 
 minUpstreamBox="($minUpstreamX ${14} ${15})"
 maxUpstreamBox="($maxUpstreamX ${17} ${18})"
-sed -i "$((tailUpstreamBoxLineNum+1))s/.*/    box $minUpstreamBox $maxUpstreamBox;/" system/createZonesDict
+sed -i "$((tailUpstreamBoxLineNum+1))s/.*/    box $minUpstreamBox $maxUpstreamBox;/" system/topoSetDict

@@ -185,7 +185,7 @@ castellatedMeshControls
 
     // After refinement patches get added for all refinementSurfaces and
     // all cells intersecting the surfaces get put into these patches. The
-    insidePoint (-1.060555 -.693939 -.274225);
+    locationInMesh (-1.060555 -.693939 -.274225);
     // NOTE: This point should never be on a face, always inside a cell, even
     // after refinement.
 
@@ -308,7 +308,7 @@ addLayersControls
     maxThicknessToMedialRatio 0.3;
 
     // Angle used to pick up medial axis points
-    minMedianAxisAngle 90;
+    minMedialAxisAngle 90;
 
     // Create buffer region for new layer terminations
     nBufferCellsNoExtrude 0;
@@ -343,11 +343,15 @@ meshQualityControls
     //  Set to very negative number (e.g. -1e30) to disable.
     minVol -1e30;
 
+    minArea -1;
+
     minTetQuality 1e-15;
 
     //- Minimum face twist. Set to <-1 to disable. dot product of face normal
     //  and face centre triangles normal
     minTwist 0.02;
+
+    minTriangleTwist -1;
 
     //- Minimum normalised cell determinant
     //  1 = hex, <= 0 = folded or flattened illegal cell

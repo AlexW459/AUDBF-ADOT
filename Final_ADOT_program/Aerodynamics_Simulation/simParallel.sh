@@ -12,4 +12,5 @@ source /opt/intel/oneapi/setvars.sh
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 . /usr/lib/openfoam/openfoam2512/etc/bashrc
-/opt/slurm/bin/srun snappyHexMesh -parallel -overwrite > meshLog
+/opt/slurm/bin/srun potentialFoam -writep -parallel > potentialLog
+/opt/slurm/bin/srun pimpleFoam -parallel > simLog

@@ -14,9 +14,8 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-surfaces ("aircraftModel.obj" "horizontalStabiliser.obj");
-
-
+aircraftModel.obj
+{
     // How to obtain raw features (extractFromFile || extractFromSurface)
     extractionMethod    extractFromSurface;
 
@@ -41,6 +40,31 @@ surfaces ("aircraftModel.obj" "horizontalStabiliser.obj");
     // Write features to obj format for postprocessing
     writeObj            yes;
 
+} 
+
+horizontalStabiliser.obj
+{
+    // How to obtain raw features (extractFromFile || extractFromSurface)
+    extractionMethod    extractFromSurface;
+
+    // Mark edges whose adjacent surface normals are at an angle less
+    // than includedAngle as features
+    // - 0  : selects no edges
+    // - 180: selects all edges
+    includedAngle       180;
+
+    subsetFeatures
+    {
+        // Keep nonManifold edges (edges with >2 connected faces)
+        nonManifoldEdges       no;
+
+        // Keep open edges (edges with 1 connected face)
+        openEdges       no;
+    }
 
 
-// ************************************************************************* //
+    // Write options
+
+    // Write features to obj format for postprocessing
+    writeObj            yes;
+}
