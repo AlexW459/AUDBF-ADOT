@@ -88,7 +88,7 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
     tailHorizArea = fullHorizontalStabiliserWidth*horizontalStabiliserChord;
 }
 
-double rateDesign(array<double, 3> bestConfig, double velocity, glm::dvec3 aeroForces,
+double rateDesign(array<double, 3> aircraftConfig, double velocity, glm::dvec3 aeroForces,
     double oscillationFreq, double dampingCoeff, double dMdAlpha, double mass, vector<string> fullParamNames, vector<double> fullParamVals){
     
     return dampingCoeff*(1.0/oscillationFreq)*(-1.0/aeroForces[0]);

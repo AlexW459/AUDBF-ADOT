@@ -125,8 +125,8 @@ profile& profile::operator=(profile& Profile){
     return *this;
 }
 
-/*void profile::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const{
-    meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
+void profile::plot(int WINDOW_WIDTH, int WINDOW_HEIGHT) const{
+    meshWindow window(WINDOW_WIDTH, WINDOW_HEIGHT);
 
 
     int numInnerPoints = vertexCoords.size();
@@ -142,7 +142,7 @@ profile& profile::operator=(profile& Profile){
     }
 
     window.draw2D(points, adjacencyMatrix);
-}*/
+}
 
 bool profile::pointInTriangle(glm::dvec2 point, glm::dvec2 vert1, glm::dvec2 vert2, glm::dvec2 vert3) const{
 

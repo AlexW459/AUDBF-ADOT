@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
     MULEaircraft.addPart("horizontalStabiliser", "empennageBoomRight", 1000, extrudeHorizontalStabiliser, 4);
     MULEaircraft.addPart("elevator", "horizontalStabiliser", 1000, extrudeElevator, 5);
 
+    //MULEaircraft.plot(500, 500, paramVals, discreteVals, 50.0);
+
 
     vector<double> paramVals(paramNames.size());
     vector<int> discreteVals(discreteTables.size());
@@ -118,7 +120,7 @@ int main(int argc, char *argv[]) {
         //Rate aircraft performance
         array<double, 3> aircraftConfig;
         double score = MULEaircraft.calculateScore(paramVals, discreteVals, rateDesign, aircraftConfig, 
-            75.0, 150.0, localRank, nSimNodes, nSimTasksPerNode);
+            PROFILE_RESOLUTION, SDF_RESOLUTION, localRank, nSimNodes, nSimTasksPerNode);
 
         cout << "score on rank " << localRank << ": " << score << endl;
 
@@ -233,20 +235,28 @@ int main(int argc, char *argv[]) {
         //Pick each parameter of child entirely randomly
         uniform_int_distribution binaryDist(0, 1);
         
-        //Randomly add or subtract a percentage of the maximum amount that can be added
+        //Randomly add or subtract a fraction of the maximum amount that can be added
         //or subtracted while staying in param range 
-        uniform_real_distribution mutationDist(0.02, 0.2);
+        normal_distribution mutationDist(0.0, MUTATION_STD_DEV);
+        
         for(int i = 0; i < nParams; i++){
             bool choice = binaryDist(rndNumGenerator);
             crossParamVals[i] = choice ? firstParentParamVals[i] : secondParentParamVals[i];
             crossDiscreteVals[i] = choice ? firstParentDiscreteVals[i] : secondParentDiscreteVals[i];
             
 
-            bool addOrSubtract = binaryDist(rndNumGenerator);
-            double min = addOrSubtract ? crossParamVals[i] : paramRanges.rows[i].second[0];
-            double max = addOrSubtract ? paramRanges.rows[i].second[1] : crossParamVals[i];
-            double mutateAmount = mutationDist(rndNumGenerator)*(max-min);
-            paramVals[i] = addOrSubtract ? crossParamVals[i] + mutateAmount : crossParamVals[i] - mutateAmount;
+            
+            double paramMin = paramRanges.rows[i].second[0];
+            double paramMax = paramRanges.rows[i].second[1];
+            double maxIncrease = paramMax - crossParamVals[i];
+            double maxDecrease = crossParamVals[i] - paramMin;
+
+            
+            //Converts value to one that is between -1 and 1 using the sigmoid function
+            double randVal =  mutationDist(rndNumGenerator);
+            double mutationAmount = 2.0/(1.0+exp(-randVal)) - 1.0;
+            double mutation = mutationAmount > 0 ? maxIncrease*mutationAmount : maxDecrease*mutationAmount;
+            paramVals[i] = crossParamVals[i] + mutation;
 
             //Checks for error
             if(paramVals[i] > paramRanges.rows[i].second[1] || paramVals[i] < paramRanges.rows[i].second[0]){
@@ -274,10 +284,12 @@ int main(int argc, char *argv[]) {
     }
 
 
-    //MULEaircraft.plot(500, 500, paramVals, discreteVals, 50.0);
 
     //Quit SDL
-    //SDL_Quit();
+    if(SDL_WasInit(SDL_INIT_EVERYTHING)){
+        SDL_Quit();
+    }
+
 
     MPI_Finalize();
 

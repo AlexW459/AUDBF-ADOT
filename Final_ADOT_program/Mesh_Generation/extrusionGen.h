@@ -9,6 +9,7 @@
 
 #include "profile.h"
 
+
 using namespace std;
 
 struct motorData{
@@ -114,6 +115,8 @@ struct extrusionData{
         extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, 
         _translation, _pivotPoint, true, _controlAxis, 0.0, glm::dvec3(0.0, 0.0, 0.0), 
         false, motorData(), _isHorizontalStabiliser) {};
+
+    void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfile) const;
 };
 
 

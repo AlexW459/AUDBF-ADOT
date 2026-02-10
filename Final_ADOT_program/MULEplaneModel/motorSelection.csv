@@ -1,4 +1,4 @@
-Name,Diameter,Length,Voltage,Current,Thrust,Weight,RPM,propDiameter
+Name,Diameter,Length,Voltage,Current,Thrust,Mass,RPM,propDiameter
 EmaxGT2820/07,35,43.5,16.8,41,2300,0.14,8700,12
 EmaxGT2826/04,35,49.5,16.8,47,3100,0.175,13200,12
 T-Motor AS2820 KV880,36.2,62.2,15.01,44.7,2731,0.136,9892,12

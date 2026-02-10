@@ -16,19 +16,17 @@
 #include "Mesh_Generation/profile.h"
 #include "Mesh_Generation/surfaceMeshGen.h"
 #include "Mesh_Generation/extrusionGen.h"
+#include "Mesh_Generation/meshWindow.h"
 #include "getForces.h"
 #include "readCSV.h"
+
+#include "MULEplaneModel/constants.h"
+
 
 #define RHO 1.225
 #define G_CONSTANT 9.81
 
 using namespace std;
-
-enum HELPER_CMD {
-    HELPER_QUIT,
-    HELPER_MESH,
-    HELPER_SIM
-};
 
 
 class aircraft{
@@ -55,7 +53,7 @@ class aircraft{
             double volMeshRes, double surfMeshRes, int procRank, int nSimNodes, int nSimTasksPerNode);
 
 
-        //void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
+        void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
 
     private:
 

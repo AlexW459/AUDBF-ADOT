@@ -111,7 +111,7 @@ void meshWindow::draw3DSingle(vector<glm::dvec3> &points, vector<char> adjMatrix
     glm::dvec3 translation = -1.0*glm::dvec3((maxPos[0] + minPos[0])/2, minPos[1], (maxPos[2] + minPos[2])/2);
 
     double yPos = dist;
-    double distToScreen = 0.3;
+    double distToScreen = MESH_WINDOW_DIST_TO_SCREEN;
 
     vector<glm::dvec3> transformedPoints(numPoints);
 
@@ -242,7 +242,7 @@ void meshWindow::draw3D(vector<vector<glm::dvec3>>& points, vector<vector<char>>
     glm::dvec3 translation = -1.0*glm::dvec3((maxPos[0] + minPos[0])/2, minPos[1], (maxPos[2] + minPos[2])/2);
 
     double yPos = dist;
-    double distToScreen = 0.3;
+    double distToScreen = MESH_WINDOW_DIST_TO_SCREEN;
 
     //Assigns memory to store transformed points
     vector<vector<glm::dvec3>> transformedPoints(numMeshes);

@@ -7,6 +7,8 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
+#include "meshWindow.h"
+
 
 using namespace std;
 
@@ -24,7 +26,7 @@ struct profile{
     vector<glm::dvec2> generateInset(const vector<glm::dvec2>& outerPoints) const;
     
 
-    //void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT) const;
+    void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT) const;
 
     //Only contains outer coordinates
     vector<glm::dvec2> vertexCoords;

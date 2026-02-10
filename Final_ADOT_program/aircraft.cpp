@@ -295,12 +295,12 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
 
 
     //Specify the different values to be tested
-    array<double, 2> alphaRange = {-M_PI/18.0, 3*M_PI/18.0};
-    int nAlpha= 4;
-    array<double, 2> elevatorRange = {-M_PI/6.0, M_PI/6.0};
-    int nElevator = 4;
-    array<double, 2> throttleRange = {60.0, 100.0};
-    int nThrottle = 5;
+    array<double, 2> alphaRange = {MIN_ALPHA, MAX_ALPHA};
+    int nAlpha = N_ALPHA;
+    array<double, 2> elevatorRange = {MIN_ELEVATOR, MAX_ELEVATOR};
+    int nElevator = N_ELEVATOR;
+    array<double, 2> throttleRange = {MIN_THROTTLE, MAX_THROTTLE};
+    int nThrottle = N_THROTTLE;
 
     //Fill tables with required configurations
     int nPositions = nAlpha*nElevator;
@@ -744,8 +744,11 @@ void aircraft::getVolVals(const profile& partProfile, const extrusionData& extru
     vector<char> adjMatrix;
     int numTetras = generateExtrusion(partProfile, extrusion, adjMatrix, extrudePoints, boundingBox);
 
-    //meshWindow window(500, 500);
-    //window.draw3DSingle(extrudePoints, adjMatrix, 2.0);
+
+        //meshWindow window(500, 500);
+        //window.draw3DSingle(extrudePoints, adjMatrix, 2.0);
+
+
 
     //Allocates an additional element due to how the tetrahedron searching code works
     //The vector in this space is unused
@@ -953,20 +956,21 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
                 adjustedBoundingBoxes, totalBoundingBox, flapSurfaces, surfMeshRes);
 
             //Meshes SDF
-            MC::mcMesh mesh;
-            MC::marching_cube(SDF, SDFSize[0], SDFSize[1], SDFSize[2], mesh);
+            MC::mcMesh aircraftMesh;
+            MC::marching_cube(SDF, SDFSize[0], SDFSize[1], SDFSize[2], aircraftMesh);
             glm::dvec3 minPoint = totalBoundingBox[0];
             double interval = 1.0/surfMeshRes;
 
             //Moves points from index coordinates to actual space coordinates
-            for (int p = 0; p < (int)mesh.vertices.size(); p++){
-                glm::dvec3 newPoint = minPoint + interval*glm::dvec3(mesh.vertices[p].x, mesh.vertices[p].y, mesh.vertices[p].z);
-                mesh.vertices[p].x = newPoint[0];
-                mesh.vertices[p].y = newPoint[1];
-                mesh.vertices[p].z = newPoint[2];
+            for (int p = 0; p < (int)aircraftMesh.vertices.size(); p++){
+                glm::dvec3 newPoint = minPoint + interval*glm::dvec3(aircraftMesh.vertices[p].x, 
+                    aircraftMesh.vertices[p].y, aircraftMesh.vertices[p].z);
+                aircraftMesh.vertices[p].x = newPoint[0];
+                aircraftMesh.vertices[p].y = newPoint[1];
+                aircraftMesh.vertices[p].z = newPoint[2];
             }
             
-            writeMeshToObj(caseDir + "/aircraftMesh/aircraftModelRaw.obj", mesh);
+            writeMeshToObj(caseDir + "/aircraftMesh/aircraftModelRaw.obj", aircraftMesh);
 
 
             //Writes horizontal stabiliser to obj
@@ -991,8 +995,26 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             writeMeshToObj(caseDir + "/aircraftMesh/horizontalStabiliserRaw.obj", horizontalStabiliserMesh);
 		
 
-	    //MPI_Finalize();
-	    //exit(0);
+            //Checks if user has asked for an early exit
+            if(!RUN_OPTIMISATION_LOOP){
+
+                //Creates an obj file representing the current model
+                writeMeshToObj("aircraftModel" + to_string(procRank) + ".obj", aircraftMesh);
+                writeMeshToObj("horizontalStabiliser" + to_string(procRank) + ".obj", horizontalStabiliserMesh);
+
+                if(SDL_WasInit(SDL_INIT_EVERYTHING)){
+                    SDL_Quit();
+                }
+
+                MPI_Barrier(MPI_COMM_WORLD);
+
+                MPI_Finalize();
+
+                exit(0);
+            }
+
+            //MPI_Finalize();
+            //exit(0);
 
             glm::dmat2x3 widerAdjustedTotBoundingBox = totalBoundingBox;
             widerAdjustedTotBoundingBox[1] += glm::dvec3(0.2, 0.2, 0.2);
@@ -1036,9 +1058,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
         //Gets turbulent dissipation rate
         //https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions
-        double testVelocity = 40.0;
-        double turbulenceIntensity = 0.003;
-        double lengthScale = 0.5;
+        double testVelocity = TEST_VELOCITY;
+        double turbulenceIntensity = TURBULENCE_INTENSITY;
+        double lengthScale = TURBULENCE_LENGTH_SCALE;
         double turbulentEnergy = 1.5*(testVelocity*turbulenceIntensity)*(testVelocity*turbulenceIntensity);
         double turbulentDissipationRate = pow(0.09, 0.75)*pow(turbulentEnergy, 1.5)/lengthScale;
         double specificTurbulenceDissipationRate = turbulentDissipationRate/(0.09*turbulentEnergy);
@@ -1072,9 +1094,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         //Runs simulation
         cout << "Running simulation on rank " << procRank << ", utilising " << nSimTasksPerNode <<
             " processes across " << nSimNodes << " nodes  with config AOA: " 
-            << posVals[0] << ", elevator: " << posVals[2] << endl;
-        double endTime = 0.3;
-        double deltaT = 0.002;
+           << posVals[0] << ", elevator: " << posVals[2] << endl;
+        double endTime = SIMULATION_LENGTH;
+        double deltaT = SIMULATION_DELTA_T;
         string simScriptCall = "./Aerodynamics_Simulation/runSim.sh " + to_string(endTime) + " " + to_string(deltaT) + " " +
             to_string(procRank) + " " + to_string(nSimNodes) + " " + to_string(nSimTasksPerNode);
         failure = system(simScriptCall.c_str());
@@ -1178,7 +1200,7 @@ void aircraft::getPhysVals(vector<vector<double>> positionVariables, double stat
 
 
 
-/*void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramValues, vector<int> discreteVals, double volMeshRes){
+void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramValues, vector<int> discreteVals, double volMeshRes){
 
 
     //Gets profiles
@@ -1235,5 +1257,5 @@ void aircraft::getPhysVals(vector<vector<double>> positionVariables, double stat
 
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
     window.draw3D(totalPoints, adjMatrices, 1.5);
-}*/
+}
 

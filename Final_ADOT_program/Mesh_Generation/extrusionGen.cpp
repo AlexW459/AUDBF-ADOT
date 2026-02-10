@@ -136,6 +136,19 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
     return numTetras;
 }
 
+void extrusionData::plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfile) const {
+
+    vector<glm::dvec3> extrudePoints;
+    vector<char> adjMatrix;
+    glm::dmat2x3 boundingBox;
+    int numTetras = generateExtrusion(partProfile, *this, adjMatrix, extrudePoints, boundingBox);
+    (void)numTetras;
+
+    meshWindow window(WINDOW_WIDTH, WINDOW_HEIGHT);
+    window.draw3DSingle(extrudePoints, adjMatrix, 2.0);
+
+};
+
 double getParam(string param, const vector<double>& paramVals, const vector<string>& paramNames){
 
     int index = distance(paramNames.begin(), find(paramNames.begin(), 
