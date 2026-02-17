@@ -8,6 +8,14 @@ Requirements:
 - openmpi (other distributions of mpi may require some modifications to the code)
 - slurm (other schedulers will require modifications to the slurm batch scripts)
 
+Notes on dependencies: 
+I have built and tested this program on an AWS cluster, which uses Oneapi to integrate MPI with Slurm. More information here: https://blog.ronin.cloud/how-to-enable-intel-mpi/ . This requires the command "source /opt/intel/oneapi/setvars.sh" to be called before compiling or running the program, in order to initialise the environment. If using a different HPC service, this might not be necessary.
+I have found that Openfoam does not install correctly using apt, and it must be installed using the steps described here: https://openfoam.org/download/13-ubuntu/ , except with all mentions of openfoam13 replaced with openfoam2512.
+Installing the package "libglm-dev" is sufficient to install glm.
+I have found that SDL2 does not install correctly on a cluster using apt, and the best option is to follow the steps listed here: https://wiki.libsdl.org/SDL2/Installation 
+to clone and build the library.
+
+
 Code functionality:
 1. A tetrahedral mesh of each part of the aircraft is constructed according to a set of parameters describing the shape of the aircraft (initially random within defined bounds)
    - User-defined functions describe the construction of the aircraft, taking the values of the parameters as inputs. One set of functions describes the arrangement of points to create 2-dimensional shapes, such as airfoils or beam cross-sections, while another set of functions describes how these shapes are extruded into 3-dmensional parts, as well as how the parts are translated and rotated into place. All parts exist within a tree structure, where the transformations of lower parts in the tree occur within the reference frame of their parents part, which is then moved into place according to its own transformations.
