@@ -4,7 +4,10 @@
 CXX = mpicxx
 
 # Compiler flags
-CXXFLAGS = -Wall -g -std=c++20 -march=x86-64 -msse2 -O3  #-fopt-info-vec-missed -fno-inline
+CXXFLAGS = -Wall -g -std=c++20 -march=x86-64 -msse2 -O3 \
+$(shell /home/ubuntu/local/bin/sdl2-config --cflags)  #-fopt-info-vec-missed -fno-inline
+
+SDL_FLAGS = `sdl2-config --cflags --libs`
 
 # Target executable
 TARGET = Main
@@ -30,7 +33,7 @@ $(TARGET): $(OBJS)
 
 # Rule to compile .cpp files into .o files
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@ $(sdl2-config --cflags --libs) -lSDL2
+	$(CXX) $(CXXFLAGS) -c $< -o $@ $(SDL_FLAGS)
 
 # Rule to run the executable
 run: mpirun -n 2 $(TARGET) 2
