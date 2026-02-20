@@ -12,8 +12,7 @@ Notes on dependencies:
 I have built and tested this program on an AWS cluster, which uses Oneapi to integrate MPI with Slurm. More information here: https://blog.ronin.cloud/how-to-enable-intel-mpi/ . This requires the command "source /opt/intel/oneapi/setvars.sh" to be called before compiling or running the program, in order to initialise the environment. If using a different HPC service, this might not be necessary.
 I have found that Openfoam does not install correctly using apt, and it must be installed using the steps described here: https://openfoam.org/download/13-ubuntu/ , except with all mentions of openfoam13 replaced with openfoam2512.
 Installing the package "libglm-dev" is sufficient to install glm.
-I have found that SDL2 does not install correctly on a cluster using apt, and the best option is to follow the steps listed here: https://wiki.libsdl.org/SDL2/Installation 
-to clone and build the library.
+I have found that SDL2 does not install correctly on a cluster using apt, and the best option is to follow the steps listed here: https://wiki.libsdl.org/SDL2/Installation to clone and build the library. Make sure to install all of the dependencies first: https://wiki.libsdl.org/SDL3/README-linux#build-dependencies .
 
 
 Code functionality:
