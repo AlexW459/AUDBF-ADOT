@@ -10,8 +10,6 @@
 #include "profile.h"
 #include "extrusionGen.h"
 
-#define INITIAL_GEN true
-#define UPDATE_GEN false
 
 using namespace std;
 

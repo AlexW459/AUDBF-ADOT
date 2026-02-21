@@ -8,6 +8,8 @@
 #include <algorithm>
 
 #include "profile.h"
+#include "constants.h"
+
 
 
 using namespace std;
@@ -116,7 +118,9 @@ struct extrusionData{
         _translation, _pivotPoint, true, _controlAxis, 0.0, glm::dvec3(0.0, 0.0, 0.0), 
         false, motorData(), _isHorizontalStabiliser) {};
 
-    void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfile) const;
+    #ifdef USE_SDL
+        void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfile) const;
+    #endif
 };
 
 

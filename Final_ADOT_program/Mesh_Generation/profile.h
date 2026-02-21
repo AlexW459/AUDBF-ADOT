@@ -7,7 +7,10 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
-#include "meshWindow.h"
+#include "../constants.h"
+#ifdef USE_SDL
+    #include "meshWindow.h"
+#endif
 
 
 using namespace std;
@@ -25,8 +28,9 @@ struct profile{
     bool pointInTriangle(glm::dvec2 point, glm::dvec2 vert1, glm::dvec2 vert2, glm::dvec2 vert3) const;
     vector<glm::dvec2> generateInset(const vector<glm::dvec2>& outerPoints) const;
     
-
-    void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT) const;
+    #ifdef USE_SDL
+        void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT) const;
+    #endif
 
     //Only contains outer coordinates
     vector<glm::dvec2> vertexCoords;

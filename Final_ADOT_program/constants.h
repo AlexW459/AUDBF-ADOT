@@ -1,6 +1,10 @@
+#pragma once
 //Defines various constants
 
+//#define USE_SDL
+
 #define RUN_OPTIMISATION_LOOP false
+
 //distance from screen to object being viewed. Used to move in or out to view objects 
 //of different sizes
 #define MESH_WINDOW_DIST_TO_SCREEN 0.3

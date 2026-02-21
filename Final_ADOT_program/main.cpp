@@ -27,8 +27,11 @@ int main(int argc, char *argv[]) {
     srand (time(0));
     default_random_engine rndNumGenerator;
     rndNumGenerator.seed(time(0));
+
     //Initialise SDL
-    //SDL_Init(SDL_INIT_EVERYTHING);
+    #ifdef USE_SDL
+        SDL_Init(SDL_INIT_EVERYTHING);
+    #endif
 
     string barrierFilename = "Comm_Files/Barrier";
     string paramFileName = "Comm_Files/paramVals";
@@ -286,9 +289,9 @@ int main(int argc, char *argv[]) {
 
 
     //Quit SDL
-    if(SDL_WasInit(SDL_INIT_EVERYTHING)){
+    #ifdef USE_SDL
         SDL_Quit();
-    }
+    #endif
 
 
     MPI_Finalize();

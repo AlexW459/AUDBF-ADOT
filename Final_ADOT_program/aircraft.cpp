@@ -1002,14 +1002,13 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
                 writeMeshToObj("aircraftModel" + to_string(procRank) + ".obj", aircraftMesh);
                 writeMeshToObj("horizontalStabiliser" + to_string(procRank) + ".obj", horizontalStabiliserMesh);
 
-                if(SDL_WasInit(SDL_INIT_EVERYTHING)){
+                #ifdef USE_SDL
                     SDL_Quit();
-                }
+                #endif
 
                 MPI_Barrier(MPI_COMM_WORLD);
 
                 MPI_Finalize();
-
                 exit(0);
             }
 
@@ -1199,7 +1198,7 @@ void aircraft::getPhysVals(vector<vector<double>> positionVariables, double stat
 }
 
 
-
+#ifdef USE_SDL
 void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramValues, vector<int> discreteVals, double volMeshRes){
 
 
@@ -1258,4 +1257,4 @@ void aircraft::plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNam
     meshWindow window(SCREEN_WIDTH, SCREEN_HEIGHT);
     window.draw3D(totalPoints, adjMatrices, 1.5);
 }
-
+#endif

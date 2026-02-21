@@ -12,8 +12,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+#include "constants.h"
+#ifdef USE_SDL
+#include "SDL2/SDL.h"
+#endif
 
-//#include "SDL2/SDL.h"
 #include "readCSV.h"
 #include "aircraft.h"
 //#include "Mesh_Generation/meshWindow.h"

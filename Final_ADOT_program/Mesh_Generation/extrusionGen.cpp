@@ -136,6 +136,7 @@ int generateExtrusion(const profile& partProfile, const extrusionData& extrusion
     return numTetras;
 }
 
+#ifdef USE_SDL
 void extrusionData::plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfile) const {
 
     vector<glm::dvec3> extrudePoints;
@@ -148,6 +149,7 @@ void extrusionData::plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfil
     window.draw3DSingle(extrudePoints, adjMatrix, 2.0);
 
 };
+#endif
 
 double getParam(string param, const vector<double>& paramVals, const vector<string>& paramNames){
 

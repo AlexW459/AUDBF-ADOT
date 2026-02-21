@@ -16,11 +16,12 @@
 #include "Mesh_Generation/profile.h"
 #include "Mesh_Generation/surfaceMeshGen.h"
 #include "Mesh_Generation/extrusionGen.h"
+#ifdef USE_SDL
 #include "Mesh_Generation/meshWindow.h"
+#endif
+
 #include "getForces.h"
 #include "readCSV.h"
-
-#include "MULEplaneModel/constants.h"
 
 
 #define RHO 1.225
@@ -52,8 +53,9 @@ class aircraft{
             double, double, vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig, 
             double volMeshRes, double surfMeshRes, int procRank, int nSimNodes, int nSimTasksPerNode);
 
-
-        void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
+        #ifdef USE_SDL
+            void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
+        #endif
 
     private:
 

@@ -125,6 +125,7 @@ profile& profile::operator=(profile& Profile){
     return *this;
 }
 
+#ifdef USE_SDL
 void profile::plot(int WINDOW_WIDTH, int WINDOW_HEIGHT) const{
     meshWindow window(WINDOW_WIDTH, WINDOW_HEIGHT);
 
@@ -143,6 +144,7 @@ void profile::plot(int WINDOW_WIDTH, int WINDOW_HEIGHT) const{
 
     window.draw2D(points, adjacencyMatrix);
 }
+#endif
 
 bool profile::pointInTriangle(glm::dvec2 point, glm::dvec2 vert1, glm::dvec2 vert2, glm::dvec2 vert3) const{
 

@@ -8,7 +8,7 @@
 #define GLM_FORCE_RADIANS
 #include "glm/glm.hpp"
 #include "glm/gtx/quaternion.hpp"
-#include "../MULEplaneModel/constants.h"
+#include "../constants.h"
 
 using namespace std;
 
