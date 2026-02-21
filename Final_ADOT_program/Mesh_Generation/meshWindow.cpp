@@ -1,5 +1,7 @@
 #include "meshWindow.h"
 
+#ifdef USE_SDL
+
 meshWindow::meshWindow(int _SCREEN_WIDTH, int _SCREEN_HEIGHT){
     window = NULL;
     SCREEN_WIDTH = _SCREEN_WIDTH;
@@ -300,6 +302,6 @@ void meshWindow::draw3D(vector<vector<glm::dvec3>>& points, vector<vector<char>>
     }
 }
 
-
+#endif
 
 

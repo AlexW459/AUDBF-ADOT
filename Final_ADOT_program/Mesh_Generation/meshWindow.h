@@ -10,6 +10,8 @@
 #include "glm/gtx/quaternion.hpp"
 #include "../constants.h"
 
+#ifdef USE_SDL
+
 using namespace std;
 
 class meshWindow{
@@ -35,3 +37,5 @@ class meshWindow{
         int SCREEN_WIDTH;
         int SCREEN_HEIGHT;
 };
+
+#endif

@@ -13,7 +13,7 @@
 #define SDF_RESOLUTION 150.0
 
 //velocity at which simulations are run
-#define TEST_VELOCITY 40.0 
+#define TEST_VELOCITY 40.0
 //k-epsilon model constants
 #define TURBULENCE_INTENSITY 0.003
 #define TURBULENCE_LENGTH_SCALE 0.5

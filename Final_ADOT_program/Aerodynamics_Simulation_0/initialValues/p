@@ -1,0 +1,82 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+ 
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    object      p;
+    location    "0";
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include        "initialConditions";
+
+dimensions      [0 2 -2 0 0 0 0];
+
+internalField   uniform $pressure;
+
+boundaryField
+{
+    inlet
+    {
+        type            zeroGradient;
+
+
+    }
+
+    outlet
+    {
+        type            fixedValue;
+        inletValue      uniform 0;
+        value           uniform 0;
+    }
+    
+    lower
+    {
+        type           zeroGradient;
+ 
+ 
+    }
+    upper
+    {
+        type           inletOutlet;
+        inletValue     uniform 0;
+        value          uniform 0;
+    }
+    aircraftModel
+    {
+        type           zeroGradient;
+    }
+
+    horizontalStabiliser
+    {
+        type            zeroGradient;
+    }
+
+    front
+    {
+        type           inletOutlet;
+        inletValue     uniform 0;
+        value          uniform 0;
+    }
+    back
+    {
+        type           inletOutlet;
+        inletValue     uniform 0;
+        value          uniform 0;
+    }
+    "proc.*"
+    {
+        type              processor;
+    }
+}
+
+
+
+
+// ************************************************************************* //

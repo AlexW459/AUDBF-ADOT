@@ -4,10 +4,9 @@
 CXX = mpicxx
 
 # Compiler flags
-CXXFLAGS = -Wall -g -std=c++20 -march=x86-64 -msse2 -O3 \
-$(shell /home/ubuntu/local/bin/sdl2-config --cflags)  #-fopt-info-vec-missed -fno-inline
+CXXFLAGS = -Wall -g -std=c++20 -march=x86-64 -msse2 -O3 #-fopt-info-vec-missed -fno-inline
 
-SDL_FLAGS = `sdl2-config --cflags --libs`
+SDL_FLAGS = #$(sdl2-config --cflags --libs)
 
 # Target executable
 TARGET = Main
@@ -29,7 +28,7 @@ OBJS = $(SRCS:.cpp=.o)
 
 # Rule to link object files into the target executable
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) -lSDL2
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(SDL_FLAGS)
 
 # Rule to compile .cpp files into .o files
 %.o: %.cpp

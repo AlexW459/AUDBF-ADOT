@@ -1,0 +1,92 @@
+/*----------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application     foamRun;
+
+solver          incompressibleFlow;
+
+startFrom       startTime;
+
+startTime       0;
+
+endTime         0.3;
+
+deltaT          0.002;
+
+writeControl    timeStep;
+
+writeInterval   1;
+
+purgeWrite      0;
+
+writeFormat     binary;
+
+writePrecision  10;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+functions
+{
+
+mag1
+{
+    type            mag;
+    libs            ("libfieldFunctionObjects.so");
+
+    
+    // Mandatory (inherited) entries (runtime modifiable)
+    field           U;
+
+    // Optional (inherited) entries
+    result          magU;
+    enabled         true;
+    writeControl    outputTime;
+    writeFormat     binary;
+    writeInterval   1;
+}
+
+tailUpstreamVelocity
+{
+    name            tailUpstreamBoxSet;
+    type            volFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+
+    regionType      cellSet;
+    cellSet         tailUpstreamBoxSet;
+    operation       volAverage;
+
+    fields          (magU);
+
+    log             true;
+    writeControl    outputTime;
+    writeFormat     ascii;
+    writeInterval   1;
+    writeFields     yes;
+
+  }
+
+  #include "forces"
+
+}
+
+
+// ************************************************************************* //
