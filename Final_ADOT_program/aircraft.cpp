@@ -999,8 +999,10 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             if(!RUN_OPTIMISATION_LOOP){
 
                 //Creates an obj file representing the current model
-                writeMeshToObj("aircraftModel" + to_string(procRank) + ".obj", aircraftMesh);
-                writeMeshToObj("horizontalStabiliser" + to_string(procRank) + ".obj", horizontalStabiliserMesh);
+                if(WRITE_OBJS_TO_ROOT){
+                    writeMeshToObj("aircraftModel" + to_string(procRank) + ".obj", aircraftMesh);
+                    writeMeshToObj("horizontalStabiliser" + to_string(procRank) + ".obj", horizontalStabiliserMesh);
+                }
 
                 #ifdef USE_SDL
                     SDL_Quit();

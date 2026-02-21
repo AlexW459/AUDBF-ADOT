@@ -4,6 +4,8 @@
 //#define USE_SDL
 
 #define RUN_OPTIMISATION_LOOP false
+//Enables writing produced obj files to the root directory. Useful for double checking aircraft designs
+#define WRITE_OBJS_TO_ROOT false
 
 //distance from screen to object being viewed. Used to move in or out to view objects 
 //of different sizes

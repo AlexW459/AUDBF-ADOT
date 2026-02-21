@@ -26,7 +26,7 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
 
     
     double motorWidth = getParam("Diameter", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames)*0.001;
-    double motorMass = getParam("Weight", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames);
+    double motorMass = getParam("Mass", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames);
     double motorThrust = getParam("Thrust", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames)*0.001*G_CONSTANT;
     double motorRPM = getParam("RPM", discreteTables[0].rows[discreteVals[0]].second, discreteTables[0].colNames);
     double horizontalStabiliserWidth = getParam("horizontalStabiliserWidth", paramVals, paramNames);
