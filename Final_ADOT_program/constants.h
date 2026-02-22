@@ -3,7 +3,7 @@
 
 //#define USE_SDL
 
-#define RUN_OPTIMISATION_LOOP false
+#define RUN_OPTIMISATION_LOOP true
 //Enables writing produced obj files to the root directory. Useful for double checking aircraft designs
 #define WRITE_OBJS_TO_ROOT false
 
@@ -21,7 +21,7 @@
 #define TURBULENCE_LENGTH_SCALE 0.5
 
 //Length and timestep of simulations
-#define SIMULATION_LENGTH 0.3
+#define SIMULATION_LENGTH 0.01
 #define SIMULATION_DELTA_T 0.002
 
 //Standard deviation of mutations to parameter vals (distribution is then flattened to between 0 and 1)
@@ -31,7 +31,7 @@
 //Defines ranges of and number of different configurations tested to find the positions 
 //leading to trim flight. Configurations are evenly spaced
 //Angle of attack (radians)
-#define MIN_ALPHA -M_PI/1.0
+#define MIN_ALPHA -M_PI/18.0
 #define MAX_ALPHA 3.0*M_PI/18.0
 #define N_ALPHA 4
 //Elevator deflection (radians)

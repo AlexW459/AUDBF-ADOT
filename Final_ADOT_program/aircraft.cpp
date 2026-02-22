@@ -70,7 +70,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
         int failure = system(deleteDirBash.c_str());
     	if(failure) throw runtime_error("Failed to clean old case directories on " + to_string(procRank) + " before simulations");
 
-	cout << "cleaned old directories" << endl;
+	    cout << "cleaned old directories" << endl;
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -231,10 +231,8 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             staticMassSoFar += partMass;
             MOISoFar += partMOI;
 
-            if(!extrusions[i].isHorizontalStabiliser){
-                //Makes list of non-control surfaces
-                staticSurfaces.push_back(i);
-            }
+            //Makes list of non-control surfaces
+            staticSurfaces.push_back(i);
 
         }else{
             controlSurfaces.push_back(i);
@@ -244,7 +242,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             controlAxes.push_back(partAxis);
             controlPivotPoints.push_back(partPivot);
 
-            if(extrusions[i].isHorizontalStabiliser){
+            if(extrusions[i].isTail){
                 elevatorPart = i;
             }
         }
@@ -255,7 +253,7 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             propellersPos.push_back(partPropPos);
         }
 
-        if(extrusions[i].isHorizontalStabiliser && !extrusions[i].isControl){
+        if(extrusions[i].isTail && !extrusions[i].isControl){
             horizontalStabiliserPart = i;
         }
 
@@ -284,10 +282,6 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     //Adds parts
     vector<double> staticSDF = updateSDF(SDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
         boundingBoxes, totalBoundingBox, staticSurfaces, surfMeshRes);
-
-    vector<double> stabiliserSDF = updateSDF(SDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
-        boundingBoxes, totalBoundingBox, {horizontalStabiliserPart}, surfMeshRes);;
-
 
     //Copies SDF without control surfaces for future use
 
@@ -337,8 +331,8 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
     vector<glm::dvec3> tailForceList, tailTorqueList;\
     pair<vector<glm::dvec3>, vector<glm::dvec3>> aeroTable = getAeroVals(positionVariables, 
         staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
-        controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
-        COMs, boundingBoxes, totalBoundingBox, dummyVar, tailForceList, tailTorqueList, 
+        controlPivotPoints, horizontalStabiliserPart, elevatorPart, COMs, boundingBoxes, 
+        totalBoundingBox, dummyVar, tailForceList, tailTorqueList, 
         surfMeshRes, procRank, nSimNodes, nSimTasksPerNode);
 
 
@@ -540,8 +534,8 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
             vector<glm::dvec3> tailForces, tailTorques;
             pair<vector<glm::dvec3>, vector<glm::dvec3>> pointAeroTable = getAeroVals(positionVariables, 
                 staticSDF, SDFSize, XYZ, profiles, extrusions, controlSurfaces, controlAxes, 
-                controlPivotPoints, horizontalStabiliserPart, elevatorPart, stabiliserSDF,
-                COMs, boundingBoxes, totalBoundingBox, tEfficiencyFactors, tailForces, tailTorques, 
+                controlPivotPoints, horizontalStabiliserPart, elevatorPart, COMs, boundingBoxes, 
+                totalBoundingBox, tEfficiencyFactors, tailForces, tailTorques, 
                 surfMeshRes, procRank, nSimNodes, nSimTasksPerNode);
 
             vector<glm::dvec3> aeroForces = pointAeroTable.first;
@@ -867,11 +861,10 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
     const vector<double>& staticSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
     const vector<profile>& profiles, vector<extrusionData> extrusions, vector<int> controlSurfaces,
     vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlPivots, int horizontalStabiliser,
-    int elevatorPart, const vector<double>& horizontalStabiliserSDF, vector<glm::dvec3> totalCOMs, 
-    const vector<glm::dmat2x3>& boundingBoxes, glm::dmat2x3 totalBoundingBox, 
-    vector<double>& tEfficiencyFactors, vector<glm::dvec3>& tailForces, 
-    vector<glm::dvec3>& tailTorques, double surfMeshRes, int procRank, int nSimNodes, 
-    int nSimTasksPerNode){
+    int elevatorPart, vector<glm::dvec3> totalCOMs, const vector<glm::dmat2x3>& boundingBoxes, 
+    glm::dmat2x3 totalBoundingBox, vector<double>& tEfficiencyFactors, 
+    vector<glm::dvec3>& tailForces, vector<glm::dvec3>& tailTorques, double surfMeshRes, 
+    int procRank, int nSimNodes, int nSimTasksPerNode){
 
     vector<double> SDF = staticSDF;
 
@@ -889,14 +882,6 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
     string caseDir = "Aerodynamics_Simulation_" + to_string(procRank);
 
-    //Makes a list of non-elevator control surfaces, as elevator is meshed separately 
-    //with the horizontal stabiliser
-    vector<int> flapSurfaces;
-    for(int i = 0; i < numControl; i++){
-        if(controlSurfaces[i] != elevatorPart){
-            flapSurfaces.push_back(controlSurfaces[i]);
-        }
-    }
 
     for(int i = 0; i < numPositions; i++){
         vector<double> posVals = positionVariables[i];
@@ -953,7 +938,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             //cout << "updating SDF" << endl;
             //Generates SDF
             vector<double> SDF = updateSDF(staticSDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
-                adjustedBoundingBoxes, totalBoundingBox, flapSurfaces, surfMeshRes);
+                adjustedBoundingBoxes, totalBoundingBox, controlSurfaces, surfMeshRes);
 
             //Meshes SDF
             MC::mcMesh aircraftMesh;
@@ -973,35 +958,12 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             writeMeshToObj(caseDir + "/aircraftMesh/aircraftModelRaw.obj", aircraftMesh);
 
 
-            //Writes horizontal stabiliser to obj
-            vector<double> stabiliserSDF = updateSDF(horizontalStabiliserSDF, SDFSize, XYZ, profiles, partProfiles, extrusions, parentIndices,
-                adjustedBoundingBoxes, totalBoundingBox, {elevatorPart}, surfMeshRes);
-
-            //Meshes SDF
-            MC::mcMesh horizontalStabiliserMesh;
-            MC::marching_cube(stabiliserSDF, SDFSize[0], SDFSize[1], SDFSize[2], horizontalStabiliserMesh);
-
-            //Moves points from index coordinates to actual space coordinates
-            for (int p = 0; p < (int)horizontalStabiliserMesh.vertices.size(); p++){
-                glm::dvec3 newPoint = minPoint + 
-                    interval*glm::dvec3(horizontalStabiliserMesh.vertices[p].x, 
-                    horizontalStabiliserMesh.vertices[p].y, horizontalStabiliserMesh.vertices[p].z);
-
-                horizontalStabiliserMesh.vertices[p].x = newPoint[0];
-                horizontalStabiliserMesh.vertices[p].y = newPoint[1];
-                horizontalStabiliserMesh.vertices[p].z = newPoint[2];
-            }
-
-            writeMeshToObj(caseDir + "/aircraftMesh/horizontalStabiliserRaw.obj", horizontalStabiliserMesh);
-		
-
             //Checks if user has asked for an early exit
             if(!RUN_OPTIMISATION_LOOP){
 
                 //Creates an obj file representing the current model
                 if(WRITE_OBJS_TO_ROOT){
                     writeMeshToObj("aircraftModel" + to_string(procRank) + ".obj", aircraftMesh);
-                    writeMeshToObj("horizontalStabiliser" + to_string(procRank) + ".obj", horizontalStabiliserMesh);
                 }
 
                 #ifdef USE_SDL
@@ -1022,6 +984,12 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
             widerAdjustedTotBoundingBox[0] += glm::dvec3(-1.7, -0.2, -0.2);
 
             cout << "Setting bounds on rank " << procRank << endl;
+
+            //Gets bounds of entire tail
+            glm::dmat3 elevatorBounds = adjustedBoundingBoxes[elevatorPart];
+            glm::dmat3 tailTotalBounds;
+            tailTotalBounds[0] = min(horizontalStabiliserBounds[0], elevatorBounds[0]);
+            tailTotalBounds[1] = max(horizontalStabiliserBounds[1], elevatorBounds[1]);
             
             //Writes correct bounding box
             string scriptCall = "./Aerodynamics_Simulation/updateBounds.sh " + to_string(widerAdjustedTotBoundingBox[0][0]) + " " +
@@ -1031,9 +999,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
                 to_string(totalBoundingBox[0][0]) + " " + to_string(totalBoundingBox[0][1]) + " " + 
                 to_string(totalBoundingBox[0][2]) + " " + to_string(totalBoundingBox[1][0]) + " " + 
                 to_string(totalBoundingBox[1][1]) + " " + to_string(totalBoundingBox[1][2]) + " " +
-                to_string(horizontalStabiliserBounds[0][0]) + " " + to_string(horizontalStabiliserBounds[0][1]) + " " +
-                to_string(horizontalStabiliserBounds[0][2]) + " " + to_string(horizontalStabiliserBounds[1][0]) + " " +
-                to_string(horizontalStabiliserBounds[1][1]) + " " + to_string(horizontalStabiliserBounds[1][2]) + " " +
+                to_string(tailTotalBounds[0][0]) + " " + to_string(tailTotalBounds[0][1]) + " " +
+                to_string(tailTotalBounds[0][2]) + " " + to_string(tailTotalBounds[1][0]) + " " +
+                to_string(tailTotalBounds[1][1]) + " " + to_string(tailTotalBounds[1][2]) + " " +
                 to_string(procRank);
 
             int failure = system(scriptCall.c_str());
@@ -1049,9 +1017,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
             cout << "Completed meshing on rank " << procRank << endl;
 
-            MPI_Barrier(MPI_COMM_WORLD);
-            MPI_Finalize();
-            exit(0);
+            //MPI_Barrier(MPI_COMM_WORLD);
+            //MPI_Finalize();
+            //exit(0);
 
         }
 
@@ -1066,9 +1034,8 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         double turbulentDissipationRate = pow(0.09, 0.75)*pow(turbulentEnergy, 1.5)/lengthScale;
         double specificTurbulenceDissipationRate = turbulentDissipationRate/(0.09*turbulentEnergy);
 
-        glm::dvec3 velocity(-testVelocity*cos(pitch)*cos(yaw), testVelocity*sin(yaw)*sin(pitch), testVelocity*sin(pitch));
+        glm::dvec3 velocity(-1.0*testVelocity*cos(pitch)*cos(yaw), testVelocity*sin(yaw)*sin(pitch), testVelocity*sin(pitch));
 
-        
         //Sets boundary conditions based on velocity direciton
         string dictScriptCall = "./Aerodynamics_Simulation/updateDicts.sh " + to_string(velocity[0]) +
             " " + to_string(velocity[1]) + " " + to_string(velocity[2]) + " " + 
@@ -1089,8 +1056,7 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         failure = system(forceScriptCall.c_str());
         if(failure) throw std::runtime_error("Setting force details failed");
 
-	    MPI_Finalize();
-	    exit(0);
+
 
         //Runs simulation
         cout << "Running simulation on rank " << procRank << ", utilising " << nSimTasksPerNode <<
@@ -1134,16 +1100,16 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         netForces.push_back(forceVals.first);
         netTorques.push_back(forceVals.second);
 
-        glm::dvec3 totalForce = forceVals.first + tailForce;
-        glm::dvec3 totalTorque = forceVals.second + tailTorque;
+        //glm::dvec3 totalForce = forceVals.first + tailForce;
+        //glm::dvec3 totalTorque = forceVals.second + tailTorque;
 
-        cout << "Force and torque from simulation " << i << " on rank " << procRank << ": " << 
+        /*cout << "Force and torque from simulation " << i << " on rank " << procRank << ": " << 
             "(" << totalForce[0] + tailForce[0] << ", " << totalForce[1] + tailForce[1]<< ", " <<
             totalForce[2] + tailForce[2] << ") (" << totalTorque[0] + tailTorque[0] << ", " << 
-            totalTorque[1] + tailTorque[1] << ", " << totalTorque[2] + tailTorque[2] << ")" << endl;
+            totalTorque[1] + tailTorque[1] << ", " << totalTorque[2] + tailTorque[2] << ")" << endl;*/
 	
-	MPI_Finalize();
-	exit(0);
+	    MPI_Finalize();
+	    exit(0);
     }
 
 

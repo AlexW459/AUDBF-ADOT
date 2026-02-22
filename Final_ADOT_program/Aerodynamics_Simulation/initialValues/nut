@@ -14,6 +14,8 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+#include        "initialConditions"
+
 dimensions      [0 2 -1 0 0 0 0];
 
 internalField   uniform 0;
@@ -50,14 +52,14 @@ boundaryField
     {
         type            nutkWallFunction;
         value           uniform 0;
-        Ks              0;
+        Ks              $surfaceRoughnessHeight;
         Cs              0.5;
     }
     horizontalStabiliser
     {
         type            nutkWallFunction;
         value           uniform 0;
-        Ks              0;
+        Ks              $surfaceRoughnessHeight;
         Cs              0.5;
     }
     

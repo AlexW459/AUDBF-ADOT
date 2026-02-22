@@ -7,11 +7,12 @@
 \*---------------------------------------------------------------------------*/
 
 flowVelocity       (-39.392310 0.000000 6.945927);
-pressure             0;
-nuTildaBoundary      4.5e-5;
+internalPressure             0;
+//nuTildaBoundary      4.5e-5;
 turbulentEnergy      0.0216;
 turbulentDissipationRate 1.043e-3;
 specificTurbulenceDissipationRate 1;
+surfaceRoughnessHeight            1.0e-3;
 
 
 // ************************************************************************* //

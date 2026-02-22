@@ -55,7 +55,7 @@ struct extrusionData{
     motorData motor;
 
     //Possibly is a horizontal part of the tail
-    bool isHorizontalStabiliser;
+    bool isTail;
 
 
     extrusionData(){};
@@ -64,12 +64,12 @@ struct extrusionData{
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
         glm::dvec3 _pivotPoint, bool _isControl, glm::dvec3 _controlAxis, double _pointMass,
-        glm::dvec3 _massLocation, bool _isMotor, motorData _motor, bool _isHorizontalStabiliser)
+        glm::dvec3 _massLocation, bool _isMotor, motorData _motor, bool _isTail)
         : zSampleVals(_zSampleVals), posVals(_posVals), 
         scaleVals(_scaleVals), rotation(_rotation), translation(_translation), pivotPoint(_pivotPoint), 
         isControl(_isControl), controlAxis(_controlAxis), rotateAngle(0.0), massLocation(_massLocation), 
         pointMass(_pointMass), isMotor(_isMotor), motor(_motor), 
-        isHorizontalStabiliser(_isHorizontalStabiliser) {};
+        isTail(_isTail) {};
 
     //Barebones, basic part with no extras
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
@@ -105,18 +105,18 @@ struct extrusionData{
     //Horizontal Stabiliser
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, bool _isHorizontalStabiliser) : extrusionData(_zSampleVals, 
+        glm::dvec3 _pivotPoint, bool _isTail) : extrusionData(_zSampleVals, 
         _posVals, _scaleVals, _rotation, _translation, _pivotPoint, false, 
         glm::dvec3(0.0), 0.0, glm::dvec3(0.0),
-        false, motorData(), _isHorizontalStabiliser) {};
+        false, motorData(), _isTail) {};
 
     //Elevator
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, glm::dvec3 _controlAxis, bool _isHorizontalStabiliser) : 
+        glm::dvec3 _pivotPoint, glm::dvec3 _controlAxis, bool _isTail) : 
         extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, 
         _translation, _pivotPoint, true, _controlAxis, 0.0, glm::dvec3(0.0, 0.0, 0.0), 
-        false, motorData(), _isHorizontalStabiliser) {};
+        false, motorData(), _isTail) {};
 
     #ifdef USE_SDL
         void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfile) const;

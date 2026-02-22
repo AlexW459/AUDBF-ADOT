@@ -34,12 +34,6 @@ geometry
         file "aircraftModel.obj";
     }
 
-    horizontalStabiliser
-    {
-        type triSurfaceMesh;
-        file "horizontalStabiliser.obj";
-    }
-
     // Analytical shape; cylinder, sphere
     refinementBox
     {
@@ -105,16 +99,6 @@ castellatedMeshControls
         }
     );
 
-    features
-    (
-        {
-            file "horizontalStabiliser.eMesh";
-            level 2;
-        }
-
-    );
-
-
 
     // Surface based refinement
     // ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,18 +115,6 @@ castellatedMeshControls
         {
             // Surface-wise min and max refinement level
             level (3 4);
-            
-            patchInfo
-            {
-                type wall;
-            }
-
-        }
-
-        horizontalStabiliser
-        {
-            // Surface-wise min and max refinement level
-            level (2 4);
             
             patchInfo
             {
@@ -248,10 +220,6 @@ addLayersControls
     layers
     {
         "aircraftModel"
-        {
-            nSurfaceLayers 1;
-        }
-        "horizontalStabiliser"
         {
             nSurfaceLayers 1;
         }

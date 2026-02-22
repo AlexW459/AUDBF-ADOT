@@ -4,6 +4,8 @@
 #Second number is the number of nodes to run on
 #Third argument is the processes per node
 
+openfoamSource="/opt/openfoam13/etc/bashrc"
+
 #Enters case
 caseNum="Aerodynamics_Simulation_$1"
 cd $caseNum
@@ -12,7 +14,8 @@ cd $caseNum
 totalProcesses=$(($2*$3))
 
 #Loads latest Openfoam version
-. /usr/lib/openfoam/openfoam2512/etc/bashrc
+#. /usr/lib/openfoam/openfoam2512/etc/bashrc
+. $openfoamSource
 
 #Cleans mesh
 surfaceSplitByTopology aircraftMesh/aircraftModelRaw.obj splitPatches/aircraftModelSplit.obj > splitLog
@@ -22,22 +25,12 @@ largestAircraftFile=$(wc -l *splitPatches/aircraftModelSplit_*.obj | sort -n | t
 cp $largestAircraftFile aircraftMesh/aircraftModelSplit.obj
 rm splitPatches/*
 
-#Repeats for horizontal stabiliser
-surfaceSplitByTopology aircraftMesh/horizontalStabiliserRaw.obj splitPatches/horizontalStabiliserSplit.obj > splitLog2
-largestStabiliserFile=$(wc -l *splitPatches/horizontalStabiliserSplit_*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
-cp $largestStabiliserFile aircraftMesh/horizontalStabiliserSplit.obj
-rm splitPatches/*
-
-surfaceLambdaMuSmooth aircraftMesh/aircraftModelSplit.obj 0.5 0.5 20 aircraftMesh/aircraftModel.obj > smoothLog
+surfaceLambdaMuSmooth aircraftMesh/aircraftModelSplit.obj aircraftMesh/aircraftModel.obj 0.5 0.5 20 > smoothLog
 gzip aircraftMesh/aircraftModel.obj
-
-surfaceLambdaMuSmooth aircraftMesh/horizontalStabiliserSplit.obj 0.5 0.5 20 aircraftMesh/horizontalStabiliser.obj > smoothLog2
-gzip aircraftMesh/horizontalStabiliser.obj
 
 
 rm -f constant/triSurface/*
 cp aircraftMesh/aircraftModel.obj.gz constant/triSurface
-cp aircraftMesh/horizontalStabiliser.obj.gz constant/triSurface
 
 
 rm -r -f constant/polyMesh/*
@@ -50,15 +43,15 @@ sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/
 
 
 blockMesh > blockLog
-surfaceFeatureExtract > surfaceLog
+surfaceFeatures > surfaceLog
 
 decomposePar -force -constant > decomposeLog
 
 # Load the Intel oneAPI environment for the job
-source /opt/intel/oneapi/setvars.sh
+#source /opt/intel/oneapi/setvars.sh
 
 # Set the PMI library path for Slurm-MPI integration
-#export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 echo "Running snappyHexMesh in parallel on rank $1 on $totalProcesses processes across $2 nodes"
 
@@ -66,15 +59,17 @@ echo "Running snappyHexMesh in parallel on rank $1 on $totalProcesses processes 
 sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$1/" meshParallel.sh
 sed -i "$((3))s/.*/#SBATCH --nodes=$2/" meshParallel.sh
 sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$3/" meshParallel.sh
+sed -i "$((9))s/.*/. $openfoamSource/" meshParallel.sh
 
-#srun -N 1 -n $2 snappyHexMesh -parallel -overwrite > meshLog
 #snappyHexMesh -overwrite > meshLog
 sbatch --wait --wait-all-nodes 1 meshParallel.sh
 
-reconstructParMesh -constant > reconstructLog
+reconstructPar -constant > reconstructLog
 
-topoSet > setLog
+createZones > zoneLog
+
+createPatch > patchLog
 
 renumberMesh -constant > renumberLog
 
-rm -r processor*
+rm -r -f processor*

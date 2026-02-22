@@ -74,8 +74,7 @@ class aircraft{
         void getPhysVals(vector<vector<double>> positionVariables,
             double staticMass, glm::dvec3 staticCOM, glm::dmat3 staticMOI, vector<double> controlMasses, 
             vector<glm::dvec3> controlPivots, vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlCOMs,
-            vector<glm::dmat3> controlMOIs,
-            vector<glm::dvec3>& COMs, vector<glm::dmat3>& MOIs);
+            vector<glm::dmat3> controlMOIs, vector<glm::dvec3>& COMs, vector<glm::dmat3>& MOIs);
 
         //Gets the aerodynamic forces (net force, torque) on the aircraft for a range of configurations of the aircraft
         //Forces are normalised for velocity squared
@@ -84,8 +83,7 @@ class aircraft{
             const vector<double>& staticSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ,
             const vector<profile>& profiles, vector<extrusionData> extrusions, vector<int> controlSurfaces,
             vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlPivots, int horizontalStabiliser,
-            int elevatorPart, const vector<double>& horizontalStabiliserSDF, 
-            vector<glm::dvec3> totalCOMs, const vector<glm::dmat2x3>& boundingBoxes, 
+            int elevatorPart, vector<glm::dvec3> totalCOMs, const vector<glm::dmat2x3>& boundingBoxes, 
             glm::dmat2x3 totalBoundingBox, vector<double>& tEfficiencyFactors, 
             vector<glm::dvec3>& tailForce, vector<glm::dvec3>& tailTorques, double surfMeshRes,
             int procRank, int nSimNodes, int nSimTasksPerNode);

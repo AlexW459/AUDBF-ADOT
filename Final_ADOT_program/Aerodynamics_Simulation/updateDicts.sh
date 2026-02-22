@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # First 3 arguments are velocity in x, y and z direction
-# Next argument is the surface height deviation
+# Next argument is the surface roughness height
 # Next argument is the specific turbulence dissipation rate
 # Final argument is the case number
 
@@ -10,9 +10,8 @@ caseNum="Aerodynamics_Simulation_$6"
 cd $caseNum
 
 #Updates inlet velocity
-velocityLineNum="$(grep -n "flowVelocity" initialValues/initialConditions | head -n 1 | cut -d: -f1)"
-newVelocity="flowVelocity       ($1 $2 $3);"
-sed -i "$((velocityLineNum))s/.*/$newVelocity/" initialValues/initialConditions
+sed -i "/flowVelocity/c\flowVelocity       ($1 $2 $3);" initialValues/initialConditions
+
 
 #Updates patch types
 #Inlets are type fixed value for velocity, and type zeroGradient for pressure
@@ -63,14 +62,15 @@ else
 fi
 
 #Set surface roughness
-nutWallLineNum="$(grep -n "aircraftModel" initialValues/nut | head -n 1 | cut -d: -f1)"
-sed -i "$((nutWallLineNum+4))s/.*/        Ks              $4;/" initialValues/nut
+sed -i "/surfaceRoughnessHeight/c\surfaceRoughnessHeight            $4;" initialValues/initialConditions
+
 
 #Set specific turbulence dissipation rate
-omegaLineNum="$(grep -n "specificTurbulenceDissipationRate" initialValues/initialConditions | head -n 1 | cut -d: -f1)"
-sed -i "$((omegaLineNum))s/.*/specificTurbulenceDissipationRate $5;/" initialValues/initialConditions
+sed -i "/specificTurbulenceDissipationRate/c\specificTurbulenceDissipationRate $5;" initialValues/initialConditions
 
-rm -r 0/*
+
+
+rm -r -f 0/*
 
 cp -a initialValues/. 0/
 

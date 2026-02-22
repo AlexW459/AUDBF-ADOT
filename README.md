@@ -2,7 +2,7 @@
 The Aircraft Design and Optimisation Toolbox is a library of code developed for use by the AUDBF to optimise aircraft designs
 
 Requirements:
-- openfoam2512
+- openfoam v13
 - glm3
 - SDL2
 - openmpi (other distributions of mpi may require some modifications to the code)
@@ -10,11 +10,15 @@ Requirements:
 
 Notes on dependencies: 
 I have built and tested this program on an AWS cluster, which uses Oneapi to integrate MPI with Slurm. More information here: https://blog.ronin.cloud/how-to-enable-intel-mpi/ . This requires the command "source /opt/intel/oneapi/setvars.sh" to be called before compiling or running the program, in order to initialise the environment. If using a different HPC service, this might not be necessary.
-I have found that Openfoam does not install correctly using apt, and it must be installed using the steps described here: https://openfoam.org/download/13-ubuntu/ , except with all mentions of openfoam13 replaced with openfoam2512.
 Installing the package "libglm-dev" is sufficient to install glm.
+
+If you are having trouble using Openfoam 13 on a cluster, I recommend building from the source code using the steps here: https://openfoam.org/download/source/ , in a shared directory.
 
 I have not been able to successfully install SDL2 on the cluster in a way that doesn't cause problems accessing object files at runtime when running using Slurm. However, SDL2 is not needed for the key features of the program, and is only used to check that the aircrat design has been described correctly. To address this, I have made all inclusion and utilisation of SDL2 dependent on the defining of "USE_SDL" in the constants.h file. This can be enabled when testing and disabled when running the program.
 
+
+*Important* At the beginning of Aerodynamics_Simulation/meshObj.sh and Aerodynamics_Simulation/runSim.sh, the location of the Openfoam bashrc file sourced by those scripts is assigned to a variable. Ensure that this path is correct. In meshObj.sh, runSim.sh, meshParallel.sh and simParallel.sh there is also the line "export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+". This was necessary on the cluster that this program was tested on, in order to ensure that MPI functioned correctly with Slurm. This may not be required on your system, or it may require modification.
 
 Code functionality:
 1. A tetrahedral mesh of each part of the aircraft is constructed according to a set of parameters describing the shape of the aircraft (initially random within defined bounds)
@@ -25,7 +29,7 @@ Code functionality:
    - A signed distance field is calculated in the bounding box of each part, by translating and scaling a meshgrid of coordinates according to the translation and scaling that occurs along its length (extruded in the +z direction), and then finding the signed distance of each of those points to the 2d cross-section. The signed distance field produced by this method is not entirely accurate, but it has the same gradient as the correct field at the location of the surface (when the field is zero).
    - A triangular mesh can be produced from this field using the marching cubes algorithm.
 4. The triangular mesh is used to perform aerodynamic simulations at a range of angles of attack and a range of elevator deflections. The parameters measured are theforce on the aircraft excluding the horizontal stabiliser, the force on the horizontal stabiliser, and the velocity of the air in the region in front of the horizontal stabiliser.
-   - The Openfoamv2512 API is used to perform all simulations in this application. The mesh is produced by using snappyHexMesh to overlay the triangular mesh onto a background mesh produced by blockMesh
+   - The Openfoam v13 API is used to perform all simulations in this application. The mesh is produced by using snappyHexMesh to overlay the triangular mesh onto a background mesh produced by blockMesh
    - Aerodynamic simulations are performed by first initialising fields using potentialFoam, and then running pimpleFoam for however much time is specified
 5.  The configurations of the aircraft that lead to trim flight are determined based on the simulation data
    - The velocity and forces on the aircraft for a range of different motor throttles for each of the configurations is estimated, and the results of these estimations can be described as a 3-dimensional field of values, where the axes represent the values of elevator deflection, angle of attack and motor throttle, and the values represent the net vertical force on the aircraft. The same can be done to find a field representing the pitching torque on the aircraft for the different configurations.
@@ -42,7 +46,7 @@ Parallelisation:
 - Openfoam simulations performed on each design are themselves run using multiple processes
 
 How to use:
-- MULEplaneModel is provided as an example so that other 
+- MULEplaneModel is provided as an example of an aircraft produced by following these steps:
 - When running the program, the first argument is the number of aircraft designs to test in parallel, and the second argument is the number of processes per design.
 - Define ranges of each of the parameters that are used to define the aircraft in a csv file, using the formatting shown in the example.
 - Specify the different batteries and motors that are available in 2 more csv files. The thrust, mass, 
