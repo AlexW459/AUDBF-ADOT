@@ -45,7 +45,7 @@ sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/
 
 
 blockMesh > blockLog
-surfaceFeatures > surfaceLog
+surfaceFeatures -writeObj > surfaceLog
 
 decomposePar -force -constant > decomposeLog
 
