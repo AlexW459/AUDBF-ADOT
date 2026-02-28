@@ -17,7 +17,7 @@ If you are having trouble using Openfoam 13 on a cluster, I recommend building f
 I have not been able to successfully install SDL2 on the cluster in a way that doesn't cause problems accessing object files at runtime when running using Slurm. However, SDL2 is not needed for the key features of the program, and is only used to check that the aircrat design has been described correctly. To address this, I have made all inclusion and utilisation of SDL2 dependent on the defining of "USE_SDL" in the constants.h file. This can be enabled when testing and disabled when running the program.
 
 
-*Important* At the beginning of Aerodynamics_Simulation/meshObj.sh and Aerodynamics_Simulation/runSim.sh, the location of the Openfoam bashrc file sourced by those scripts is assigned to a variable. Ensure that this path is correct. In meshObj.sh, runSim.sh, meshParallel.sh and simParallel.sh there is also the line "export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+*Important* Ensure that the sourcing path for OpenFOAM defined in constants.h is correct. In meshObj.sh, runSim.sh, meshParallel.sh and simParallel.sh there is also the line "export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 ". This was necessary on the cluster that this program was tested on, in order to ensure that MPI functioned correctly with Slurm. This may not be required on your system, or it may require modification.
 
 Code functionality:

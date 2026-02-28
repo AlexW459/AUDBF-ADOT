@@ -4,11 +4,11 @@
 # Second argument is timeStep, 
 # Next argument is the case number
 # Next argument is the number of nodes
-# Final argument is the number of processes per node
+# Next argument is the number of processes per node
+# Final argument is the location of the openfoam source script
 
 #Loads latest Openfoam version
-#. /usr/lib/openfoam/openfoam2512/etc/bashrc
-openfoamSource="/opt/openfoam13/etc/bashrc"
+openfoamSource=$6
 
 . $openfoamSource
 
@@ -49,7 +49,10 @@ rm -r -f postProcessing/tailUpstreamVelocity/0/*
 sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$3/" simParallel.sh
 sed -i "$((3))s/.*/#SBATCH --nodes=$4/" simParallel.sh
 sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$5/" simParallel.sh
-sed -i "$((9))s/.*/. $openfoamSource/" simParallel.sh
+sed -i "/bashrc/c\ . $openfoamSource \\" meshParallel.sh
+
+
+
 
 echo "Running simulation in parallel on rank $3 on $totalProcesses processes across $4 nodes"
 

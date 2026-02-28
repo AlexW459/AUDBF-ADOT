@@ -6,10 +6,10 @@
 #SBATCH --time=01:00:00
 #SBATCH --output=slurmMeshingOutput
 #SBATCH --error=slurmMeshingErrorLog
-. /opt/openfoam13/etc/bashrc
 
 #source /opt/intel/oneapi/setvars.sh
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
-. /usr/lib/openfoam/openfoam2512/etc/bashrc
-/opt/slurm/bin/srun snappyHexMesh -parallel -overwrite > meshLog
+/opt/slurm/bin/srun \
+ . opt/openfoam13/etc/bashrc \
+ && snappyHexMesh -parallel -overwrite > meshLog
