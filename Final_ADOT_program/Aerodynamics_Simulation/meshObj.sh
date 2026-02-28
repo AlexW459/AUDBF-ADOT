@@ -25,14 +25,14 @@ surfaceSplitByTopology aircraftMesh/aircraftModelRaw.obj splitPatches/aircraftMo
 #Only retains largest mesh
 largestAircraftFile=$(wc -l *splitPatches/aircraftModelSplit_*.obj | sort -n | tail -n 2 | head -n 1 | awk '{print $2}')
 cp $largestAircraftFile aircraftMesh/aircraftModelSplit.obj
-rm splitPatches/*
+rm splitPatches/aircraftModel*
 
 surfaceLambdaMuSmooth aircraftMesh/aircraftModelSplit.obj aircraftMesh/aircraftModel.obj 0.5 0.5 20 > smoothLog
 gzip aircraftMesh/aircraftModel.obj
 
 
-rm -f constant/triSurface/*
-cp aircraftMesh/aircraftModel.obj.gz constant/triSurface
+rm -f constant/geometry/aircraftModel*
+cp aircraftMesh/aircraftModel.obj.gz constant/geometry/
 
 
 rm -r -f constant/polyMesh/*
@@ -45,7 +45,7 @@ sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/
 
 
 blockMesh > blockLog
-surfaceFeatures -writeObj > surfaceLog
+surfaceFeatures > surfaceLog
 
 decomposePar -force -constant > decomposeLog
 
