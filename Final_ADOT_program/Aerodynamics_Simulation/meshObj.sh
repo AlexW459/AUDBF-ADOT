@@ -63,7 +63,7 @@ sed -i "$((3))s/.*/#SBATCH --nodes=$2/" meshParallel.sh
 sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$3/" meshParallel.sh
 sed -i "$((9))s/.*//" meshParallel.sh
 
-sed -i "/bashrc/c\ . $openfoamSource \\" meshParallel.sh
+sed -i "/bashrc/c\ . $openfoamSource" meshParallel.sh
 
 #snappyHexMesh -overwrite > meshLog
 sbatch --wait --wait-all-nodes 1 meshParallel.sh

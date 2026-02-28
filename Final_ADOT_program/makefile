@@ -18,7 +18,7 @@ TARGET_DEL = Main.exe
 # Source files
 SRCS = main.cpp aircraft.cpp readCSV.cpp Mesh_Generation/profile.cpp  \
 	MULEplaneModel/MULEplane.cpp Mesh_Generation/extrusionGen.cpp Mesh_Generation/surfaceMeshGen.cpp \
-	getForces.cpp Mesh_Generation/meshWindow.cpp
+	getForces.cpp #Mesh_Generation/meshWindow.cpp
 
 
 
