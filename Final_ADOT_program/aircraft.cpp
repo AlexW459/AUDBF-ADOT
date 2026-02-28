@@ -1010,16 +1010,16 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
             cout << "Meshing on rank " << procRank << endl;
 
-            scriptCall = "./" + caseDir + "/meshObj.sh " + to_string(procRank) + " " + 
-                to_string(nSimNodes) + " " + to_string(nSimTasksPerNode);
+            scriptCall = "./Aerodynamics_Simulation/meshObj.sh " + to_string(procRank) + " " + 
+                to_string(nSimNodes) + " " + to_string(nSimTasksPerNode) + " \"" + OPENFOAM_SOURCE + "\"";
             failure = system(scriptCall.c_str());
             if(failure) throw runtime_error("Meshing failed in case " + to_string(procRank));
 
             cout << "Completed meshing on rank " << procRank << endl;
 
-            //MPI_Barrier(MPI_COMM_WORLD);
-            //MPI_Finalize();
-            //exit(0);
+            MPI_Barrier(MPI_COMM_WORLD);
+            MPI_Finalize();
+            exit(0);
 
         }
 
@@ -1064,8 +1064,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
            << posVals[0] << ", elevator: " << posVals[2] << endl;
         double endTime = SIMULATION_LENGTH;
         double deltaT = SIMULATION_DELTA_T;
-        string simScriptCall = "./Aerodynamics_Simulation/runSim.sh " + to_string(endTime) + " " + to_string(deltaT) + " " +
-            to_string(procRank) + " " + to_string(nSimNodes) + " " + to_string(nSimTasksPerNode);
+        string simScriptCall = "./Aerodynamics_Simulation/runSim.sh " + to_string(endTime) + " " + 
+            to_string(deltaT) + " " + to_string(procRank) + " " + to_string(nSimNodes) + " " + 
+            to_string(nSimTasksPerNode) + " \"" + OPENFOAM_SOURCE + "\"";
         failure = system(simScriptCall.c_str());
         if(failure) throw std::runtime_error("Runnning simulation failed");
 

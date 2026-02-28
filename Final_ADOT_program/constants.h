@@ -3,6 +3,9 @@
 
 //#define USE_SDL
 
+//"/opt/openfoam13/etc/bashrc"
+#define OPENFOAM_SOURCE "/opt/openfoam13/etc/bashrc"
+
 #define RUN_OPTIMISATION_LOOP true
 //Enables writing produced obj files to the root directory. Useful for double checking aircraft designs
 #define WRITE_OBJS_TO_ROOT false
