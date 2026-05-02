@@ -61,10 +61,7 @@ echo "Running snappyHexMesh in parallel on rank $1 on $totalProcesses processes 
 sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$1/" meshParallel.sh
 sed -i "$((3))s/.*/#SBATCH --nodes=$2/" meshParallel.sh
 sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$3/" meshParallel.sh
-
 sed -i "/bashrc/c\ . $openfoamSource \\\ " meshParallel.sh
-
-exit 0;
 
 #snappyHexMesh -overwrite > meshLog
 sbatch --wait --wait-all-nodes 1 meshParallel.sh
