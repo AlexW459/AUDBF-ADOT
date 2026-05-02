@@ -49,7 +49,7 @@ rm -r -f postProcessing/tailUpstreamVelocity/0/*
 sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$3/" simParallel.sh
 sed -i "$((3))s/.*/#SBATCH --nodes=$4/" simParallel.sh
 sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$5/" simParallel.sh
-sed -i "/bashrc/c\ . $openfoamSource \\" meshParallel.sh
+sed -i "/bashrc/c\ . $openfoamSource \\\ " meshParallel.sh
 
 
 

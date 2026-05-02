@@ -9,26 +9,26 @@ int main(int argc, char *argv[]) {
 
     MPI_Barrier(MPI_COMM_WORLD);
 
-    //Gets rank of node that program is being run on, the number of processes available 
-    //to the program, and the total number of nodes
+    // Gets rank of node that program is being run on, the number of processes available 
+    // to the program, and the total number of nodes
     int nRanks;
     int localRank;
     MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
     MPI_Comm_rank(MPI_COMM_WORLD, &localRank);
 
-    //First argument is the number of nodes per simulation, second argument is the number of
-    //simulation tasks per node
+    // First argument is the number of nodes per simulation, second argument is the number of
+    // simulation tasks per node
     int nSimNodes = atoi(argv[1]);
     int nSimTasksPerNode = atoi(argv[2]);
 
     cout << "Running process " << localRank << " of " << nRanks << endl;
 
-    //Initialise rand()
+    // Initialise rand()
     srand (time(0));
     default_random_engine rndNumGenerator;
     rndNumGenerator.seed(time(0));
 
-    //Initialise SDL
+    // Initialise SDL
     #ifdef USE_SDL
         SDL_Init(SDL_INIT_EVERYTHING);
     #endif
@@ -38,19 +38,19 @@ int main(int argc, char *argv[]) {
     string discreteFileName = "Comm_Files/discreteVals";
     string scoresFileName = "Comm_Files/scores";
 
-    //Initialises aircraft
+    // Initialises aircraft
     string planeModel = "MULEplaneModel";
 
     vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = 
         {fuselageProfile, wingProfile, motorPodProfile, empennageBoomProfile, 
             horizontalStabiliserProfile, elevatorProfile};
     
-    //Gets maximum and minimun values of each parameter
+    // Gets maximum and minimun values of each parameter
     dataTable paramRanges = readCSV(planeModel + "/paramRanges.csv");
     dataTable motorTable = readCSV(planeModel + "/motorSelection.csv");
     dataTable batteryTable = readCSV(planeModel + "/batterySelection.csv");
 
-    //Gets names of variables
+    // Gets names of variables
     vector<string> paramNames(paramRanges.rows.size());
     for(int i = 0; i < (int)paramRanges.rows.size(); i++){
         paramNames[i] = paramRanges.rows[i].first;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     int nDiscrete = discreteTables.size();
 
 
-    //Finds random values of parameters within bounds
+    // Finds random values of parameters within bounds
     for(int i = 0; i < nParams; i++){
         double min = paramRanges.rows[i].second[0];
         double max = paramRanges.rows[i].second[1];
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
         paramVals[i] = paramDist(rndNumGenerator);
     }
 
-    //Finds random values of discrete parameters
+    // Finds random values of discrete parameters
     for(int i = 0; i < nDiscrete; i++){
         
         int nChoices = discreteTables[i].rows.size();

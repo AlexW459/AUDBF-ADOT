@@ -4,13 +4,13 @@
 //#define USE_SDL
 
 //"/opt/openfoam13/etc/bashrc"
-#define OPENFOAM_SOURCE "/opt/openfoam13/etc/bashrc"
+#define OPENFOAM_SOURCE "$HOME/opt/OpenFOAM-13/etc/bashrc"
 
 #define RUN_OPTIMISATION_LOOP true
 //Enables writing produced obj files to the root directory. Useful for double checking aircraft designs
 #define WRITE_OBJS_TO_ROOT false
 
-//distance from screen to object being viewed. Used to move in or out to view objects 
+//Distance from screen to object being viewed. Used to move in or out to view objects 
 //of different sizes
 #define MESH_WINDOW_DIST_TO_SCREEN 0.3
 
@@ -45,4 +45,3 @@
 #define MIN_THROTTLE 0.6
 #define MAX_THROTTLE 1.0
 #define N_THROTTLE 5
-
