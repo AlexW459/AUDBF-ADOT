@@ -3,7 +3,6 @@
 
 //#define USE_SDL
 
-//"/opt/openfoam13/etc/bashrc"
 #define OPENFOAM_SOURCE "$HOME/opt/OpenFOAM-13/etc/bashrc"
 
 #define RUN_OPTIMISATION_LOOP true
