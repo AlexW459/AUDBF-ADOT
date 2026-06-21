@@ -1,0 +1,78 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 13
+Exec   : blockMesh
+Date   : Jun 21 2026
+Time   : 07:34:35
+Host   : "ip-10-255-0-177"
+PID    : 6441
+I/O    : uncollated
+Case   : /home/ubuntu/AUDBF-ADOT/Final_ADOT_program/Aerodynamics_Simulation_0
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Reading "blockMeshDict"
+
+Creating block mesh from
+    "system/blockMeshDict"
+Creating block edges
+No non-planar block faces defined
+Creating topology blocks
+Creating topology patches
+
+Creating block mesh topology
+
+Check topology
+
+	Basic statistics
+		Number of internal faces : 0
+		Number of boundary faces : 6
+		Number of defined boundary faces : 6
+		Number of undefined boundary faces : 0
+	Checking patch -> block consistency
+
+Creating block offsets
+Creating merge list .
+
+Creating polyMesh from blockMesh
+Creating patches
+Creating cells
+Creating points with scale 1
+    Block 0 cell size :
+        i : 0.21541235 .. 0.21541235
+        j : 0.19039 .. 0.19039
+        k : 0.118188
+
+No patch pairs to merge
+
+Writing polyMesh
+----------------
+Mesh Information
+----------------
+  boundingBox: (-3.033151 -1.14234 -0.472752) (1.275096 1.14234 0.472752)
+  nPoints: 2457
+  nCells: 1920
+  nFaces: 6256
+  nInternalFaces: 5264
+----------------
+Patches
+----------------
+  patch 0 (start: 5264 size: 160) name: front
+  patch 1 (start: 5424 size: 160) name: back
+  patch 2 (start: 5584 size: 96) name: inlet
+  patch 3 (start: 5680 size: 96) name: outlet
+  patch 4 (start: 5776 size: 240) name: lower
+  patch 5 (start: 6016 size: 240) name: upper
+
+End
+

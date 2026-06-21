@@ -1,0 +1,90 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 13
+Exec   : decomposePar -force -constant
+Date   : Jun 21 2026
+Time   : 07:34:37
+Host   : "ip-10-255-0-245"
+PID    : 4743
+I/O    : uncollated
+Case   : /home/ubuntu/AUDBF-ADOT/Final_ADOT_program/Aerodynamics_Simulation_1
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Removing 0 existing processor directories
+
+Calculating distribution of cells
+
+Selecting decomposer scotch
+
+Finished decomposition in 0.004411 s
+
+Calculating original mesh data
+
+Distributing cells to processors
+
+Distributing faces to processors
+
+Distributing points to processors
+
+Constructing processor meshes
+
+Processor 0
+    Number of cells = 480
+    Number of faces shared with processor 1 = 80
+    Number of faces shared with processor 3 = 48
+    Number of processor patches = 2
+    Number of processor faces = 128
+    Number of boundary faces = 248
+
+Processor 1
+    Number of cells = 480
+    Number of faces shared with processor 0 = 80
+    Number of faces shared with processor 2 = 48
+    Number of processor patches = 2
+    Number of processor faces = 128
+    Number of boundary faces = 248
+
+Processor 2
+    Number of cells = 480
+    Number of faces shared with processor 1 = 48
+    Number of faces shared with processor 3 = 80
+    Number of processor patches = 2
+    Number of processor faces = 128
+    Number of boundary faces = 248
+
+Processor 3
+    Number of cells = 480
+    Number of faces shared with processor 0 = 48
+    Number of faces shared with processor 2 = 80
+    Number of processor patches = 2
+    Number of processor faces = 128
+    Number of boundary faces = 248
+
+Number of processor faces = 256
+Max number of cells = 480 (0% above average 480)
+Max number of processor patches = 2 (0% above average 2)
+Max number of faces between processors = 128 (0% above average 128)
+
+Time = constant
+
+Decomposing FV fields
+
+    (no FV fields)
+
+Decomposing point fields
+
+    (no point fields)
+
+End
+

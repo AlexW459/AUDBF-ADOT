@@ -1,0 +1,48 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 13
+Exec   : createZones
+Date   : Jun 21 2026
+Time   : 07:38:07
+Host   : "ip-10-255-0-177"
+PID    : 6537
+I/O    : uncollated
+Case   : /home/ubuntu/AUDBF-ADOT/Final_ADOT_program/Aerodynamics_Simulation_0
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Reading "createZonesDict"
+
+--> FOAM Warning : 
+    From function Foam::labelHashSet Foam::polyBoundaryMesh::patchSet(const Foam::UList<Foam::wordRe>&, bool, bool) const
+    in file meshes/polyMesh/polyBoundaryMesh/polyBoundaryMesh.C at line 814
+    Cannot find any patch or group names matching aircraftModel
+--> FOAM Warning : 
+    From function Foam::labelHashSet Foam::polyBoundaryMesh::patchSet(const Foam::dictionary&, bool) const
+    in file meshes/polyMesh/polyBoundaryMesh/polyBoundaryMesh.C at line 863
+    Cannot find any patch named 1(aircraftModel)
+Valid patch names are 
+6
+(
+front
+back
+inlet
+outlet
+lower
+upper
+)
+
+End
+

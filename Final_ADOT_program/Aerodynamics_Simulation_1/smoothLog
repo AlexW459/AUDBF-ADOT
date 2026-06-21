@@ -1,0 +1,31 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+Build  : 13
+Exec   : surfaceLambdaMuSmooth aircraftMesh/aircraftModelSplit.obj aircraftMesh/aircraftModel.obj 0.5 0.5 20
+Date   : Jun 21 2026
+Time   : 07:34:34
+Host   : "ip-10-255-0-245"
+PID    : 4731
+I/O    : uncollated
+Case   : /home/ubuntu/AUDBF-ADOT/Final_ADOT_program/Aerodynamics_Simulation_1
+nProcs : 1
+sigFpe : Enabling floating point exception trapping (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 10)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+lambda      : 0.5
+mu          : 0.5
+Iters       : 20
+Reading surface from "aircraftMesh/aircraftModelSplit.obj" ...
+Faces       : 108524
+Vertices    : 54254
+Bounding Box: (-1.09982 -0.708736 -0.0651945) (0.818833 0.708736 0.0672198)
+Writing surface to "aircraftMesh/aircraftModel.obj" ...
+End
+
