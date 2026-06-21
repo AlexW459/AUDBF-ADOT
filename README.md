@@ -10,17 +10,17 @@ Requirements:
 
 Notes on dependencies: 
 I have built and tested this program on an AWS cluster running Ubuntu, which uses Oneapi to integrate MPI with Slurm. More information here: https://blog.ronin.cloud/how-to-enable-intel-mpi/ . This requires the command "source /opt/intel/oneapi/setvars.sh" to be called before compiling or running the program, in order to initialise the environment. If using a different HPC service, this might not be necessary.
-Installing the ubuntu package "libglm-dev" is sufficient to install glm3. Installation on other Linux distributions may 
+Installing the ubuntu apt package "libglm-dev" is sufficient to install glm3. Installation on other Linux distributions may 
 
 If you are having trouble using Openfoam 13 on a cluster, I recommend building from the source code using the steps here: https://openfoam.org/download/source/ , in a shared directory.
 
-I have not been able to successfully install SDL2 on the cluster in a way that doesn't cause problems accessing object files at runtime when running using Slurm. However, SDL2 is not needed for the key features of the program, and is only used to check that the aircrat design has been described correctly. To address this, I have made all inclusion and utilisation of SDL2 dependent on the defining of "USE_SDL" in the constants.h file. This can be enabled when testing and disabled when running the program.
+I have not been able to successfully install SDL2 on the cluster in a way that allows for successful object file access at runtime when running across multiple nodes. However, SDL2 is not required for the key functionality of the program, and is only used to check that the aircraft design has been described correctly. To address this, I have made all inclusion and utilisation of SDL2 dependent on the defining of "USE_SDL" in the constants.h file. This can be enabled when testing locally and disabled when running the program on a cluster.
 
 
 *Important* Ensure that the sourcing path for OpenFOAM is defined in constants.h is correct. In meshObj.sh, runSim.sh, meshParallel.sh and simParallel.sh there is also the line "export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 ". This was necessary on the cluster that this program was tested on, in order to ensure that MPI functioned correctly with Slurm. This may not be required on your system, or it may require modification.
 
-Code functionality:
+## Code functionality:
 1. A tetrahedral mesh of each part of the aircraft is constructed according to a set of parameters describing the shape of the aircraft (initially random within defined bounds)
    - User-defined functions describe the construction of the aircraft, taking the values of the parameters as inputs. One set of functions describes the arrangement of points to create 2-dimensional shapes, such as airfoils or beam cross-sections, while another set of functions describes how these shapes are extruded into 3-dmensional parts, as well as how the parts are translated and rotated into place. All parts exist within a tree structure, where the transformations of lower parts in the tree occur within the reference frame of their parents part, which is then moved into place according to its own transformations.
    - By triangulating the 2d part cross-sections, the extrusions can be modelled as a set of triangular prisms (possibly irregular prisms if the extrusion is scaled or translated      along its length). By splitting each rectangular face of the prisms into two triangular faces, each prism becomes 6 tetrahedrons.
@@ -41,11 +41,10 @@ Code functionality:
    - Optimisation is performed using a genetic algorithm, which uses a weighted random based on the score assigned to each design to find the parents of each design of the next generation.
    - Each parameter of a child design is found by picking the value of that parameter from either of the parents, decided randomly, and then applying a random mutation. The  random mutation is found by getting a random value centred around zero using a normal distribution and flattening it to a value between -1 and 1 using a sigmoid function. This value then determines the proportion of the maximum change (positive or negative) that is made to the parameter, with the maximum change determined by the parameter bounds.
 
-Parallelisation:
-- Testing of each aircraft design is done in parallel
-- Openfoam simulations performed on each design are themselves run using multiple processes
+## Parallelisation:
+Testing of each generation of aircraft designs is done in parallel, using one process per aircraft design, aside from Openfoam Simulations. Openfoam simulations performed on each design are run using multiple processes across multiple nodes. Size of generation and number of nodes and processes per each aircraft design is set in the Slurm batch script, as described under "Slurm batch script necessary inclusions" below.
 
-How to use:
+## How to use:
 - MULEplaneModel is provided as an example of an aircraft produced by following these steps:
 - When running the program, the first argument is the number of aircraft designs to test in parallel, and the second argument is the number of processes per design.
 - Define ranges of each of the parameters that are used to define the aircraft in a csv file, using the formatting shown in the example.
@@ -64,72 +63,71 @@ How to use:
 - The RunProgram.sh slurm batch script should be modified to request the desired resources.
 
 
-Steps for OpenFOAM-13 installation on a cluster that may help if you are running into difficulties:
-# Switch to HOME directory
+## Steps for OpenFOAM-13 installation on a cluster that may help if you are running into difficulties:
+1. Switch to HOME directory
 cd $HOME
 
-# Download and extract
+2. Download and extract
 wget http://dl.openfoam.org/source/13 -O OpenFOAM-13.tgz
 wget http://dl.openfoam.org/third-party/13 -O ThirdParty-13.tgz
 mkdir $HOME/opt
 tar -xvzf OpenFOAM-13.tgz -C $HOME/opt/
 tar -xvzf ThirdParty-13.tgz -C $HOME/opt/
 
-# Use correct installation of OpenMPI
+3. Use correct installation of OpenMPI
 source /opt/intel/oneapi/setvars.sh # May not be necessary on your cluster
 export PATH=/opt/amazon/openmpi/bin:$PATH
 export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib:$LD_LIBRARY_PATH
 
-# Rename directory to fix error in bashrc file
+4. Rename directory to fix error in bashrc file
 mv $HOME/opt/OpenFOAM-13-version-13 $HOME/opt/OpenFOAM-13
 mv $HOME/opt/ThirdParty-13-version-13 $HOME/opt/ThirdParty-13
 
-# Set compiler type and source bash script
+4. Set compiler type and source bash script
 cd $HOME/opt/OpenFOAM-13
 WM_COMPILER_TYPE=ThirdParty
 source etc/bashrc
 
-# Compile ThirdParty using 4 processors (set to preferred value, it takes multiple hours on a single processor)
+5. Compile ThirdParty using 4 processors (set to preferred value, it takes multiple hours on a single processor)
 cd $HOME/opt/ThirdParty-13
 ./Allwmake -j 4
 
-# Compile OpenFOAM using 4 processors (set to preferred value, it takes multiple hours on a single processor)
+6. Compile OpenFOAM using 4 processors (set to preferred value, it takes multiple hours on a single processor)
 cd $HOME/opt/OpeAnFOAM-13
 ./Allwmake -j 4
 
-# This is only required if you are having difficulties loading shared object files
-# Look in OpenFOAM-13/platforms folder and ThirdParty-13/platforms folder
-# In my case the folders are: linux64GccDPInt32Opt  linux64GccDPInt32OptSYSTEMOPENMPI in OPENFOAM-13/platform
-# and : linux64GccDPInt32 in ThirdParty-13
-# Run "locate libscotch-6.so" to find location of object files, then copy to ThirdParty-13/lib directory
+*This next step is only required if you are having difficulties loading shared object files*
+7. Look in OpenFOAM-13/platforms folder and ThirdParty-13/platforms folder
+In my case the folders are: linux64GccDPInt32Opt  linux64GccDPInt32OptSYSTEMOPENMPI in OPENFOAM-13/platform
+and : linux64GccDPInt32 in ThirdParty-13
+Run "locate libscotch-6.so" to find location of object files, then copy to ThirdParty-13/lib directory
 cp *location*.libscotch-6.so $HOME/opt/ThirdParty-13/platforms/linux64GccDPInt32/lib
 cp /usr/lib/x86_64-linux-gnu/libscotcherrexit-6.so $HOME/opt/ThirdParty-13/platforms/linux64GccDPInt32/lib
 cp /usr/lib/x86_64-linux-gnu/libscotcherr-6.so $HOME/opt/ThirdParty-13/platforms/linux64GccDPInt32/lib
 
 
+## Slurm batch script necessary inclusions:
 
-Slurm batch script necessary inclusions:
-
-# Set PMI library (Also may not be necessary depending on your cluster)
+Set PMI library (Also may not be necessary depending on your cluster)
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
-# Source OpenFOAM bashrc
+1. Source OpenFOAM bashrc
 . $HOME/opt/OpenFOAM-13/etc/bashrc
 
-# Include following commands in bash script to manually specify locations of shared object files:
-# This is only required if you are having difficulties with missing shared object files
+2.Include following commands in bash script to manually specify locations of shared object files:
+*This is only required if you are having difficulties with missing shared object files*
 export LD_LIBRARY_PATH=$HOME/opt/ThirdParty-13/platforms/linux64GccDPInt32/lib:LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$HOME/opt/OpenFOAM-13/platforms/linux64GccDPInt32Opt/lib:LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$HOME/opt/OpenFOAM-13/platforms/linux64GccDPInt32OptSYSTEMOPENMPI/lib:LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$HOME/opt/OpenFOAM-13/platforms/linux64GccDPInt32Opt/lib/openmpi-system:LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$HOME/opt/OpenFOAM-13/platforms/linux64GccDPInt32Opt/lib/dummy:LD_LIBRARY_PATH
 
-# Choose: n is number of aircraft models per generation
-# m is number of nodes allocated to each aircraft model when running simulations
-# o is number of processes allocated to each node when running simulations 
-# (Often limited by characteristics of nodes being used)
-# Therefore, total processes per model is m*o
-# Also, the location of srun may differ in your case
+3. Choose: n is number of aircraft models per generation
+m is number of nodes allocated to each aircraft model when running simulations
+o is number of processes allocated to each node when running simulations 
+(Often limited by characteristics of nodes being used)
+Therefore, total processes per model is m*o
+Also, the location of srun may differ in your case
 /opt/slurm/bin/srun -n n Main m o
 
 
