@@ -37,7 +37,7 @@ decomposePar -force > decomposeLog
 #source /opt/intel/oneapi/setvars.sh
 
 # Set the PMI library path for Slurm-MPI integration
-export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+#export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 #Clears postprocessing files
 rm -r -f postProcessing/aeroForces/0/*
@@ -49,15 +49,13 @@ rm -r -f postProcessing/tailUpstreamVelocity/0/*
 sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$3/" simParallel.sh
 sed -i "$((3))s/.*/#SBATCH --nodes=$4/" simParallel.sh
 sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$5/" simParallel.sh
-sed -i "/bashrc/c\ . $openfoamSource \\\ " meshParallel.sh
-
-
+sed -i "/bashrc/c\. $openfoamSource " meshParallel.sh
 
 
 echo "Running simulation in parallel on rank $3 on $totalProcesses processes across $4 nodes"
 
-potentialFoam -writep > potentialLog
-foamRun -solver incompressibleFluid > simLog
-#sbatch --wait --wait-all-nodes 1 simParallel.sh
+#potentialFoam -writep > potentialLog
+#foamRun -solver incompressibleFluid > simLog
+sbatch --wait --wait-all-nodes 1 simParallel.sh
 
 rm -r -f processor*

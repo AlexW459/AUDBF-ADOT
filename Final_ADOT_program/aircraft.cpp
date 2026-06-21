@@ -287,6 +287,9 @@ double aircraft::calculateScore(vector<double> paramVals, vector<int> discreteVa
 
     //applyGaussianBlur(0.2, 7, staticSDF, SDFSize);
 
+    //cout << "ending process " << procRank << endl;
+    //MPI_Finalize();
+    //exit(0);
 
     //Specify the different values to be tested
     array<double, 2> alphaRange = {MIN_ALPHA, MAX_ALPHA};
@@ -1017,9 +1020,9 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
 
             cout << "Completed meshing on rank " << procRank << endl;
 
-            MPI_Barrier(MPI_COMM_WORLD);
-            MPI_Finalize();
-            exit(0);
+            //MPI_Barrier(MPI_COMM_WORLD);
+            //MPI_Finalize();
+            //exit(0);
 
         }
 
@@ -1101,16 +1104,16 @@ pair<vector<glm::dvec3>, vector<glm::dvec3>> aircraft::getAeroVals(vector<vector
         netForces.push_back(forceVals.first);
         netTorques.push_back(forceVals.second);
 
-        //glm::dvec3 totalForce = forceVals.first + tailForce;
-        //glm::dvec3 totalTorque = forceVals.second + tailTorque;
+        glm::dvec3 totalForce = forceVals.first + tailForce;
+        glm::dvec3 totalTorque = forceVals.second + tailTorque;
 
-        /*cout << "Force and torque from simulation " << i << " on rank " << procRank << ": " << 
+        cout << "Force and torque from simulation " << i << " on rank " << procRank << ": " << 
             "(" << totalForce[0] + tailForce[0] << ", " << totalForce[1] + tailForce[1]<< ", " <<
             totalForce[2] + tailForce[2] << ") (" << totalTorque[0] + tailTorque[0] << ", " << 
-            totalTorque[1] + tailTorque[1] << ", " << totalTorque[2] + tailTorque[2] << ")" << endl;*/
+            totalTorque[1] + tailTorque[1] << ", " << totalTorque[2] + tailTorque[2] << ")" << endl;
 	
-	    MPI_Finalize();
-	    exit(0);
+	MPI_Finalize();
+	exit(0);
     }
 
 

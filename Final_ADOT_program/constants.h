@@ -23,7 +23,7 @@
 #define TURBULENCE_LENGTH_SCALE 0.5
 
 //Length and timestep of simulations
-#define SIMULATION_LENGTH 0.01
+#define SIMULATION_LENGTH 0.3
 #define SIMULATION_DELTA_T 0.002
 
 //Standard deviation of mutations to parameter vals (distribution is then flattened to between 0 and 1)

@@ -7,13 +7,12 @@
 #SBATCH --output=slurmMeshingOutput
 #SBATCH --error=slurmMeshingErrorLog
 
-#source /opt/intel/oneapi/setvars.sh
+source /opt/intel/oneapi/setvars.sh
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 . $HOME/opt/OpenFOAM-13/etc/bashrc
 
-/opt/slurm/bin/srun \
- . opt/openfoam13/etc/bashrc \
- && potentialFoam -writep -parallel > potentialLog \
- && foamRun -solver incompressibleFluid -parallel > simLog
+
+/opt/slurm/bin/srun potentialFoam -writep > potentialLog \
+ && foamRun -solver incompressibleFluid > simLog
 
