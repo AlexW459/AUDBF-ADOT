@@ -22,9 +22,9 @@ function result = gaussian_blur(SDF, sigma, n)
 
     kernelSum = (sum(kernel, "all"));
 
-    kernelRow = kernel(:, 1, 1);
-    kernelCol= kernel(1, :, 1);
-    kernelTube = kernel(1, 1, :)/kernelSum;
+    kernelRow = kernel(:, 1, 1)/(kernelSum^(1/3));
+    kernelCol= kernel(1, :, 1)/(kernelSum^(1/3));
+    kernelTube = kernel(1, 1, :)/(kernelSum^(1/3));
 
     result1 = SDF;
     result2 = SDF;

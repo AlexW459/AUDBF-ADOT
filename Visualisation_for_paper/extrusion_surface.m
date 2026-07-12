@@ -1,4 +1,4 @@
-beg%Name:        Alex Welke
+%Name:        Alex Welke
 %Date:        16/07/2024 - 01/08/2024
 %Description: This is a profile class designed to take in planar 
 %             polygonal points and a vector normal
@@ -71,37 +71,48 @@ classdef extrusion_surface
 
             %Precalculated table of values for scaling and vertical
             %translations along extrusion
-            xPosVals = linearInterp([obj.z_sample', obj.xy_pos_points(:, 1)], interval, Z);
-            yPosVals = linearInterp([obj.z_sample', obj.xy_pos_points(:, 2)], interval, Z);
-            scaleVals = linearInterp([obj.z_sample', obj.scale_vals'], interval, Z);
+            
+            xPosVals = linearInterp([obj.z_sample', obj.xy_pos_points(:, 1)], Z);
+            yPosVals = linearInterp([obj.z_sample', obj.xy_pos_points(:, 2)], Z);
+            scaleVals = linearInterp([obj.z_sample', obj.scale_vals'], Z);
+
+            %xPosVals(:, :, :) = 0;
+            %yPosVals(:, :, :) = 0;
+            %scaleVals(:, :, :) = 1;
 
             X = (X-xPosVals)./scaleVals;
 
             Y = (Y-yPosVals)./scaleVals;
 
             %Calculate SDF of profile
-            profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y, interval);
+            profileSDF = generate_SDF(obj.base_profile.vertex_coords, X, Y);
 
             beginZ = min(obj.z_sample, [], 2);
             endZ = max(obj.z_sample, [], 2);
 
-            beginFace = (beginZ-Z)./sqrt(1+beginZ^2);
-            endFace = (Z-endZ)./sqrt(1+endZ^2);
+            beginFace = -1+2*(Z<beginZ);%*0.5*interval
+            endFace = -1+2*(Z>endZ);%0.5*interval
+
 
             eqVals = max(cat(4, profileSDF, beginFace, endFace), [], 4);
 
 
-            % % [face_nodes, node_coords] = isosurface(Xi, Yi, Zi, eqVals, 0.01);
-            % % clf;
-            % % patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
-            % % 
-            % % xlabel('x');
-            % % ylabel('y');
-            % % zlabel('z');
-            % % 
-            % % xlim([-0.5,1.5]);
-            % % ylim([-0.75,0.75]);
-            % % zlim([-0.75,0.75]);
+            %profileSize = size(eqVals);
+            %contour(reshape(X(100, :, :), profileSize(2:3)), reshape(Y(100, :, :), profileSize(2:3)), reshape(eqVals(100, :, :), profileSize(2:3)));
+            %axis equal;
+
+
+            %[face_nodes, node_coords] = isosurface(Xi, Yi, Zi, eqVals, 0.01);
+            %clf;
+            %patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
+
+            % xlabel('x');
+            % ylabel('y');
+            % zlabel('z');
+            % 
+            % xlim([-0.5,1.5]);
+            % ylim([-0.75,0.75]);
+            % zlim([-0.75,0.75]);
 
 
 
