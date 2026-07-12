@@ -30,6 +30,7 @@ function [fuselage_extrusion, pivot_point] = extrude_fuselage(profiles, ...
          parameters(find(strcmp(param_names, "tailcone_length")));
     tailcone_tip_scale = ...
          parameters(find(strcmp(param_names, "tailcone_tip_scale")));
+    tailcone_tip_height = tailcone_tip_scale*fuselage_height;
     
     %Finds the length of the hollow section
     Q2xPos = (nosecone_tip_height*nosecone_length)/(fuselage_height-0.5*nosecone_tip_height);

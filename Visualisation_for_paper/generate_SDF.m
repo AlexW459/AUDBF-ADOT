@@ -3,23 +3,17 @@
 %Description: This function generates a signed distance field based on a
 %set of points outlining a polygon
 
-function SDF = generate_SDF(vertices, X, Y, interval)
+function SDF = generate_SDF(vertices, X, Y)
 
     x1 = vertices(1:end, 1);
     y1 = vertices(1:end, 2);
     x2 = [vertices(2:end, 1); vertices(1, 1)];
     y2 = [vertices(2:end, 2); vertices(1, 2)];
 
-    %Find parameters of implicit equation of side of polygon
-    l2 = sqrt((x1-x2).^2 + (y1-y2).^2);
-    v = [x1, y1];
-    diff = [x2, y2]-v;
-    %normalises diff
-
-
     a1 = y2-y1;
     b1 = x1 - x2;
     c1 = x2.*y1 - x1.*y2;
+
 
 
     %Precalculates values for relevant range
@@ -27,21 +21,24 @@ function SDF = generate_SDF(vertices, X, Y, interval)
     intEndX = max(X, [], "all");
     intStartY = min(Y, [],"all");
     intEndY = max(Y, [], "all");
+    intSize = [intEndX - intStartX, intEndY - intStartY];
     xSize = size(X);
 
-    xVals = intStartX:interval:intEndX;
-    yVals = intStartY:interval:intEndY;
+    valSize = round(20*xSize);
+    xVals = linspace(intStartX, intEndX, valSize(1));
+    xInterval = xVals(2) - xVals(1);
+    yVals = linspace(intStartY, intEndY, valSize(2));
+    yInterval = yVals(2) - yVals(1);
 
-
-    SDFtable = zeros(size(xVals, 2), size(yVals, 2));
+    SDFtable = zeros(valSize(1), valSize(2));
 
     %Choose [100, 0] as a point that will definitely be outside the
     %polygon. This point and the current coordinate form a line
     pOut = [100.245, 150.245];
 
 
-    for i = 1:size(xVals, 2)
-        for j = 1:size(yVals, 2)
+    for i = 1:valSize(1)
+        for j = 1:valSize(2)
             p = [xVals(i), yVals(j)];
             %Find if point is inside or outside polygon
 
@@ -58,8 +55,7 @@ function SDF = generate_SDF(vertices, X, Y, interval)
             %of the polygon. Floor is used so that if either point lies on the
             %polygon and the value of d1 or d2 is zero, the value of the
             %heaviside function gets rounded down to zero
-            int1 = floor(heaviside(-1*d1.*d2));
-
+            int1 = d1.*d2 < 0;
 
             %Find parameters of implicit equation of line going to outside of
             %polygon
@@ -78,40 +74,36 @@ function SDF = generate_SDF(vertices, X, Y, interval)
             %the heaviside function is equal to 0. This indicates that there is
             %no intersection between the line going to the outside and the side
             %of the polygon
-            int2 = floor(heaviside(-1*d1.*d2));
+            int2 = d1.*d2 < 0;
 
 
             %The sum of the two int arrays multiplied together is equal to the
             %total number of intersections between the outgoing line and the
             %side of the polygon. If this sum is odd then the point must be
-            %outside the polygon
+            %inside the polygon, and so the SDF is made negative
             distSign = 1-2*mod(sum(int1.*int2, 1), 2);
 
-            %Find distance from point to nearest line segment
-
-            t = max([zeros(size(v, 1), 1), min([ones(size(v, 1), 1), dot(p-v, diff./l2, 2)], [], 2)], [], 2);
-
-            proj = v + t.*diff;
-            dist = p-proj;
-
-            SDFtable(i, j) = min(sqrt(dist(:, 1).^2 + dist(:, 2).^2))*distSign;
+            SDFtable(i, j) = distSign;%*halfInterval
 
         end
     end
 
-
+    
 
     toc
 
-    %Find location of X and Y vales in table of values
+    %Find location of X and Y values in table of values
     Xrow = reshape(X, [1, xSize(1)*xSize(2)*xSize(3)]);
-    xIndices = floor((Xrow-intStartX)./(intEndX-intStartX)...
-                *(size(xVals, 2)-2))+1;
+    xIndices = floor((Xrow-intStartX)./intSize(1)...
+                *(valSize(1)-2))+1;
     Yrow = reshape(Y, [1, xSize(1)*xSize(2)*xSize(3)]);
-    yIndices = floor((Yrow-intStartY)./(intEndY-intStartY)...
-                *(size(yVals, 2)-2))+1;
+    yIndices = floor((Yrow-intStartY)./intSize(2)...
+                *(valSize(2)-2))+1;
 
-    %Perform 2d interpolation
+
+    SDF = reshape(SDFtable(sub2ind(size(SDFtable), xIndices, yIndices)), [xSize(1), xSize(2), xSize(3)]);
+
+    %2D interpolation
     x0 = xVals(xIndices);
     x1 = xVals(xIndices+1);
     y0 = yVals(yIndices);
@@ -122,14 +114,14 @@ function SDF = generate_SDF(vertices, X, Y, interval)
     Q01 = SDFtable(sub2ind(size(SDFtable), xIndices, yIndices+1));
     Q11 = SDFtable(sub2ind(size(SDFtable), xIndices+1, yIndices+1));
 
-    diff1 = (x1-Xrow)./interval;
-    diff2 = (Xrow-x0)./interval;
+    diff1 = (x1-Xrow)./xInterval;
+    diff2 = (Xrow-x0)./xInterval;
 
     SDFy0 = diff1.*Q00 + diff2.*Q10;
     SDFy1 = diff1.*Q01 + diff2.*Q11;
 
-    SDFlist = (y1-Yrow)./interval.*SDFy0 + (Yrow-y0)./interval.*SDFy1;
+    SDFlist = (y1-Yrow)./yInterval.*SDFy0 + (Yrow-y0)./yInterval.*SDFy1;
 
-    SDF = reshape(SDFlist, [xSize(1), xSize(2), xSize(3)]);
+    %SDF = reshape(SDFlist, [xSize(1), xSize(2), xSize(3)]);
 
 end

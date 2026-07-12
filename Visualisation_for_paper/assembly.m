@@ -97,13 +97,17 @@ classdef assembly < handle
         %COM of aircraft
         COM = zeros(1, 3);
 
+        total_bounding_box;
+
+        meshResolution;
+
     end
 
     methods
         function obj = assembly(base_extrude_function, base_constraint, base_part_name,...
             base_part_material_index, profile_functions, profile_name_list, parameters, ...
             param_names, derived_param_function, material_table, motor_table, ...
-            battery_table, airfoil_table)
+            battery_table, airfoil_table, meshResolution)
             
             %Creates tree structure to store parts
             obj.part_tree = tree(base_part_name);
@@ -186,6 +190,7 @@ classdef assembly < handle
             obj.part_locations = base_transformations(1:3);
             obj.part_rotations = base_transformations(4:7);
 
+            obj.meshResolution = meshResolution;
 
         end
 
@@ -217,10 +222,16 @@ classdef assembly < handle
         function construct_profiles(obj)
             %Constructs profiles
             profiles = obj.part_profiles;
+
+            % Gets minimum and maximum points of each profile
+            profileBounds = zeros([size(profiles, 2), 2, 2]);
+
             for i = 1:size(obj.profile_constructors, 2)
+                profileBounds(i, :, :) = [100, 100; -100, -100];
                 current_constructor = obj.profile_constructors{i};
                 profiles{i} = current_constructor(obj.aircraft_parameters, ...
                     obj.parameter_names, obj.derived_parameters, obj.derived_param_names);
+                
             end
 
             obj.part_profiles = profiles;
@@ -297,6 +308,8 @@ classdef assembly < handle
             %correct position
             obj.transformed_parts = obj.parts;
 
+            obj.total_bounding_box = [100, 100, 100; -100, -100, -100];
+
             %Loop through each layer of the part tree, starting at the
             %bottom layer
             for layer = obj.part_tree.num_layers:-1:1
@@ -347,7 +360,18 @@ classdef assembly < handle
 
             total_COM = zeros(1, 3);
 
-            
+            for i = 1:obj.num_parts
+                obj.total_bounding_box(1, :) = min(obj.total_bounding_box(1, :), ...
+                    obj.transformed_parts{i}.bounding_box(1, :));
+                obj.total_bounding_box(2, :) = max(obj.total_bounding_box(2, :), ...
+                    obj.transformed_parts{i}.bounding_box(2, :));
+            end
+
+            % Expands bounding box by 10% in each direction
+            boundSize = obj.total_bounding_box(2, :) - obj.total_bounding_box(1, :);
+            obj.total_bounding_box(1, :) = obj.total_bounding_box(1, :) - 0.1*boundSize;
+            obj.total_bounding_box(2, :) = obj.total_bounding_box(2, :) + 0.1*boundSize;
+
 
             for i = 1:obj.num_parts
                 [new_part_mass, new_part_COM] = obj.transformed_parts{i}.find_COM();
@@ -364,45 +388,104 @@ classdef assembly < handle
         end
 
         function generate_surface(obj)
-            bounding_box = [-1.1,-1,-1;2,1,1];
-            interval = 0.05;
+            bounding_box = obj.total_bounding_box;
+            resolution = obj.meshResolution;
+            boundSize = bounding_box(2, :) - bounding_box(1, :);
+            SDF_size = ceil(resolution*boundSize);
 
 
-            [X,Y,Z] = meshgrid(bounding_box(1, 1):interval:bounding_box(2, 1), ...
-                bounding_box(1, 2):interval:bounding_box(2, 2), ...
-                bounding_box(1, 3):interval:bounding_box(2, 3));
+            [Y, X, Z] = meshgrid(linspace(bounding_box(1, 2), bounding_box(2, 2), SDF_size(2)), ...
+                linspace(bounding_box(1, 1), bounding_box(2, 1), SDF_size(1)), ....
+                linspace(bounding_box(1, 3), bounding_box(2, 3), SDF_size(3)));
+            %X = pagetranspose(X);
+            %Y = pagetranspose(Y);
+            %Z = pagetranspose(Z);
 
 
-            surface_values = zeros([size(X), size(obj.transformed_parts, 1)]);
+            surface_values = ones(size(X));
 
             tic
 
             for i = 1:size(obj.transformed_parts, 1)
                 disp(i);
-                surface_values(:, :, :, i) = ...
-                   obj.transformed_parts{i}.surface_mesh.generate_surface(X, Y, Z, interval);
+
+                %Gets meshgrid for each part
+                obj.transformed_parts{i}.bounding_box;
+                partBoundIndices(1, :) = floor((obj.transformed_parts{i}.bounding_box(1, :)- ...
+                    bounding_box(1, :))*resolution+1);
+                partBoundIndices(2, :) = ceil((obj.transformed_parts{i}.bounding_box(2, :)- ...
+                    bounding_box(1, :))*resolution+1);
+
+                Xp = X(partBoundIndices(1, 1):partBoundIndices(2, 1), ...
+                    partBoundIndices(1, 2):partBoundIndices(2, 2), ...
+                    partBoundIndices(1, 3):partBoundIndices(2, 3));
+                Yp = Y(partBoundIndices(1, 1):partBoundIndices(2, 1), ...
+                    partBoundIndices(1, 2):partBoundIndices(2, 2), ...
+                    partBoundIndices(1, 3):partBoundIndices(2, 3));
+                Zp = Z(partBoundIndices(1, 1):partBoundIndices(2, 1), ...
+                    partBoundIndices(1, 2):partBoundIndices(2, 2), ...
+                    partBoundIndices(1, 3):partBoundIndices(2, 3));
+                
+                part_surface_vals = ...
+                   obj.transformed_parts{i}.surface_mesh.generate_surface(Xp, Yp, Zp);
+
+                surface_values(partBoundIndices(1, 1):partBoundIndices(2, 1), ...
+                    partBoundIndices(1, 2):partBoundIndices(2, 2), ...
+                    partBoundIndices(1, 3):partBoundIndices(2, 3)) = ...
+                    min(surface_values(partBoundIndices(1, 1):partBoundIndices(2, 1), ...
+                    partBoundIndices(1, 2):partBoundIndices(2, 2), ...
+                    partBoundIndices(1, 3):partBoundIndices(2, 3)), part_surface_vals);
+
+                
             end
 
-            surface_points = min(surface_values, [], 4);
+            %surface_points = min(surface_values, [], 4);
 
             toc
 
-            surface_points = gaussian_blur(surface_points, 0.2, 7);
+            surface_points = gaussian_blur(surface_values, 3, 7);
 
 
-            [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);
-
-            patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
-
-            writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
-
-            xlim([-1, 1]);
-            ylim([-1, 1]);
-            zlim([-1, 1]);
-
+            % [face_nodes, node_coords] = isosurface(X, Y, Z, surface_points, 0.02);
+            % 
+            % patch('Faces', face_nodes,'Vertices', node_coords, 'FaceColor','red');
+            % 
+            % writeMeshtoObj(node_coords, face_nodes, "aircraftModel");
+            % 
+            % xlim([-1, 1]);
+            % ylim([-1, 1]);
+            % zlim([-1, 1]);
+            % 
+            % xlabel("x");
+            % 
+            % hold on;
             %[p, t] = distmeshsurface( SDF, FH, 0.02, bounding_box);
 
-
+            % gradField = zeros([size(surface_points), 3]);
+            % 
+            % for i=2:size(X, 1)-1
+            %     for j=2:size(X, 2)-1
+            %         for k=2:size(X, 3)-1
+            %             dSx = surface_points(i+1, j, k)-surface_points(i-1, j, k);
+            %             dSy = surface_points(i, j+1, k)-surface_points(i, j-1, k);
+            %             dSz = surface_points(i, j, k+1)-surface_points(i, j, k-1);
+            %             grad = [dSx, dSy, dSz]/2;
+            %             adjustedGrad = grad*(surface_points(i, j, k));
+            % 
+            %             % if(abs(surface_points(i, j, k)) < 0.5)
+            %             %     disp(grad);
+            %             %     disp(norm(grad));
+            %             %     disp(norm(adjustedGrad));
+            %             %     disp("");
+            %             % end
+            % 
+            %             gradField(i, j, k, :) = grad;
+            % 
+            %         end
+            %     end
+            % end
+            % 
+            % quiver3(X, Y, Z, gradField(:, :, :, 1), gradField(:, :, :, 2), gradField(:, :, :, 3));
             
 
         end
