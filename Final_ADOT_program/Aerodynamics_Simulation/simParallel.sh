@@ -4,14 +4,13 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --time=01:00:00
-#SBATCH --output=slurmMeshingOutput
-#SBATCH --error=slurmMeshingErrorLog
+#SBATCH --output=slurmSimOutput
+#SBATCH --error=slurmSimErrorLog
 
 source /opt/intel/oneapi/setvars.sh
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 . $HOME/opt/OpenFOAM-13/etc/bashrc
-
 
 /opt/slurm/bin/srun potentialFoam -writep > potentialLog \
  && foamRun -solver incompressibleFluid > simLog

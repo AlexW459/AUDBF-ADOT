@@ -1,0 +1,20 @@
+//Standard deviation of mutations to parameter vals (distribution is then 
+//flattened to between 0 and 1) using the sigmoid function
+MUTATION_STD_DEV 0.2
+
+// Resolution with which profiles are constructed
+PROFILE_RESOLUTION 75.0
+// Resolution with which the SDF is constructed
+SDF_RESOLUTION 150.0
+
+//Length and timestep of simulations
+SIMULATION_LENGTH 0.3
+SIMULATION_DELTA_T 0.002
+
+//Simulation air density
+RHO 1.225
+
+//k-epsilon model constants
+TURBULENCE_INTENSITY 0.003
+TURBULENCE_LENGTH_SCALE 0.5
+

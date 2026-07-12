@@ -19,16 +19,19 @@ int meshIndexTo1DIndex(int i, int j, int k, int sizeX, int sizeY);
 glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 totalBoundingBox, double surfMeshRes);
 
 
-//Returns updated SDF with all specified parts added
+//Returns updated SDF with all parts specified in meshSurfaces added. Parts will be rotated
+// by controlAngles (radians), which is vector the same length of extrusions
 vector<double> updateSDF(vector<double> SDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
     const vector<profile>& profiles, vector<int> profileIndices, const vector<extrusionData>& extrusions, 
     const vector<vector<int>>& parentIndices, const vector<glm::dmat2x3>& boundingBoxes,
-     glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, double surfMeshRes);
+    glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, vector<double> controlAngles,
+    double surfMeshRes);
 
 //Gets SDF of a single part with a specified resolution. Returns size of SDF
-glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profile& partProfile, int partIndex,
-    vector<int> parentIndices, const vector<glm::dvec3>& meshGrid, glm::ivec3 SDFSize, 
-    glm::imat2x3 boundingIndices, double surfMeshRes, vector<double>& SDF);
+glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profile& partProfile, 
+    int partIndex, vector<int> parentIndices, const vector<glm::dvec3>& meshGrid, 
+    glm::ivec3 SDFSize, glm::imat2x3 boundingIndices, vector<double> controlAngles,
+    double surfMeshRes, vector<double>& SDF);
 
 
 //void applyGaussianBlur(float sigma, int n, vector<double>& SDF, glm::ivec3 SDFSize);

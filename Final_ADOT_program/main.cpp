@@ -16,10 +16,19 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
     MPI_Comm_rank(MPI_COMM_WORLD, &localRank);
 
+    // Gets arguments and simulation parameters
+    string parameterFileName = "simulation_parameters";
+    vector<double> simParameters;
+    int meshParallelOpt, simParallelOpt, nSimNodes, nSimTasksPerNode;
+    bool writeObjs;
+    parseParameters(argc, argv, parameterFileName, meshParallelOpt,
+    simParallelOpt, nSimNodes, nSimTasksPerNode, simParameters, writeObjs);
+
+    double MUTATION_STD_DEV = simParameters[0];
+    //double PROFILE_RESOLUTION = simParameters[1];
+    //double SDF_RESOLUTION = simParameters[2];
     // First argument is the number of nodes per simulation, second argument is the number of
     // simulation tasks per node
-    int nSimNodes = atoi(argv[1]);
-    int nSimTasksPerNode = atoi(argv[2]);
 
     cout << "Running process " << localRank << " of " << nRanks << endl;
 
@@ -33,57 +42,19 @@ int main(int argc, char *argv[]) {
         SDL_Init(SDL_INIT_EVERYTHING);
     #endif
 
-    string barrierFilename = "Comm_Files/Barrier";
-    string paramFileName = "Comm_Files/paramVals";
-    string discreteFileName = "Comm_Files/discreteVals";
-    string scoresFileName = "Comm_Files/scores";
-
     // Initialises aircraft
-    string planeModel = "MULEplaneModel";
-
-    vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions = 
-        {fuselageProfile, wingProfile, motorPodProfile, empennageBoomProfile, 
-            horizontalStabiliserProfile, elevatorProfile};
+    aircraft testModel = constructAircraft();
     
-    // Gets maximum and minimun values of each parameter
-    dataTable paramRanges = readCSV(planeModel + "/paramRanges.csv");
-    dataTable motorTable = readCSV(planeModel + "/motorSelection.csv");
-    dataTable batteryTable = readCSV(planeModel + "/batterySelection.csv");
+    int nParams = testModel.paramRanges.size();
+    int nDiscrete = testModel.discreteTables.size();
 
-    // Gets names of variables
-    vector<string> paramNames(paramRanges.rows.size());
-    for(int i = 0; i < (int)paramRanges.rows.size(); i++){
-        paramNames[i] = paramRanges.rows[i].first;
-    }
-    vector<dataTable> discreteTables = {motorTable, batteryTable};
-
-    
-    aircraft MULEaircraft = aircraft(paramNames, discreteTables, calcDerivedParams, profileFunctions, 0.0005);
-
-    MULEaircraft.addPart("fuselage", 1000, extrudeFuselage, 0);
-    MULEaircraft.addPart("rightWing", "fuselage", 1000, extrudeRightWing, 1);
-    MULEaircraft.addPart("leftWing", "fuselage", 1000, extrudeLeftWing, 1);
-    MULEaircraft.addPart("motorPodRight", "rightWing", 1000, extrudeRightMotorPod, 2);
-    MULEaircraft.addPart("motorPodLeft", "leftWing", 1000, extrudeLeftMotorPod, 2);
-    MULEaircraft.addPart("empennageBoomRight", "motorPodRight", 1000, extrudeEmpennageBoom, 3);
-    MULEaircraft.addPart("empennageBoomLeft", "motorPodLeft", 1000, extrudeEmpennageBoom, 3);
-    MULEaircraft.addPart("horizontalStabiliser", "empennageBoomRight", 1000, extrudeHorizontalStabiliser, 4);
-    MULEaircraft.addPart("elevator", "horizontalStabiliser", 1000, extrudeElevator, 5);
-
-    //MULEaircraft.plot(500, 500, paramVals, discreteVals, 50.0);
-
-
-    vector<double> paramVals(paramNames.size());
-    vector<int> discreteVals(discreteTables.size());
-    
-    int nParams = paramNames.size();
-    int nDiscrete = discreteTables.size();
-
+    vector<double> paramVals(nParams);
+    vector<int> discreteVals(nDiscrete);
 
     // Finds random values of parameters within bounds
     for(int i = 0; i < nParams; i++){
-        double min = paramRanges.rows[i].second[0];
-        double max = paramRanges.rows[i].second[1];
+        double min = testModel.paramRanges[i][0];
+        double max = testModel.paramRanges[i][1];
 
         uniform_real_distribution paramDist(min, max);
 
@@ -93,7 +64,7 @@ int main(int argc, char *argv[]) {
     // Finds random values of discrete parameters
     for(int i = 0; i < nDiscrete; i++){
         
-        int nChoices = discreteTables[i].rows.size();
+        int nChoices = testModel.discreteTables[i].rows.size();
 
         uniform_int_distribution discreteDist(0, nChoices-1);
 
@@ -122,8 +93,8 @@ int main(int argc, char *argv[]) {
 
         //Rate aircraft performance
         array<double, 3> aircraftConfig;
-        double score = MULEaircraft.calculateScore(paramVals, discreteVals, rateDesign, aircraftConfig, 
-            PROFILE_RESOLUTION, SDF_RESOLUTION, localRank, nSimNodes, nSimTasksPerNode);
+        double score = testModel.calculateScore(paramVals, discreteVals, aircraftConfig, 
+            simParameters, writeObjs, localRank, nSimNodes, meshParallelOpt, simParallelOpt, nSimTasksPerNode);
 
         cout << "score on rank " << localRank << ": " << score << endl;
 
@@ -249,8 +220,8 @@ int main(int argc, char *argv[]) {
             
 
             
-            double paramMin = paramRanges.rows[i].second[0];
-            double paramMax = paramRanges.rows[i].second[1];
+            double paramMin = testModel.paramRanges[i][0];
+            double paramMax = testModel.paramRanges[i][1];
             double maxIncrease = paramMax - crossParamVals[i];
             double maxDecrease = crossParamVals[i] - paramMin;
 
@@ -262,8 +233,8 @@ int main(int argc, char *argv[]) {
             paramVals[i] = crossParamVals[i] + mutation;
 
             //Checks for error
-            if(paramVals[i] > paramRanges.rows[i].second[1] || paramVals[i] < paramRanges.rows[i].second[0]){
-                throw runtime_error("Mutation outside of parameter range for parameter " + paramNames[i]);
+            if(paramVals[i] > testModel.paramRanges[i][1] || paramVals[i] < testModel.paramRanges[i][0]){
+                throw runtime_error("Mutation outside of parameter range for parameter " + testModel.paramNames[i]);
             }
 
         }
@@ -272,7 +243,7 @@ int main(int argc, char *argv[]) {
         uniform_real_distribution discreteMutationDist(0.0, 1.0);
         for(int i = 0; i < nDiscrete; i++){
 
-            int nChoices = discreteTables[i].rows.size();
+            int nChoices = testModel.discreteTables[i].rows.size();
             uniform_int_distribution discreteParamDist(0, nChoices-1);
 
             double mutationChance = 0.5*(mutationDist.max() - mutationDist.min());

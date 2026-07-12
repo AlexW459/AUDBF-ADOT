@@ -8,26 +8,12 @@
 #include <algorithm>
 
 #include "profile.h"
-#include "../constants.h"
+#include "../compile_config.h"
 
 
 
 using namespace std;
 
-struct motorData{
-    glm::dvec3  thrustDir;
-    glm::dvec3  propPos;
-    double      maxThrust; //Newtons
-    double      maxRPM;
-    double      propPitch; //Inches
-
-    motorData(glm::dvec3 _thrustDir, glm::dvec3 _propPos, double _maxThrust,
-        double _maxRPM, double _propPitch) : thrustDir(_thrustDir), propPos(_propPos),
-        maxThrust(_maxThrust), maxRPM(_maxRPM), propPitch(_propPitch) {};
-
-    motorData() : thrustDir(glm::dvec3(0.0, 0.0, 0.0)), propPos(glm::dvec3(0.0, 0.0, 0.0)),
-        maxThrust(0.0), maxRPM(1.0), propPitch(1.0){};
-};
 
 struct extrusionData{
     //Description of extrusion
@@ -41,83 +27,73 @@ struct extrusionData{
     glm::dvec3 pivotPoint;
 
 
-    //Possible a control surface
-    bool isControl;
+    //Possible a control surface. Set controlAxis to (0, 0, 0) if not a control surface
     glm::dvec3 controlAxis;
-    double rotateAngle;
+    //double rotateAngle;
 
     //Possibly has a point mass inside
-    glm::dvec3 massLocation;
-    double pointMass;
+    vector<glm::dvec3> massLocations;
+    vector<double> pointMasses;
 
-    //Possibly is a motor with propellor
-    bool isMotor;
-    motorData motor;
+    // Possibly facing a certain direction that will be recorded
+    glm::dvec3 partDirection;
 
-    //Possibly is a horizontal part of the tail
-    bool isTail;
-
+    // Whether to isolate forces on part
+    bool isForceRegion;
 
     extrusionData(){};
 
-    //General constructor
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, bool _isControl, glm::dvec3 _controlAxis, double _pointMass,
-        glm::dvec3 _massLocation, bool _isMotor, motorData _motor, bool _isTail)
+        glm::dvec3 _pivotPoint, glm::dvec3 _controlAxis, vector<double> _pointMasses,
+        vector<glm::dvec3> _massLocations, glm::dvec3 _partDirection, bool _isForceRegion)
         : zSampleVals(_zSampleVals), posVals(_posVals), 
         scaleVals(_scaleVals), rotation(_rotation), translation(_translation), pivotPoint(_pivotPoint), 
-        isControl(_isControl), controlAxis(_controlAxis), rotateAngle(0.0), massLocation(_massLocation), 
-        pointMass(_pointMass), isMotor(_isMotor), motor(_motor), 
-        isTail(_isTail) {};
+        controlAxis(_controlAxis), massLocations(_massLocations), 
+        pointMasses(_pointMasses), partDirection(_partDirection), isForceRegion(_isForceRegion) {};
 
     //Barebones, basic part with no extras
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
         glm::dvec3 _pivotPoint) : extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, 
-        _translation, _pivotPoint, false, glm::dvec3(0.0), 0.0, glm::dvec3(0.0),
-        false, motorData(), false) {};
+        _translation, _pivotPoint, glm::dvec3(0.0), vector<double>(0), vector<glm::dvec3>(0),
+        glm::dvec3(0.0), false) {};
 
     //Control surface but no point mass
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, glm::dvec3 _controlAxis) : 
-        extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, 
-        _translation, _pivotPoint, true, _controlAxis, 0.0, glm::dvec3(0.0, 0.0, 0.0), 
-        false, motorData(), false) {};
+        glm::dvec3 _pivotPoint, glm::dvec3 _controlAxis) : extrusionData(_zSampleVals, _posVals, 
+        _scaleVals, _rotation, _translation, _pivotPoint, _controlAxis, vector<double>(0), 
+        vector<glm::dvec3>(0), glm::dvec3(0.0), false) {};
 
-    //Not a control surface but has point mass
+    //Just has point mass
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, double _pointMass, glm::dvec3 _massLocation) : 
-        extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, 
-        _translation, _pivotPoint, false, glm::dvec3(0.0), _pointMass, _massLocation,
-        false, motorData(), false) {};
+        glm::dvec3 _pivotPoint, vector<double> _pointMasses, vector<glm::dvec3> _massLocations) : 
+        extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, _translation, _pivotPoint, 
+        glm::dvec3(0.0), _pointMasses, _massLocations, glm::dvec3(0.0), false) {};
 
-    //Not a control but has a motor
+    //Not a control surface but has point mass and direction
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, double _pointMass, glm::dvec3 _massLocation,
-        motorData _motor) : extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, 
-        _translation, _pivotPoint, false, glm::dvec3(0.0), _pointMass, _massLocation,
-        true, _motor, false) {};
+        glm::dvec3 _pivotPoint, vector<double> _pointMasses, vector<glm::dvec3> _massLocations,
+        glm::dvec3 _partDirection) : extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, _translation, _pivotPoint, 
+        glm::dvec3(0.0), _pointMasses, _massLocations, _partDirection, false) {};
 
-    //Horizontal Stabiliser
+    //Not a control but has a forceRegion
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, bool _isTail) : extrusionData(_zSampleVals, 
-        _posVals, _scaleVals, _rotation, _translation, _pivotPoint, false, 
-        glm::dvec3(0.0), 0.0, glm::dvec3(0.0),
-        false, motorData(), _isTail) {};
+        glm::dvec3 _pivotPoint, bool _isForceRegion) : extrusionData(_zSampleVals, _posVals, 
+        _scaleVals, _rotation, _translation, _pivotPoint, glm::dvec3(0.0), vector<double>(0), 
+        vector<glm::dvec3>(0), glm::dvec3(0.0), _isForceRegion) {};
 
-    //Elevator
+    //Control and force region
     extrusionData(vector<double> _zSampleVals, vector<glm::dvec2> _posVals,
         vector<glm::dvec2> _scaleVals, glm::dquat _rotation, glm::dvec3 _translation, 
-        glm::dvec3 _pivotPoint, glm::dvec3 _controlAxis, bool _isTail) : 
-        extrusionData(_zSampleVals, _posVals, _scaleVals, _rotation, 
-        _translation, _pivotPoint, true, _controlAxis, 0.0, glm::dvec3(0.0, 0.0, 0.0), 
-        false, motorData(), _isTail) {};
-
+        glm::dvec3 _pivotPoint, glm::dvec3 _controlAxis, bool _isForceRegion) : extrusionData(
+        _zSampleVals, _posVals, _scaleVals, _rotation, _translation, _pivotPoint, _controlAxis,
+        vector<double>(0), vector<glm::dvec3>(0), glm::dvec3(0.0), _isForceRegion) {};
+    
     #ifdef USE_SDL
         void plot(int WINDOW_WIDTH, int WINDOW_HEIGHT, profile partProfile) const;
     #endif

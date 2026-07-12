@@ -8,7 +8,7 @@
 #define GLM_FORCE_RADIANS
 #include "glm/glm.hpp"
 #include "glm/gtx/quaternion.hpp"
-#include "../constants.h"
+#include "../compile_config.h"
 
 #ifdef USE_SDL
 

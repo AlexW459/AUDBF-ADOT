@@ -1,0 +1,33 @@
+mag1
+{
+    type            mag;
+    libs            ("libfieldFunctionObjects.so");
+
+    
+    // Mandatory (inherited) entries (runtime modifiable)
+    field           U;
+
+    // Optional (inherited) entries
+    result          magU;
+    enabled         true;
+    writeControl    outputTime;
+    writeFormat     binary;
+    writeInterval   1;
+}
+
+tailUpstreamVelocity
+{
+    type            volFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+
+    regionType      zone;
+    cellZone        upstreamTailZone;
+    operation       volAverage;
+
+    fields          (magU);
+
+    writeFields     yes;
+    writeControl    outputTime;
+    writeFormat     ascii;
+    writeInterval   1;
+}

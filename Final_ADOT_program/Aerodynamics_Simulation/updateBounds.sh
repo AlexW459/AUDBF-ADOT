@@ -2,15 +2,19 @@
 
 # First 6 arguments are the 3 min bounds and 3 max bounds of the volume
 # Next 6 arguments are the 3 min bounds and 3 max bounds of the refinement box
-# Next 6 arguments are the 3 min bounds and 3 max bounds of the horizontal stabiliser
-# Final argument is the case number
+# Next argument is the case number
+# Next argument is the number of force regions
+# Next arguments are bounds of force regions, 3 min and 3 max for each
+# Next argument is the number of velocity regions
+# Next arguments are bounds of velocity regions, 3 min and 3 max for each
 
 #Enters case
-caseNum="Aerodynamics_Simulation_${19}"
+caseNum="Aerodynamics_Simulation_$3"
 cd $caseNum
+cd system
 
 #Updates bounding box
-verticesLineNum="$(grep -n "vertices" system/blockMeshDict | head -n 1 | cut -d: -f1)"
+verticesLineNum="$(grep -n "vertices" blockMeshDict | head -n 1 | cut -d: -f1)"
 
 vertex0="   ($1 $2 $3)"
 vertex1="   ($4 $2 $3)"
@@ -21,41 +25,78 @@ vertex5="   ($4 $2 $6)"
 vertex6="   ($4 $5 $6)"
 vertex7="   ($1 $5 $6)"
 
-sed -i "$((verticesLineNum+2))s/.*/$vertex0/" system/blockMeshDict
-sed -i "$((verticesLineNum+3))s/.*/$vertex1/" system/blockMeshDict
-sed -i "$((verticesLineNum+4))s/.*/$vertex2/" system/blockMeshDict
-sed -i "$((verticesLineNum+5))s/.*/$vertex3/" system/blockMeshDict
-sed -i "$((verticesLineNum+7))s/.*/$vertex4/" system/blockMeshDict
-sed -i "$((verticesLineNum+8))s/.*/$vertex5/" system/blockMeshDict
-sed -i "$((verticesLineNum+9))s/.*/$vertex6/" system/blockMeshDict
-sed -i "$((verticesLineNum+10))s/.*/$vertex7/" system/blockMeshDict
+sed -i "$((verticesLineNum+2))s/.*/$vertex0/" blockMeshDict
+sed -i "$((verticesLineNum+3))s/.*/$vertex1/" blockMeshDict
+sed -i "$((verticesLineNum+4))s/.*/$vertex2/" blockMeshDict
+sed -i "$((verticesLineNum+5))s/.*/$vertex3/" blockMeshDict
+sed -i "$((verticesLineNum+7))s/.*/$vertex4/" blockMeshDict
+sed -i "$((verticesLineNum+8))s/.*/$vertex5/" blockMeshDict
+sed -i "$((verticesLineNum+9))s/.*/$vertex6/" blockMeshDict
+sed -i "$((verticesLineNum+10))s/.*/$vertex7/" blockMeshDict
 
 #Updates refinementBox
-refinementBoxLineNum="$(grep -n "refinementBox" system/snappyHexMeshDict | head -n 1 | cut -d: -f1)"
+refinementBoxLineNum="$(grep -n "refinementBox" snappyHexMeshDict | head -n 1 | cut -d: -f1)"
 minRefine="        min ($7 $8 $9);"
 maxRefine="        max (${10} ${11} ${12});"
-sed -i "$((refinementBoxLineNum+3))s/.*/$minRefine/" system/snappyHexMeshDict
-sed -i "$((refinementBoxLineNum+4))s/.*/$maxRefine/" system/snappyHexMeshDict
+sed -i "$((refinementBoxLineNum+3))s/.*/$minRefine/" snappyHexMeshDict
+sed -i "$((refinementBoxLineNum+4))s/.*/$maxRefine/" snappyHexMeshDict
 
 #Sets the location of the inside point
 inMeshPointX=$(echo "$7+0.005" | bc)
 inMeshPointY=$(echo "$8+0.005" | bc)
 inMeshPointZ=$(echo "$9+0.005" | bc)
-sed -i "/locationInMesh/c\    locationInMesh ($inMeshPointX $inMeshPointY $inMeshPointZ);" system/snappyHexMeshDict
+sed -i "/locationInMesh/c\    locationInMesh ($inMeshPointX $inMeshPointY $inMeshPointZ);" snappyHexMeshDict
+
+# Clears createZones dict beyond line 25
+sed -i '25,$d' createZonesDict
+
+# Adds region to isolate forces on object
+for ((i=0; i<$4; i++)); do
+paramNum=$(($i*6+5));
+cat <<EOF >> createZonesDict
+Intersection{
+    name forceFaceZone_$(($i))
+    aircraftModelZone;
+    forceZone_$i{
+        zoneType face;
+        type box;
+        box (${!$paramNum} ${!$paramNum+1} ${!$paramNum+2}) (${!$paramNum+3} ${!$paramNum+4} ${!$paramNum+5});
+    };
+}
+EOF
+done
+
+# Deletes all lines following line 19
+sed -i '20,$d' createPatchDict
 
 
-#Sets the bounds of the box enclosing the horizontal stabiliser
-tailBoundsLineNum="$(grep -n "TailBounds" system/createZonesDict | head -n 1 | cut -d: -f1)"
-minTailBounds="(${13} ${14} ${15})"
-maxTailBounds="(${16} ${17} ${18})"
-sed -i "$((tailBoundsLineNum+1))s/.*/        box $minTailBounds $maxTailBounds;/" system/createZonesDict
+# Creates patches from force region face zones
+for ((i=0; i<$4; i++)); do
+cat <<EOF >> createPatchDict
+    forcePatch_$i{
+        patchInfo{
+            type wall;
+        }
+        constructFrom zone;
+        zone forceFaceZone_$i;
+    }
+}
+EOF
+done
 
 
-#Sets the bounds of the box that measures tail upstream velocity
-tailUpstreamBoxLineNum="$(grep -n "TailUpstreamBox" system/createZonesDict | head -n 1 | cut -d: -f1)"
-minUpstreamX=$(echo "${16}+0.05*(${16}-(${13}))" | bc)
-maxUpstreamX=$(echo "${16}+0.2*(${16}-(${13}))" | bc)
+# Adds regions to isolate velocity
+velVarNum=$((5+$4*6));
+nVelZones=${!$velVarNum};
+for ((i=0; i<nVelZones; i++)); do
+paramNum=$(($velVarNum+$i*6+1));
+cat <<EOF >> createZonesDict
+box{
+    name velZone_$i
+    zoneType cell;
+    box (${!$paramNum} ${!$(($paramNum+1))} ${!$(($paramNum+1))}) 
+        (${!$(($paramNum+3))} ${!$(($paramNum+4))} ${!$(($paramNum+5))});
+};
+EOF
 
-minUpstreamBox="($minUpstreamX ${14} ${15})"
-maxUpstreamBox="($maxUpstreamX ${17} ${18})"
-sed -i "$((tailUpstreamBoxLineNum+1))s/.*/    box $minUpstreamBox $maxUpstreamBox;/" system/createZonesDict
+done

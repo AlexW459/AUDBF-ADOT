@@ -1,22 +1,23 @@
 #!/bin/bash
 
 #First argument is the case number
-#Second number is the number of nodes to run on
-#Third argument is the processes per node
-#Fourth argument is the location of the OpenFOAM sourcing script
+#Second argument is the location of the OpenFOAM sourcing script
+#Third argument is whether to run on current process (0) run in parallel (1) or run in parallel with Slurm (2)
+#Fourth argument is the number of nodes/processes to run on 
+#Fifth argument is the processes per node
 
-openfoamSource=$4
+openfoamSource=$2
 
+. $openfoamSource
 
 #Enters case
 caseNum="Aerodynamics_Simulation_$1"
 cd $caseNum
 
 #Gets total number of processes
-totalProcesses=$(($2*$3))
+totalProcesses=$(($3*$4))
 
 #Loads latest Openfoam version
-#. /usr/lib/openfoam/openfoam2512/etc/bashrc
 . $openfoamSource
 
 #Cleans mesh
@@ -40,33 +41,44 @@ rm -r -f 0/*
 
 rm -r -f constant/extendedFeatureEdgeMesh/*
 
-#Updates number of processes
-sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/decomposeParDict
-
 
 blockMesh > blockLog
 surfaceFeatures > surfaceLog
 
-#decomposePar -force -constant > decomposeLog
+#In case of parallel running
+if [$3 -gt 0] then
+    #Updates number of processes
+    sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/decomposeParDict
+    decomposePar -force -constant > decomposeLog
+fi
 
-# Load the Intel oneAPI environment for the job
-#source /opt/intel/oneapi/setvars.sh
+if [$3 -eq 2] then
 
-# Set the PMI library path for Slurm-MPI integration
-#export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
+    # Load the Intel oneAPI environment for the job
+    #source /opt/intel/oneapi/setvars.sh
 
-#echo "Running snappyHexMesh in parallel on rank $1 on $totalProcesses processes across $2 nodes"
+    # Set the PMI library path for Slurm-MPI integration
+    #export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
-#Sets up slurm script
-#sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$1/" meshParallel.sh
-#sed -i "$((3))s/.*/#SBATCH --nodes=$2/" meshParallel.sh
-#sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$3/" meshParallel.sh
-#sed -i "/bashrc/c\. $openfoamSource" meshParallel.sh
+    echo "Running snappyHexMesh in parallel on rank $1 on $totalProcesses processes across $4 nodes"
 
-snappyHexMesh -overwrite > meshLog
-#sbatch --wait --wait-all-nodes 1 meshParallel.sh
+    #Sets up slurm script
+    sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$1/" meshParallel.sh
+    sed -i "$((3))s/.*/#SBATCH --nodes=$4/" meshParallel.sh
+    sed -i "$((4))s/.*/#SBATCH --ntasks-per-node=$5/" meshParallel.sh
+    sed -i "/bashrc/c\. $openfoamSource" meshParallel.
 
-#reconstructPar -constant > reconstructLog
+    sbatch --wait --wait-all-nodes 1 meshParallel.sh
+
+    reconstructPar -constant > reconstructLog
+elif [$3 -eq 1] then
+    echo "Running snappyHexMesh in parallel from rank $1 on $totalProcesses processes"
+    snappyHexMesh -parallel -overwrite > meshLog
+    reconstructPar -constant > reconstructLog
+elif [$3 -eq 0] then
+    echo "Running snappyHexMesh on rank $1"
+    snappyHexMesh -overwrite > meshLog
+fi
 
 createZones > zoneLog
 
@@ -74,4 +86,5 @@ createPatch > patchLog
 
 renumberMesh -constant > renumberLog
 
+#Clean directories
 rm -r -f processor*

@@ -5,16 +5,36 @@
 #include <algorithm>
 #include <complex>
 
-#include "../Mesh_Generation/profile.h"
+
 #include "../aircraft.h"
+#include "../Mesh_Generation/profile.h"
+#include "../Mesh_Generation/extrusionGen.h"
+#include "../Mesh_Generation/MC.h"
+#include "../readCSV.h"
+
+using namespace std;
+
+aircraft constructAircraft();
 
 void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals, 
-    const vector<dataTable>& discreteTables, vector<int> discreteVals, double& wingRootChord, 
-    double& wingLength, double& wingScale, double& tailHorizArea);
+    const vector<dataTable>& discreteTables, vector<int> discreteVals, 
+    vector<glm::dmat2x3>& velocityRegions);
 
-double rateDesign(array<double, 3> bestConfig, double velocity, glm::dvec3 aeroForces, double oscillationFreq, double dampingCoeff,
-    double dMdAlpha, double mass, vector<string> fullParamNames, vector<double> fullParamVals);
+double rateDesign(vector<string> fullParamNames, vector<double> fullParamVals, 
+    vector<dataTable> discreteTables, vector<int> discreteVals, vector<vector<double>> positionVariables,
+    double mass, vector<glm::dvec3> COMs, vector<glm::dmat3> MOIs, vector<glm::dvec3> totalForces, 
+    vector<glm::dvec3> totalTorques, vector<vector<glm::dvec3>> regionForces,
+    vector<vector<glm::dvec3>> regionTorques, vector<vector<double>> regionVelMags,
+    vector<vector<glm::dvec3>> POIs, vector<glm::dvec3> partDirections);
     
+//Finds the velocity at a given configuration
+double calculateVelocity(vector<double> motorMaxThrusts, vector<double> motorMaxRPMs, 
+    vector<double> motorPropPitches, double throttle, double dragCoeff, 
+    vector<glm::dvec3> motorThrustDirs, double pitch);
+    
+std::vector<glm::dvec3> findIntersections(glm::dvec3 vert1, glm::dvec3 vert2, MC::mcMesh mesh);
+
+
 profile fuselageProfile(vector<string> paramNames, vector<double> paramVals, double meshRes);
 
 extrusionData extrudeFuselage(vector<string> paramNames, vector<double> paramVals, double meshRes);

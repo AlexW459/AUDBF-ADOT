@@ -62,7 +62,7 @@ boundary
             (1 5 4 0)
         );
     }
-    inlet
+    inlet // positive x
     {
         type patch;
         faces
@@ -70,7 +70,7 @@ boundary
             (0 4 7 3)
         );
     }
-    outlet
+    outlet // negative x
     {
         type patch;
         faces

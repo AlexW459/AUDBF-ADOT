@@ -8,7 +8,6 @@
 #SBATCH --error=slurmMeshingErrorLog
 
 source /opt/intel/oneapi/setvars.sh --force
-
 export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
 . $HOME/opt/OpenFOAM-13/etc/bashrc

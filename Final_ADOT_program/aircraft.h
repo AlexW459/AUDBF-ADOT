@@ -16,27 +16,40 @@
 #include "Mesh_Generation/profile.h"
 #include "Mesh_Generation/surfaceMeshGen.h"
 #include "Mesh_Generation/extrusionGen.h"
+#include "Mesh_Generation/MC.h"
 #ifdef USE_SDL
 #include "Mesh_Generation/meshWindow.h"
 #endif
 
 #include "getForces.h"
-#include "readCSV.h"
 
 
-#define RHO 1.225
-#define G_CONSTANT 9.81
+//Members: vector<string> rowNames, vector<pair<string, vector<float>>> columns
+struct dataTable {
+    vector<string> colNames;
+    vector<pair<string, vector<double>>> rows;
+
+};
 
 using namespace std;
 
+typedef function<double(vector<string> fullParamNames, vector<double> fullParamVals, 
+    vector<dataTable> discreteTables, vector<int> discreteVals, vector<vector<double>> positionVariables,
+    double mass, vector<glm::dvec3> COMs, vector<glm::dmat3> MOIs, vector<glm::dvec3> totalForces, 
+    vector<glm::dvec3> totalTorques, vector<vector<glm::dvec3>> regionForces,
+    vector<vector<glm::dvec3>> regionTorques, vector<vector<double>> regionVelMags,
+    vector<vector<glm::dvec3>> POIs, vector<glm::dvec3> partDirections)> scoreFuncType;
+
+typedef function<void(vector<string>& paramNames, vector<double>& paramVals, 
+    const vector<dataTable>& discreteTables, vector<int> discreteVals, 
+    vector<glm::dmat2x3>& velRegions)> derParamFuncType;
 
 class aircraft{
     public:
-        aircraft(vector<string> _paramNames, vector<dataTable> _discreteTables,
-            function<void(vector<string>&, vector<double>&, const vector<dataTable>& discreteTables, 
-            vector<int>, double&, double&, double&, double&)> _derivedParamsFunc, 
-            vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions, 
-            double _roughnessHeight);
+        aircraft(vector<string> _paramNames, vector<glm::dvec2> _paramRanges,
+            vector<dataTable> _discreteTables, derParamFuncType _derivedParamsFunc, 
+            vector<function<profile(vector<string>, vector<double>, double)>> _profileFunctions,
+            vector<vector<double>> _positionVariables, scoreFuncType _scoreFunc, double _roughnessHeight);
 
         void addPart(string partName, double density,
             function<extrusionData(vector<string>, vector<double>, double)> extrusionFunction, int profileIndex);
@@ -49,17 +62,24 @@ class aircraft{
         //aerodynamic forces, velocity, oscillation frequency, damping coefficient, 
         //dMdalpha, mass, paramNames, paramVals
         double calculateScore(vector<double> paramVals, vector<int> discreteVals, 
-            function<double(array<double, 3>, double, glm::dvec3, double, double, 
-            double, double, vector<string>, vector<double>)> scoreFunc, array<double, 3>& bestConfig, 
-            double volMeshRes, double surfMeshRes, int procRank, int nSimNodes, int nSimTasksPerNode);
+            array<double, 3>& bestConfig, vector<double> simParams, bool writeObjs, int procRank, 
+            int nSimNodes, int meshParallelOpt, int simParallelOpt, int nSimTasksPerNode);
 
         #ifdef USE_SDL
             void plot(int SCREEN_WIDTH, int SCREEN_HEIGHT, vector<string> paramNames, vector<double> paramVals, vector<int> discreteVals, double volMeshRes);
         #endif
 
+
+        // Names of all of the parameters, in order for searching
+        vector<string> paramNames;
+
+        // Ranges of parameter values
+        vector<glm::dvec2> paramRanges;
+        vector<dataTable> discreteTables;
+
     private:
 
-        //Finds the variables associated with the volumetric mesh, including the bounding box of each part
+        // Finds the variables associated with the volumetric mesh, including the bounding box of each part
         void getVolVals(const profile& partProfile, const extrusionData& extrusion, double density,
             double& mass, glm::dvec3& COM, glm::dmat3& MOI, glm::dmat2x3& boundingBox) const;
         
@@ -70,7 +90,6 @@ class aircraft{
 
         //Gets COMs and MOIs at every position
         //Parameter positionVariables follows same format as in getAeroVals
-        //For motor parameters, inner vector is list of motors, outer vector is list of positions
         void getPhysVals(vector<vector<double>> positionVariables,
             double staticMass, glm::dvec3 staticCOM, glm::dmat3 staticMOI, vector<double> controlMasses, 
             vector<glm::dvec3> controlPivots, vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlCOMs,
@@ -78,40 +97,42 @@ class aircraft{
 
         //Gets the aerodynamic forces (net force, torque) on the aircraft for a range of configurations of the aircraft
         //Forces are normalised for velocity squared
-        //The first two columns in positonVariables are values of pitch and yaw, the rest are control surface positions
+        //The first three columns of positionVariables is the vector of airflow, the next three are the gravity unit vector,
+        //any additional columns are angles ofcontrol surfaces
         pair<vector<glm::dvec3>, vector<glm::dvec3>> getAeroVals(vector<vector<double>> positionVariables, 
             const vector<double>& staticSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ,
             const vector<profile>& profiles, vector<extrusionData> extrusions, vector<int> controlSurfaces,
-            vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlPivots, int horizontalStabiliser,
-            int elevatorPart, vector<glm::dvec3> totalCOMs, const vector<glm::dmat2x3>& boundingBoxes, 
-            glm::dmat2x3 totalBoundingBox, vector<double>& tEfficiencyFactors, 
-            vector<glm::dvec3>& tailForce, vector<glm::dvec3>& tailTorques, double surfMeshRes,
-            int procRank, int nSimNodes, int nSimTasksPerNode);
+            vector<glm::dvec3> controlAxes, vector<glm::dvec3> controlPivots, vector<int> forceRegionParts,
+            vector<glm::dmat2x3> velRegions, vector<glm::dvec3> totalCOMs, const vector<glm::dmat2x3>& boundingBoxes, 
+            glm::dmat2x3 totalBoundingBox, vector<vector<glm::dvec3>>& regionForces, vector<vector<glm::dvec3>>& regionTorques, 
+            vector<vector<double>>& regionAvgVels, vector<double> simParams, bool writeObjs, int procRank, 
+            int meshParallelOpt, int simParallelOpt, int nSimNodes, int nSimTasksPerNode);
 
-        //Finds the velocity at a given configuration
-        double calculateVelocity(vector<extrusionData> extrusions, vector<int> motorParts, 
-            double throttle, double dragCoeff, vector<glm::dvec3> motorThrustDirs, 
-            double alpha, double yaw) const;
+        
 
-        //Names of all of the parameters, in order for searching
-        vector<string> parameterNames;
-        vector<string> fullParamNames;
+
 
         //Function used to calculate derived values from parameters
-        //The four doubles are reference values: wing root chord, wing length,
-        //wing scale, horizontal stabiliser area
-        function<void(vector<string>&, vector<double>&, const vector<dataTable>&, 
-            vector<int>, double&, double&, double&, double&)> derivedParamsFunc;
+        //Arguments are: param names, param values, discrete data tables,
+        // discrete values, and a vector of bounds of velocity regions
+        derParamFuncType derivedParamsFunc;
         //Functions used to produce profiles based on parameters
         vector<function<profile(vector<string>, vector<double>, double)>> profileFunctions;
         //Functions used to produce extrusion information based on parameters
         vector<function<extrusionData(vector<string>, vector<double>, double)>> extrusionFunctions;
 
+        //User provided function used to evaluate score based on simulation results
+        scoreFuncType scoreFunc;
+
+        // List of positions to conduct aerodynamic simulations at. First three values are 
+        // air velocity in x, y and z directions. Each following value is the angle of a 
+        // control surface, in the order they are added
+        vector<vector<double>> simPositionVariables;
+
+        // Stores part info
         vector<string> partNames;
-        //vector<int> partParents;
         vector<vector<int>> parentIndices;
 
-        vector<dataTable> discreteTables;
         //Stores the index of the profile used for each part
         vector<int> partProfiles;
         vector<double> partDensities;

@@ -24,6 +24,16 @@ UlowerlineNum="$(grep -n "lower" initialValues/U | head -n 1 | cut -d: -f1)"
 pupperlineNum="$(grep -n "upper" initialValues/p | head -n 1 | cut -d: -f1)"
 plowerlineNum="$(grep -n "lower" initialValues/p | head -n 1 | cut -d: -f1)"
 
+UfrontlineNum="$(grep -n "front" initialValues/U | head -n 1 | cut -d: -f1)"
+UbacklineNum="$(grep -n "back" initialValues/U | head -n 1 | cut -d: -f1)"
+pfrontlineNum="$(grep -n "front" initialValues/p | head -n 1 | cut -d: -f1)"
+pbacklineNum="$(grep -n "back" initialValues/p | head -n 1 | cut -d: -f1)"
+
+UinletlineNum="$(grep -n "inlet" initialValues/U | head -n 1 | cut -d: -f1)"
+UoutletlineNum="$(grep -n "outlet" initialValues/U | head -n 1 | cut -d: -f1)"
+pinletlineNum="$(grep -n "inlet" initialValues/p | head -n 1 | cut -d: -f1)"
+poutletlineNum="$(grep -n "outlet" initialValues/p | head -n 1 | cut -d: -f1)"
+
 
 if [[ $(echo "$3 >=  0" | bc) == "1" ]]; then
     #Set upper to outlet
@@ -60,6 +70,84 @@ else
     sed -i "$((plowerlineNum+3))s/.*/ /" initialValues/p
     sed -i "$((plowerlineNum+4))s/.*/ /" initialValues/p
 fi
+
+
+
+if [[ $(echo "$2 >=  0" | bc) == "1" ]]; then
+    #Set front to outlet
+    sed -i "$((UfrontlineNum+2))s/.*/        type           inletOutlet;/" initialValues/U
+    sed -i "$((UfrontlineNum+3))s/.*/        inletValue     uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UfrontlineNum+4))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((pfrontlineNum+2))s/.*/        type           inletOutlet;/" initialValues/p
+    sed -i "$((pfrontlineNum+3))s/.*/        inletValue     uniform 0;/" initialValues/p
+    sed -i "$((pfrontlineNum+4))s/.*/        value          uniform 0;/" initialValues/p
+else
+    #Set front to inlet
+    sed -i "$((UfrontlineNum+2))s/.*/        type           fixedValue;/" initialValues/U
+    sed -i "$((UfrontlineNum+3))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UfrontlineNum+4))s/.*/ /" initialValues/U
+    sed -i "$((pfrontlineNum+2))s/.*/        type           zeroGradient;/" initialValues/p
+    sed -i "$((pfrontlineNum+3))s/.*/ /" initialValues/p
+    sed -i "$((pfrontlineNum+4))s/.*/ /" initialValues/p
+fi
+
+if [[ $(echo "$2 <= 0" | bc) == "1" ]]; then
+    #Set back to outlet
+    sed -i "$((UbacklineNum+2))s/.*/        type           inletOutlet;/" initialValues/U
+    sed -i "$((UbacklineNum+3))s/.*/        inletValue     uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UbacklineNum+4))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((pbacklineNum+2))s/.*/        type           inletOutlet;/" initialValues/p
+    sed -i "$((pbacklineNum+3))s/.*/        inletValue     uniform 0;/" initialValues/p
+    sed -i "$((pbacklineNum+4))s/.*/        value          uniform 0;/" initialValues/p
+else
+    #Set back to inlet
+    sed -i "$((UbacklineNum+2))s/.*/        type           fixedValue;/" initialValues/U
+    sed -i "$((UbacklineNum+3))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UbacklineNum+4))s/.*/ /" initialValues/U
+    sed -i "$((pbacklineNum+2))s/.*/        type           zeroGradient;/" initialValues/p
+    sed -i "$((pbacklineNum+3))s/.*/ /" initialValues/p
+    sed -i "$((pbacklineNum+4))s/.*/ /" initialValues/p
+fi
+
+
+
+if [[ $(echo "$1 >=  0" | bc) == "1" ]]; then
+    #Set inlet to outlet
+    sed -i "$((UinletlineNum+2))s/.*/        type           inletOutlet;/" initialValues/U
+    sed -i "$((UinletlineNum+3))s/.*/        inletValue     uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UinletlineNum+4))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((pinletlineNum+2))s/.*/        type           inletOutlet;/" initialValues/p
+    sed -i "$((pinletlineNum+3))s/.*/        inletValue     uniform 0;/" initialValues/p
+    sed -i "$((pinletlineNum+4))s/.*/        value          uniform 0;/" initialValues/p
+else
+    #Set inlet to inlet
+    sed -i "$((UinletlineNum+2))s/.*/        type           fixedValue;/" initialValues/U
+    sed -i "$((UinletlineNum+3))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UinletlineNum+4))s/.*/ /" initialValues/U
+    sed -i "$((pinletlineNum+2))s/.*/        type           zeroGradient;/" initialValues/p
+    sed -i "$((pinletlineNum+3))s/.*/ /" initialValues/p
+    sed -i "$((pinletlineNum+4))s/.*/ /" initialValues/p
+fi
+
+if [[ $(echo "$1 <= 0" | bc) == "1" ]]; then
+    #Set outlet to outlet
+    sed -i "$((UoutletlineNum+2))s/.*/        type           inletOutlet;/" initialValues/U
+    sed -i "$((UoutletlineNum+3))s/.*/        inletValue     uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UoutletlineNum+4))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((poutletlineNum+2))s/.*/        type           inletOutlet;/" initialValues/p
+    sed -i "$((poutletlineNum+3))s/.*/        inletValue     uniform 0;/" initialValues/p
+    sed -i "$((poutletlineNum+4))s/.*/        value          uniform 0;/" initialValues/p
+else
+    #Set outlet to inlet
+    sed -i "$((UoutletlineNum+2))s/.*/        type           fixedValue;/" initialValues/U
+    sed -i "$((UoutletlineNum+3))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UoutletlineNum+4))s/.*/ /" initialValues/U
+    sed -i "$((poutletlineNum+2))s/.*/        type           zeroGradient;/" initialValues/p
+    sed -i "$((poutletlineNum+3))s/.*/ /" initialValues/p
+    sed -i "$((poutletlineNum+4))s/.*/ /" initialValues/p
+fi
+
+
 
 #Set surface roughness
 sed -i "/surfaceRoughnessHeight/c\surfaceRoughnessHeight            $4;" initialValues/initialConditions

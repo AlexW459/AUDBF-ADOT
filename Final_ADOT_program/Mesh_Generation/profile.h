@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
-#include "../constants.h"
+#include "../compile_config.h"
 #ifdef USE_SDL
     #include "meshWindow.h"
 #endif

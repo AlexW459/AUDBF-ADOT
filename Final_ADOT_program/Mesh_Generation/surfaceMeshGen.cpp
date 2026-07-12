@@ -71,7 +71,8 @@ glm::ivec3 initSDF(vector<double>& SDF, vector<glm::dvec3>& XYZ, glm::dmat2x3 to
 vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const vector<glm::dvec3>& XYZ, 
     const vector<profile>& profiles, vector<int> profileIndices, const vector<extrusionData>& extrusions, 
     const vector<vector<int>>& parentIndices, const vector<glm::dmat2x3>& boundingBoxes, 
-    glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, double surfMeshRes){
+    glm::dmat2x3 totalBoundingBox, vector<int> meshSurfaces, vector<double> controlAngles,
+    double surfMeshRes){
 
     //cout << "hi" << endl;
 
@@ -85,6 +86,7 @@ vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const ve
     //Gets SDF of each part
     for(int p = 0; p < numParts; p++){
         int partIndex = meshSurfaces[p];
+        int partProfileIndex = profileIndices[partIndex];
 
         //Get SDF of part
         vector<double> partSDF;
@@ -94,13 +96,13 @@ vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const ve
                                 boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
         boundingIndices[1] = ceil((boundingBoxes[partIndex][1]-totalBoundingBox[0])/
                                 boundSize*glm::dvec3(SDFSize - glm::ivec3(1, 1, 1)));
-                    
+        
 
         //cout << "part bounding box: " << boundingBoxes[partIndex][0][0] << ", " << boundingBoxes[partIndex][0][1] << ", " << boundingBoxes[partIndex][0][2] << " - "
         //<< boundingBoxes[partIndex][1][0] << ", " << boundingBoxes[partIndex][1][1] << ", " << boundingBoxes[partIndex][1][2] << endl;
 
-        glm::ivec3 partSDFSize = generatePartSDF(extrusions, profiles[profileIndices[partIndex]], 
-            partIndex, parentIndices[partIndex], XYZ, SDFSize, boundingIndices, surfMeshRes, partSDF);
+        glm::ivec3 partSDFSize = generatePartSDF(extrusions, profiles[partProfileIndex], 
+            partIndex, parentIndices[partIndex], XYZ, SDFSize, boundingIndices, controlAngles, surfMeshRes, partSDF);
     
         //Find minimum of part SDF and total SDF for points in bounding box
         for(int i = 0; i < partSDFSize[0]; i++){
@@ -112,7 +114,6 @@ vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const ve
                         
                     int partSDFIndex = meshIndexTo1DIndex(i, j, k, partSDFSize[0], partSDFSize[1]);
 
-                    //if(p == 1 && partSDF[partIndex] < 0) cout << "hi" << endl;
                     
                     //Vectorisable min function
                     initialSDF[SDFindex] = initialSDF[SDFindex] + (partSDF[partSDFIndex] - initialSDF[SDFindex]) * (partSDF[partSDFIndex] < initialSDF[SDFindex]);
@@ -122,8 +123,6 @@ vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const ve
         }
     }
 
-    //cout << "hi" << endl;
-
     return initialSDF;
 }
 
@@ -132,7 +131,7 @@ vector<double> updateSDF(vector<double> initialSDF, glm::ivec3 SDFSize, const ve
 
 glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profile& partProfile, 
     int partIndex, vector<int> parentIndices, const vector<glm::dvec3>& meshGrid, glm::ivec3 SDFSize, 
-    glm::imat2x3 boundingIndices, double surfMeshRes, vector<double>& SDF){
+    glm::imat2x3 boundingIndices, vector<double> controlAngles, double surfMeshRes, vector<double>& SDF){
 
     glm::ivec3 partSDFSize = boundingIndices[1] - boundingIndices[0];
     int totalPartSDFSize = partSDFSize[0] * partSDFSize[1] * partSDFSize[2];
@@ -181,18 +180,14 @@ glm::ivec3 generatePartSDF(const vector<extrusionData>& extrusions, const profil
         //to the origin is the next step in the transformation anyway
         pivotPoints[i] = extrusions[tIndex].pivotPoint;
         translations[i] = extrusions[tIndex].translation + pivotPoints[i];
-        rotations[i] = glm::inverse(extrusions[tIndex].rotation);
-    }
+        if(glm::length(extrusions[tIndex].controlAxis) > 0.0){
+            glm::dquat controlRot = glm::angleAxis(controlAngles[tIndex], extrusions[tIndex].controlAxis);
+            glm::dquat transformRot = extrusions[tIndex].rotation;
+            rotations[i] = glm::inverse(controlRot*transformRot);
+        }else{
+            rotations[i] = glm::inverse(extrusions[tIndex].rotation);
+        }
 
-    //Adds control surface rotation if required
-    if(extrusions[partIndex].isControl){
-        //Rotates control surface
-        glm::dquat controlRot = glm::angleAxis(-extrusions[partIndex].rotateAngle, extrusions[partIndex].controlAxis);
-        pivotPoints.insert(pivotPoints.end(), extrusions[partIndex].pivotPoint);
-        translations.insert(translations.end(), extrusions[partIndex].pivotPoint);
-        rotations.insert(rotations.end(), controlRot);
-
-        numTransformations++;
     }
 
     //Applies transformations to coordinates
