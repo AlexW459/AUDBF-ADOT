@@ -1,0 +1,17 @@
+aeroForces
+{
+    type            forces;
+    libs            ("libforces.so");
+    patches         (aircraftModel);
+    
+    
+    
+    rho             1.225;
+    CofR            (-0.041740 0.001118 -0.055878);
+    magUInf         40.000000;
+
+    writeFields     yes;
+    writeControl outputTime;
+    writeInterval 1;
+    writeFormat     ascii;
+}

@@ -1,0 +1,16 @@
+mag1
+{
+    type            mag;
+    libs            ("libfieldFunctionObjects.so");
+
+    
+    // Mandatory (inherited) entries (runtime modifiable)
+    field           U;
+
+    // Optional (inherited) entries
+    result          magU;
+    enabled         true;
+    writeControl    outputTime;
+    writeFormat     binary;
+    writeInterval   1;
+}

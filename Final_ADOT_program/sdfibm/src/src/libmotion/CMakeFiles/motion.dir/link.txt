@@ -1,0 +1,2 @@
+/usr/bin/ar qc libmotion.a CMakeFiles/motion.dir/motionfactory.cpp.o
+/usr/bin/ranlib libmotion.a

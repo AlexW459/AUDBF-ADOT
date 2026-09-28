@@ -1,0 +1,98 @@
+
+// Resolution with which profiles are constructed
+PROFILE_RESOLUTION 50.0
+// Resolution with which the SDF is constructed
+SDF_RESOLUTION 50.0
+
+// Distance from surface within which SDF is calculated
+SDF_BAND_WIDTH 0.2
+
+// Size of domain as a multiple of body bounding box
+BOUND_MULTIPLE 6.0
+
+// Variation in size between cells closest to body and cells at edge of domain
+CELL_GRADIENT 20.0
+
+// Whether to use IBM for the simulations
+IBM_SIMULATION 1.0
+
+//Length and timestep of simulations
+SIMULATION_LENGTH 0.025
+SIMULATION_LENGTH_INITIAL 0.05
+SIMULATION_DELTA_T 0.0005
+SIMULATION_WRITE_INTERVAL 20
+
+//Simulation air density
+RHO 1.225
+
+// Whether to use a genetic algorithm (or gradient descent)
+GEN_OPTIM 0
+
+// Level of info to print from the optimisation algorithm
+OPTIM_PRINT_OPT 3
+
+// Affects action taken when error is encountered by optimisation algorithm
+CONV_FAILURE_SWITCH 0;
+
+// Maximum iterations of optimisation algorithm
+MAX_OPTIM_ITER 10.0
+
+// Tolerance of gradient based convergence
+GRAD_ERR_TOL 1e-8
+
+// Tolerance of convergence based on optimal input values
+REL_SOL_CHANGE_TOL 1e-14
+
+// Tolerance of convergence based on relative change in objective function
+REL_OBJFN_CHANGE_TOL 1e-8
+
+
+// Gradient descent parameters
+
+// Spacing between finite difference points (percentage of value)
+FINITE_DIFFERENCE_H 10.0
+
+// Step size
+PAR_STEP_SIZE 0.1
+
+// Whether or not to include step decay
+STEP_DECAY 0.0
+
+STEP_DECAY_PERIODS 10
+STEP_DECAY_VAL 0.5
+
+// Momentum
+PAR_MOMENTUM 0.9
+
+// Ada parameters
+PAR_ADA_NORM_TERM 1.0e-8
+PAR_ADA_RHO 0.9
+// True or false
+ADA_MAX 0.0
+
+// Adam parameters
+PAR_ADAM_BETA_1 0.9
+PAR_ADAM_BETA_2 0.999
+
+// Whether to clip gradient
+CLIP_GRAD 0.0
+
+CLIP_MAX_NORM 0.0
+CLIP_MIN_NORM 0.0
+CLIP_NORM_TYPE 2.0
+CLIP_NORM_BOUND 5.0
+
+
+// Genetic parameters
+
+// Size of population
+N_POP 200
+// Size of selected best in population
+N_POP_BEST 6
+// Number of generations
+N_GEN 10
+// 1 = RAND, 2 = BEST
+MUTATION_METHOD 2
+CHECK_FREQ -1
+PAR_F 0.8
+PAR_CR 0.9

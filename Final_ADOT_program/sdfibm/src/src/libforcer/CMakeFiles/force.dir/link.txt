@@ -1,0 +1,2 @@
+/usr/bin/ar qc libforce.a CMakeFiles/force.dir/forcerfactory.cpp.o
+/usr/bin/ranlib libforce.a

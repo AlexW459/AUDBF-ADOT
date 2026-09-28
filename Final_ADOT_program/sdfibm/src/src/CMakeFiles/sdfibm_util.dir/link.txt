@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsdfibm_util.a CMakeFiles/sdfibm_util.dir/cellenumerator.cpp.o CMakeFiles/sdfibm_util.dir/geometrictools.cpp.o CMakeFiles/sdfibm_util.dir/meshinfo.cpp.o
+/usr/bin/ranlib libsdfibm_util.a

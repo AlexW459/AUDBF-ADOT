@@ -1,0 +1,219 @@
+#ifndef SOLID_H_INCLUDED
+#define SOLID_H_INCLUDED
+
+#include "types.h"
+#include "./libshape/ishape.h"
+#include "./libmotion/imotion.h"
+#include "./libmaterial/imaterial.h"
+#include "./libforcer/iforcer.h"
+#include "utils.h"
+#include "fvc.H"
+
+namespace sdfibm {
+
+class Solid
+{
+protected:
+    label id;     // integer label
+    label hostid {-1}; // id of the mesh cell that host the solid center
+
+    // state
+    vector center;
+    quaternion orientation;
+
+    // state's 1st time derivative
+    vector velocity {vector::zero};
+    vector omega {vector::zero};
+
+    // state's 2nd time derivative
+    vector force {vector::zero};
+    vector torque {vector::zero};
+
+    // fluid only force
+    vector fluid_force {vector::zero};
+    vector fluid_torque {vector::zero};
+    // fluid only force from last time step
+    vector fluid_force_old {vector::zero};
+    vector fluid_torque_old {vector::zero};
+    bool first_fluid_step {true};
+
+    vector forcer_force {vector::zero};
+    vector forcer_torque {vector::zero};
+    vector forcer_force_old {vector::zero};
+    vector forcer_torque_old {vector::zero};
+    bool first_forcer_step {true};
+
+    // property pointers
+    IMotion*   ptr_motion {nullptr};
+    IShape*    ptr_shape {nullptr};
+    forcer::IForcer*    ptr_forcer {nullptr};
+    IMaterial* ptr_material {nullptr};
+
+    // object properties = shape x material
+    scalar mass {0};
+    scalar mass_inv {0};
+    tensor moi_inv {tensor::I};
+
+public:
+    // getters
+    inline         label getID()       const {return id;}
+    inline const vector& getCenter()   const {return center;}
+    inline const vector& getVelocity() const {return velocity;}
+    inline const vector& getOmega()    const {return omega;}
+    inline const vector& getForce()    const {return force;}
+    inline const vector& getTorque()   const {return torque;}
+    inline const quaternion& getOrientation() const {return orientation;}
+
+    inline const vector& getFluidForce()  {return fluid_force; }
+    inline const vector& getFluidTorque() {return fluid_torque; }
+
+    // setters
+    inline void setCenter  (const vector& c){ center = c; }
+    inline void setVelocity(const vector& v){ velocity = v; }
+    inline void setOmega   (const vector& o){ omega = o; }
+    inline void setForce   (const vector& f){ force = f; }
+    inline void setTorque  (const vector& t){ torque= t; }
+    inline void setOrientation(const vector& angles)
+    {
+        // from a fixed order of Euler angles
+        orientation = quaternion(quaternion::XYZ, angles);
+    }
+
+    inline IMotion*   getMotion()   const {return ptr_motion;  }
+    inline IShape*    getShape()    const {return ptr_shape;   }
+    inline IMaterial* getMaterial() const {return ptr_material;}
+    inline scalar     getRadiusB()  const {return ptr_shape->getRadiusB();}
+    inline bool       isFinite()    const {return ptr_shape->finite;}
+
+    inline void setShape(IShape* shape) {
+        ptr_shape = shape;
+    }
+    void setForcer(forcer::IForcer* forcer)
+    {
+        ptr_forcer = forcer;
+    }
+    inline void setMaterial(IMaterial* material)
+    {
+        ptr_material = material;
+
+        scalar rho = ptr_material->getRho();
+        mass     = ptr_shape->m_volume    * rho;
+        mass_inv = ptr_shape->m_volumeINV / rho;
+        moi_inv  = ptr_shape->m_moiINV    / rho;
+    }
+
+    // control of solid motion
+    inline void setMotion(IMotion* solid_motion) { ptr_motion = solid_motion; }
+    inline void unsetMotion()                    { ptr_motion = nullptr; }
+
+    // sdf01 at point, true if inside
+    inline bool phi01(const vector& p) const
+    {
+        return ptr_shape->phi01(p, {center, orientation});
+    }
+
+    // sdf at point, negative if inside
+    inline scalar phi(const vector& p) const
+    {
+        return ptr_shape->phi(p, {center, orientation});
+    }
+
+    inline vector evalPointVelocity(const vector& p) const
+    {
+        return velocity + (omega^(p - center));
+    }
+
+    inline void addAcceleration(const vector& acc)
+    {
+        // dedicated to body force which needs the (priviate) mass info
+        force += mass*acc;
+    }
+    inline void clearForceAndTorque()
+    {
+        force  = vector::zero;
+        torque = vector::zero;
+    }
+    inline void setFluidForceAndTorque(const vector& fluid_force_in, const vector& fluid_torque_in)
+    {
+        fluid_force  = fluid_force_in;
+        fluid_torque = fluid_torque_in;
+    }
+    inline void storeOldForce()
+    {
+        fluid_force_old  = fluid_force;
+        fluid_torque_old = fluid_torque;
+        forcer_force_old = forcer_force;
+        forcer_torque_old = forcer_torque;
+    }
+    inline void applyForcer(scalar& time)
+    {
+        if (!ptr_forcer)
+            return;
+        auto [f_,t_] = ptr_forcer->generate(time, center, velocity, orientation, omega);
+        forcer_force = f_;
+        forcer_torque = t_;
+        if (first_forcer_step)
+        {
+            forcer_force_old = forcer_force;
+            forcer_torque_old = forcer_torque;
+            first_forcer_step = false;
+        }
+        force += (1.5*forcer_force - 0.5*forcer_force_old);
+        torque += (1.5*forcer_torque - 0.5*forcer_torque_old);
+    }
+    inline void addMidFluidForceAndTorque()
+    {
+        if (first_fluid_step)
+        {
+            fluid_force_old  = fluid_force;
+            fluid_torque_old = fluid_torque;
+            first_fluid_step = false;
+        }
+        force  += (1.5*fluid_force  - 0.5*fluid_force_old);
+        torque += (1.5*fluid_torque - 0.5*fluid_torque_old);
+    }
+    inline void addForceAndTorque(const vector& external_force, const vector& external_torque)
+    {
+        force  += external_force;
+        torque += external_torque;
+    }
+
+    void move(const scalar& time, const scalar& dt)
+    {
+        // motion = velocity & omega
+        // temporarily store motion at time n
+        vector velocity_old = velocity;
+        vector omega_old    = omega;
+
+        // update motion to n+1 using force at time n+1/2
+        velocity += force*mass_inv*dt;        // velocity updated to t + dt
+        tensor R = orientation.R();
+        tensor moi_inv_world = R & moi_inv & R.T();
+        omega += (moi_inv_world & torque)*dt; // omega updated to t + dt
+
+        // constrain motion
+        if(ptr_motion != nullptr)
+            ptr_motion->constraint(time, velocity, omega);
+
+        // position & orientation updated AFTER constraint
+        center      += 0.5*(velocity + velocity_old)*dt;
+        orientation += 0.5*quaternion(0.5*(omega + omega_old))*orientation*dt;
+        orientation.normalise(); // no need to normalise every step, but cheap anyway
+    }
+
+    Solid(label solid_id,
+          const vector& solid_center,
+          const quaternion& solid_quaternion):
+        id      (solid_id),
+        center  (solid_center),
+        orientation (solid_quaternion)
+    {
+    }
+
+    ~Solid(){}
+    friend std::ostream& operator<<(std::ostream& os, const Solid& s);
+    friend void write2D(std::ostream& os, const Solid& s);
+};
+
+}
+#endif
