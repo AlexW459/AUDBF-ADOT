@@ -1,0 +1,271 @@
+#include "main.h"
+
+
+using namespace std;
+
+int main(int argc, char *argv[]) {
+
+    MPI_Init(&argc, &argv);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    // Gets rank of node that program is being run on, the number of processes available 
+    // to the program, and the total number of nodes
+    int nRanks;
+    int localRank;
+    MPI_Comm_size(MPI_COMM_WORLD, &nRanks);
+    MPI_Comm_rank(MPI_COMM_WORLD, &localRank);
+
+    // Gets arguments and simulation parameters
+    string parameterFileName = "simulation_parameters";
+    vector<double> simParameters;
+    int meshParallelOpt, simParallelOpt, nSimNodes, nSimTasksPerNode;
+    bool writeObjs;
+    parseParameters(argc, argv, parameterFileName, meshParallelOpt,
+    simParallelOpt, nSimNodes, nSimTasksPerNode, simParameters, writeObjs);
+
+    double MUTATION_STD_DEV = simParameters[0];
+    //double PROFILE_RESOLUTION = simParameters[1];
+    //double SDF_RESOLUTION = simParameters[2];
+    // First argument is the number of nodes per simulation, second argument is the number of
+    // simulation tasks per node
+
+    cout << "Running process " << localRank << " of " << nRanks << endl;
+
+    // Initialise rand()
+    srand (time(0));
+    default_random_engine rndNumGenerator;
+    rndNumGenerator.seed(time(0));
+
+    // Initialise SDL
+    #ifdef USE_SDL
+        SDL_Init(SDL_INIT_EVERYTHING);
+    #endif
+
+    // Initialises aircraft
+    aircraft testModel = constructAircraft();
+    
+    int nParams = testModel.paramRanges.size();
+    int nDiscrete = testModel.discreteTables.size();
+
+    vector<double> paramVals(nParams);
+    vector<int> discreteVals(nDiscrete);
+
+    // Finds random values of parameters within bounds
+    for(int i = 0; i < nParams; i++){
+        double min = testModel.paramRanges[i][0];
+        double max = testModel.paramRanges[i][1];
+
+        uniform_real_distribution paramDist(min, max);
+
+        paramVals[i] = paramDist(rndNumGenerator);
+    }
+
+    // Finds random values of discrete parameters
+    for(int i = 0; i < nDiscrete; i++){
+        
+        int nChoices = testModel.discreteTables[i].rows.size();
+
+        uniform_int_distribution discreteDist(0, nChoices-1);
+
+        discreteVals[i] = discreteDist(rndNumGenerator);
+    }
+
+    //cout << "ending process " << localRank << endl;
+    //MPI_Finalize();
+    //exit(0);
+
+    int nModels = nRanks;
+    
+    cout << "Entering optimisation loop on rank " << localRank << endl;
+    //Optimisation loop
+    int numGenerations = 1;
+    for(int generation = 0; generation < numGenerations; generation++){
+
+
+        //Cleans up folders if needed
+        if(localRank == 0) {
+            int failure = system("rm -r -f Aerodynamics_Simulation_*");
+            if(failure) throw runtime_error("Failed checking for and cleaning files");
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        //Rate aircraft performance
+        array<double, 3> aircraftConfig;
+        double score = testModel.calculateScore(paramVals, discreteVals, aircraftConfig, 
+            simParameters, writeObjs, localRank, nSimNodes, meshParallelOpt, simParallelOpt, nSimTasksPerNode);
+
+        cout << "score on rank " << localRank << ": " << score << endl;
+
+        //Wait until all nodes are finished
+        MPI_Barrier(MPI_COMM_WORLD);
+
+
+        vector<double> firstParentParamVals(nParams);
+        vector<int>    firstParentDiscreteVals(nParams);
+        vector<double> secondParentParamVals(nParams);
+        vector<int>    secondParentDiscreteVals(nParams);
+
+        if(localRank != 0){
+
+            cout << "Sending score and parameters to head rank from rank " << localRank << endl;
+
+            //Send info to controller node
+            MPI_Send(&score, 1, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD);
+            MPI_Send(paramVals.data(), nParams, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD);
+            MPI_Send(discreteVals.data(), nDiscrete, MPI_INT, 0, 2, MPI_COMM_WORLD);
+
+            //Get pair of new parameters
+            MPI_Recv(firstParentParamVals.data(), nParams, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(secondParentParamVals.data(), nParams, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(firstParentDiscreteVals.data(), nDiscrete, MPI_INT, 0, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(secondParentDiscreteVals.data(), nDiscrete, MPI_INT, 0, 3, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            cout << "Rank " << localRank << " received new parameters" << endl;
+
+        }else{
+
+            //Receives information
+            vector<vector<double>> allParamVals(nModels, vector<double>(nParams));
+            vector<vector<int>>    allDiscreteVals(nModels, vector<int>(nDiscrete));
+            allParamVals[0] = paramVals;
+            allDiscreteVals[0] = discreteVals;
+            
+            vector<double> scores(nModels);
+            scores[0] = score;
+            vector<double> interval(nModels);
+            interval[0] = 0.0;
+
+            for(int i = 1; i < nModels; i++){
+                MPI_Recv(&(scores[i]), 1, MPI_DOUBLE, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(allParamVals[i].data(), nParams, MPI_DOUBLE, i, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                MPI_Recv(allDiscreteVals[i].data(), nDiscrete, MPI_DOUBLE, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                interval[i] = (double)i;
+            }
+            cout << "Head rank received score and parameter data" << endl;
+
+            //Find pairs of parents using weighted random
+            vector<pair<int, int>> parentPairs(nModels);
+
+            //Ensures that all scores are not equal to zero
+            if( std::adjacent_find( scores.begin(), scores.end(), std::not_equal_to<>() ) == scores.end()
+                && scores[0] == 0.0){
+                //Sets scores to 1, ensuring an equally weighted distribution
+                std::fill(scores.begin(), scores.end(), 1.0);
+
+                cout << "All ranks returned a score of zero" << endl;
+            }
+
+            //Weighted distribution
+            piecewise_constant_distribution weightedDist(interval.begin(), interval.end(), scores.begin());
+            
+            //Pick first parent using weighted random, and then use weighted random on the remaining models to find the second
+            for(int i = 0; i < nModels; i++){
+                parentPairs[i].first = weightedDist(rndNumGenerator);
+
+                //Generates second parent after first parent is excluded from pool
+                vector<double> tempScores = scores;
+                tempScores[parentPairs[i].first] = 0.0;
+
+                //Ensures that all scores are not equal to zero
+                if( std::adjacent_find( tempScores.begin(), tempScores.end(), std::not_equal_to<>() ) == tempScores.end()
+                    && tempScores[0] == 0.0){
+                    //Sets scores to 1, ensuring an equally weighted distribution except excluding the already
+                    //chosen parent
+                    std::fill(tempScores.begin(), tempScores.end(), 1.0);
+                    tempScores[parentPairs[i].first] = 0.0;
+
+                    cout << "Only one rank returned a non-zero score" << endl;
+                }
+
+                piecewise_constant_distribution weightedDist2(interval.begin(), interval.end(), tempScores.begin());
+
+                parentPairs[i].second = weightedDist2(rndNumGenerator);
+            }
+
+            firstParentParamVals = allParamVals[parentPairs[0].first];
+            secondParentParamVals = allParamVals[parentPairs[0].second];
+            firstParentDiscreteVals = allDiscreteVals[parentPairs[0].first];
+            secondParentDiscreteVals = allDiscreteVals[parentPairs[0].second];
+
+            //Send pairs of parent parameters to each node
+            for(int i = 1; i < nModels; i++){
+                MPI_Send(allParamVals[parentPairs[i].first].data(), nParams, MPI_DOUBLE, i, 0, MPI_COMM_WORLD);
+                MPI_Send(allParamVals[parentPairs[i].second].data(), nParams, MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
+                MPI_Send(allDiscreteVals[parentPairs[i].first].data(), nDiscrete, MPI_INT, i, 2, MPI_COMM_WORLD);
+                MPI_Send(allDiscreteVals[parentPairs[i].second].data(), nDiscrete, MPI_INT, i, 3, MPI_COMM_WORLD);
+            }
+
+        }
+
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        //Do random crossover and mutations to find the parameters of the next model that will be tested on this node
+        vector<double> crossParamVals(nParams);
+        vector<int>    crossDiscreteVals(nDiscrete);
+
+        
+        //Pick each parameter of child entirely randomly
+        uniform_int_distribution binaryDist(0, 1);
+        
+        //Randomly add or subtract a fraction of the maximum amount that can be added
+        //or subtracted while staying in param range 
+        normal_distribution mutationDist(0.0, MUTATION_STD_DEV);
+        
+        for(int i = 0; i < nParams; i++){
+            bool choice = binaryDist(rndNumGenerator);
+            crossParamVals[i] = choice ? firstParentParamVals[i] : secondParentParamVals[i];
+            crossDiscreteVals[i] = choice ? firstParentDiscreteVals[i] : secondParentDiscreteVals[i];
+            
+
+            
+            double paramMin = testModel.paramRanges[i][0];
+            double paramMax = testModel.paramRanges[i][1];
+            double maxIncrease = paramMax - crossParamVals[i];
+            double maxDecrease = crossParamVals[i] - paramMin;
+
+            
+            //Converts value to one that is between -1 and 1 using the sigmoid function
+            double randVal =  mutationDist(rndNumGenerator);
+            double mutationAmount = 2.0/(1.0+exp(-randVal)) - 1.0;
+            double mutation = mutationAmount > 0 ? maxIncrease*mutationAmount : maxDecrease*mutationAmount;
+            paramVals[i] = crossParamVals[i] + mutation;
+
+            //Checks for error
+            if(paramVals[i] > testModel.paramRanges[i][1] || paramVals[i] < testModel.paramRanges[i][0]){
+                throw runtime_error("Mutation outside of parameter range for parameter " + testModel.paramNames[i]);
+            }
+
+        }
+
+        //Chance of discrete mutation is low, but if it happens the discrete parameter is randomly 
+        uniform_real_distribution discreteMutationDist(0.0, 1.0);
+        for(int i = 0; i < nDiscrete; i++){
+
+            int nChoices = testModel.discreteTables[i].rows.size();
+            uniform_int_distribution discreteParamDist(0, nChoices-1);
+
+            double mutationChance = 0.5*(mutationDist.max() - mutationDist.min());
+
+            if(discreteMutationDist(rndNumGenerator) > mutationChance){
+                discreteVals[i] = discreteParamDist(rndNumGenerator);
+            }else{
+                discreteVals[i] = crossDiscreteVals[i];
+            }
+        }
+
+    }
+
+
+
+    //Quit SDL
+    #ifdef USE_SDL
+        SDL_Quit();
+    #endif
+
+
+    MPI_Finalize();
+
+    return 0;
+}

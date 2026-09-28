@@ -1,0 +1,52 @@
+/*----------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  13
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      createZonesDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+//Faces on surface of aircraft
+aircraftModelZone
+{
+    zoneType    face;
+    type        patch;
+    patches ("aircraftModel");
+};
+
+//Faces of the horizontal stabiliser
+intersection
+{
+    name        horizStabiliserFaceZone;
+
+
+    
+    //Faces in box surrounding horizontal stabiliser
+    horizontalStabiliserZone
+    {
+        zoneType    face;
+        type        box;
+        //TailBounds
+        box (-.870258 -0.417780 0.012011) (-.587167 0.417780 0.038650);
+    };
+}
+
+
+//Thin box to measure velocity in front of tail
+box
+{
+    name        upstreamTailZone;
+    zoneType    cell;
+    //TailUpstreamBox
+    box (-.570258 -0.317780 0.012011) (-.537167 0.317780 0.038650);
+}
+

@@ -1,0 +1,32 @@
+{
+    "files.associations": {
+        "controldict": "cpp",
+        "array": "cpp",
+        "compare": "cpp",
+        "functional": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "u": "cpp",
+        "initialconditions": "cpp",
+        "nut": "cpp",
+        "fixedinlet": "cpp",
+        "system_error": "cpp",
+        "k": "cpp",
+        "blockmeshdict": "cpp",
+        "forcecoeffs": "cpp",
+        "fstream": "cpp",
+        "*.tcc": "cpp",
+        "deque": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "vector": "cpp",
+        "iosfwd": "cpp",
+        "iostream": "cpp",
+        "sstream": "cpp",
+        "regex": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "cmath": "cpp"
+    }
+}

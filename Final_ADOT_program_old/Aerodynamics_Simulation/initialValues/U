@@ -1,0 +1,83 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  12
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      binary;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#include "initialConditions";
+
+dimensions      [0 1 -1 0 0 0 0];
+
+internalField   uniform (0 0 0);
+
+boundaryField
+{
+    inlet
+    {
+        type            fixedValue;
+        value           uniform $flowVelocity;
+    }
+    
+    outlet
+    {
+        type            inletOutlet;
+        inletValue      uniform $flowVelocity;
+        value           uniform $flowVelocity;
+    }
+
+    aircraftModel
+    {
+        type            noSlip;
+    }
+
+    horizontalStabiliser
+    {
+        type            noSlip;
+    }
+
+    lower
+    {
+        type           fixedValue;
+        value          uniform $flowVelocity;
+ 
+    }
+
+    upper
+    {
+        type           inletOutlet;
+        inletValue     uniform $flowVelocity;
+        value          uniform $flowVelocity;
+    }
+
+    front
+    {
+        type           inletOutlet;
+        inletValue     uniform $flowVelocity;
+        value          uniform $flowVelocity;
+    }
+
+    back
+    {
+        type           inletOutlet;
+        inletValue     uniform $flowVelocity;
+        value          uniform $flowVelocity;
+    }
+
+    "proc.*"
+    {
+        type            processor;
+    }
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,1 @@
+JavaFoil data is ordered such that the sheet represents the chord length and then each set of data has the flap deflection set alongside it
