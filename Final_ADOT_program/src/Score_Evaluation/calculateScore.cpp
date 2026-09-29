@@ -69,11 +69,11 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
     string caseDir;
     if(simParams["IBM_SIMULATION"]) {
         originalCaseDir = string(projectRoot) + "/Aerodynamics_Simulation_IBM";
-        caseDir = "Aerodynamics_Simulation_IBM_";
+        caseDir = "Aerodynamics_Simulation_IBM_Test_";
     }
     else {
         originalCaseDir = string(projectRoot) + "/Aerodynamics_Simulation_BFM";
-        caseDir = "Aerodynamics_Simulation_BFM_";
+        caseDir = "Aerodynamics_Simulation_BFM_Test_";
     }
 
     // Number of tests is just one for all processes aside from the head
@@ -114,12 +114,10 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         }
 
 
-        for(int pos = 0; pos < (int)model.simPositionVariables.size(); pos++){
-            for(int test  = 0; test < nTests; test++){
-                string copyBash = "cp -r " + originalCaseDir + " " + caseDir + to_string(pos) + "_" + to_string(test); 
-                int failure = system(copyBash.c_str());
-                if(failure) throw runtime_error("Failed to copy simulation directory for case " + to_string(pos) + "_" + to_string(test));
-            }
+        for(int test  = 0; test < nTests; test++){
+            string copyBash = "cp -r " + originalCaseDir + " " + caseDir + to_string(test); 
+            int failure = system(copyBash.c_str());
+            if(failure) throw runtime_error("Failed to copy simulation directory for case " + to_string(test));
         }
 
         cout << "Copied simulation files to current directory" << endl;
@@ -136,6 +134,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
 
 
     for(int test = 0; test < nTests; test+=nProcs){
+        string testCaseDir = caseDir + to_string(test);
 
         // Gets values from model
         vector<string> fullParamNames = model.paramNames;
@@ -210,7 +209,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         //Gets derived parameter values. Values and names are inserted onto the end of argument vectors
         model.derivedParamsFunc(fullParamNames, fullParamVals, model.discreteTables, velRegions);
 
-        // Gets part proiles
+        // Gets part profiles
         int numProfiles = profileFunctions.size();
         vector<profile> profiles(numProfiles);
         for(int i = 0; i < numProfiles; i++){
@@ -415,9 +414,9 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         const vector<double> staticSDF = SDF;
 
         // Gets a point in the mesh needed for openfoam meshing
-        glm::ivec4 tetIndices = extrusions[0].tets[0];
-        glm::dvec3 pointInMesh = (extrusions[0].verts[tetIndices[0]] + extrusions[0].verts[tetIndices[1]]
-            + extrusions[0].verts[tetIndices[2]] + extrusions[0].verts[tetIndices[3]])/4.0;
+        // In this case, inside the mesh means inside the domain, so outside the model
+        // but inside the bounding box
+        glm::dvec3 pointInMesh = 0.5*(widerBoundingBox[0] + totalBoundingBox[0]);
 
 
         vector<glm::dvec3> totalCOMs(numPositions);
@@ -429,6 +428,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         int numControl = controlParts.size();
         int numForceRegions = forceRegions.size();
         int numVelRegions = velRegions.size();
+
         vector<extrusion> rotatedControlParts(numControl);
         vector<vector<double>> controlSDFs(numControl, vector<double>(totalSDFsize));
         vector<glm::dvec3> aeroForcesList(numPositions);
@@ -444,8 +444,6 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             // Directory containing most recent fields for that position
             string basePosDir = simParams["IBM_SIMULATION"] ? "Aerodynamics_Simulation_IBM_" + to_string(pos) :
                 "Aerodynamics_Simulation_BFM_" + to_string(pos);
-            string testCaseDir = simParams["IBM_SIMULATION"] ? "Aerodynamics_Simulation_IBM_" + to_string(pos) + "_" +
-                to_string(test) : "Aerodynamics_Simulation_BFM_" + to_string(pos) + "_" + to_string(test);
 
 
             //Checks whether mesh needs to be regenerated due to differeing control surface positions
@@ -467,7 +465,6 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 totalCOMs[pos] = staticCOM*staticMass;
                 totalMOIs[pos] = staticMOI;
                 SDF = staticSDF;
-
 
                 //int numControlMoved = controlMoved.size();
                 for(int c = 0; c < numControl; c++){
@@ -539,15 +536,17 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                         exit(0);
 
                     }else{
-                        writeMeshToObj(caseDir + "/testModelMesh/testModelRaw.obj", modelMesh);
+                        writeMeshToObj(testCaseDir + "/testModelMesh/testModelRaw.obj", modelMesh);
                     }
                 }
 
                 
                 if(!IBM_SIMULATION){
                     // Generates mesh including force and velocity regions
-                    generateOFmesh(simPositionVariables[pos], totalBoundingBox, pointInMesh,
-                        forceRegions, velRegions, pos, test);
+                    glm::ivec3 innerBoxCells = ceil(boundSize / interval);
+
+                    generateOFmesh(simPositionVariables[pos], totalBoundingBox, widerBoundingBox, pointInMesh,
+                        innerBoxCells, extraCells, CELL_GRADIENT, forceRegions, velRegions, pos, test);
                 }else{
                     glm::dvec3 COMtoBound = min(abs(totalCOMs[pos]-totalBoundingBox[0]), abs(totalCOMs[pos]-totalBoundingBox[1]));
                     double boundingRadius = min(COMtoBound[0], min(COMtoBound[1], COMtoBound[2]));
@@ -562,20 +561,44 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 totalMOIs[pos] = totalMOIs[pos-1];
             }
 
-            if(!IBM_SIMULATION){
+            // Finds in which directions the new bounds are smaller
+            bool cutNX = prevDomainSizes[pos][0][0] < widerBoundingBox[0][0];
+            bool cutPX = prevDomainSizes[pos][1][0] > widerBoundingBox[1][0];
+            bool cutNY = prevDomainSizes[pos][0][1] < widerBoundingBox[0][1];
+            bool cutPY = prevDomainSizes[pos][1][1] > widerBoundingBox[1][1];
+            bool cutNZ = prevDomainSizes[pos][0][2] < widerBoundingBox[0][2];
+            bool cutPZ = prevDomainSizes[pos][1][2] > widerBoundingBox[1][2];
 
+
+            if(!IBM_SIMULATION){
                 int failure;
 
-                //Sets COR, gravity direction, RHO (Also clears function objects)
+                //Sets COR, gravity direction, RHO (Need to add clearing of function objects)
                 glm::dvec3 gVec(simPositionVariables[pos][3], simPositionVariables[pos][4], simPositionVariables[pos][5]);
                 double RHO = simParams.at("RHO");
                 double flowVelocityMag = glm::length(flowVelocity);
                 string forceScriptCall =  string(projectRoot) + "/src/simScripts/BFM/updateForces.sh " + to_string(totalCOMs[pos][0]) +
                     " " + to_string(totalCOMs[pos][1]) + " " + to_string(totalCOMs[pos][2]) + " " +
                     to_string(gVec[0]) + " " + to_string(gVec[1]) + " " + to_string(gVec[2]) +
-                    " " + to_string(flowVelocityMag) + " " + to_string(RHO) + " " + to_string(pos) + " " + to_string(test);
+                    " " + to_string(flowVelocityMag) + " " + to_string(RHO) + " " + to_string(test);
                 failure = system(forceScriptCall.c_str());
                 if(failure) throw std::runtime_error("Setting force details failed");
+
+                // Copies over fields from previous simulation
+                if(modelNum != 0){
+                    double lastTime = modelNum < 2 ? simParams["SIMULATION_LENGTH_INITIAL"] : 
+                        simParams["SIMULATION_LENGTH"];
+
+                    string mapFieldsScriptCall = string(projectRoot) + "/src/simScripts/BFM/mapFields.sh "
+                    + OPENFOAM_SOURCE + " " + to_string(pos) + " " + to_string(test) + " "
+                    + to_string(cutNX) + " " +  to_string(cutPX) + " " + to_string(cutNY) + " " +
+                    to_string(cutPY) + " " + to_string(cutNZ) + " " + to_string(cutPZ) + " " +
+                    to_string(lastTime);
+
+                    failure = system(mapFieldsScriptCall.c_str());
+                    if(failure) throw std::runtime_error("Mapping fields failed"s);
+
+                }
 
 
                 // Adds force and velocity function objects
@@ -601,7 +624,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
 
                 string velocityScriptCall = string(projectRoot) + "/src/simScripts/BFM/updateVelocity.sh " + to_string(flowVelocity[0]) +
                     " " + to_string(flowVelocity[1]) + " " + to_string(flowVelocity[2]) + " " + 
-                    " " + to_string(pos) + " " + to_string(test);
+                     + " " + to_string(test);
                 failure = system(velocityScriptCall.c_str());
                 if(failure) throw runtime_error("Setting air velocity failed on position " + to_string(pos));
                 
@@ -619,14 +642,13 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 glm::dvec3 gVec(simPositionVariables[pos][3], simPositionVariables[pos][4], simPositionVariables[pos][5]);
                 string forceScriptCall =  string(projectRoot) + "/src/simScripts/IBM/updateForces.sh " +
                     to_string(gVec[0]) + " " + to_string(gVec[1]) + " " + to_string(gVec[2]) +
-                    " " + to_string(pos) + " " + to_string(test);
+                    " " + to_string(test);
                 failure = system(forceScriptCall.c_str());
                 if(failure) throw std::runtime_error("Setting force details failed");
 
                 string velocityScriptCall = string(projectRoot) + "/src/simScripts/IBM/updateVelocity.sh "
-                     + to_string(flowVelocity[0]) +
-                    " " + to_string(flowVelocity[1]) + " " + to_string(flowVelocity[2]) + " " +
-                    to_string(pos) + " " + to_string(test);
+                     + to_string(flowVelocity[0]) + " " + to_string(flowVelocity[1]) + " " + to_string(flowVelocity[2]) +
+                     " " + to_string(test);
                 failure = system(velocityScriptCall.c_str());
                 if(failure) throw std::runtime_error("Setting velocity details failed");
 
@@ -634,14 +656,6 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 if(modelNum != 0){
                     // If target bounds are smaller than source bounds, add to cutting patches
                     // all patches that are either cut or no longer present
-
-                    // Finds in which directions the new bounds are smaller
-                    bool cutNX = prevDomainSizes[pos][0][0] < widerBoundingBox[0][0];
-                    bool cutPX = prevDomainSizes[pos][1][0] > widerBoundingBox[1][0];
-                    bool cutNY = prevDomainSizes[pos][0][1] < widerBoundingBox[0][1];
-                    bool cutPY = prevDomainSizes[pos][1][1] > widerBoundingBox[1][1];
-                    bool cutNZ = prevDomainSizes[pos][0][2] < widerBoundingBox[0][2];
-                    bool cutPZ = prevDomainSizes[pos][1][2] > widerBoundingBox[1][2];
 
                     double lastTime = modelNum < 2 ? simParams["SIMULATION_LENGTH_INITIAL"] : 
                         simParams["SIMULATION_LENGTH"];
@@ -666,11 +680,29 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 //cout << "Force: " << aeroForces[0][0] << " " << aeroForces[0][1] << " " << aeroForces[0][2] << endl;
             }
 
-            // Saves bounding boxes
+            
             if(procRank == 0){
+                // Saves bounding boxes
                 prevDomainSizes[pos] = widerBoundingBox;
-                modelNum++;
+
+                // Saves data from simulations
+                int failure = false;
+
+                //Copies results to base case dir
+                string saveSimResults1 = "cp -r " + testCaseDir + "/0* " + basePosDir + "/";
+                failure = failure || system(saveSimResults1.c_str());
+                string saveSimResults2 = "cp -r " + testCaseDir + "/constant " + basePosDir + "/";
+                failure = failure || system(saveSimResults2.c_str());
+                string saveSimResults3 = "cp -r " + testCaseDir + "/system* " + basePosDir + "/";
+                failure = failure || system(saveSimResults1.c_str());
+                string saveSimResults4 = "rm -f " + basePosDir + "/*/As";
+                failure = failure || system(saveSimResults1.c_str());
+
+                if(failure) throw std::runtime_error("Saving simulation results failed");
+                cout << "Saved simulation data from iteration " << modelNum << ", test " << test << ", pos " << pos << endl;
+
             }
+            
 
         }
 
@@ -687,41 +719,13 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         MPI_Barrier(MPI_COMM_WORLD);
 
         if(procRank == 0){
+            modelNum++;
             testScores[test] = score;
 
             // Gets test scores from other ranks
             int nRemainingTests = min(nTests - test, nProcs);
             for(int i = 1; i < nRemainingTests; i++){
                 MPI_Recv(&(testScores[test + i]), 1, MPI_DOUBLE, i, DATA_TO_HEAD, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-
-            cout << "Saving simulation data from iteration " << modelNum << " test " << test << endl;
-
-            // Saves data from simulations
-            for(int pos = 0; pos < numPositions; pos++){
-
-                string basePosDir = simParams["IBM_SIMULATION"] ? "Aerodynamics_Simulation_IBM_" + to_string(pos) :
-                    "Aerodynamics_Simulation_BFM_" + to_string(pos);
-                string testCaseDir = simParams["IBM_SIMULATION"] ? "Aerodynamics_Simulation_IBM_" + to_string(pos) + "_" +
-                    to_string(0) : "Aerodynamics_Simulation_BFM_" + to_string(pos) + "_" + to_string(0);
-
-                int failure = false;
-
-                //Copies results to base case dir
-                string saveSimResults1 = "cp -r " + testCaseDir + "/0* " + basePosDir + "/";
-                failure = failure || system(saveSimResults1.c_str());
-
-                string saveSimResults2 = "cp -r " + testCaseDir + "/constant " + basePosDir + "/";
-                failure = failure || system(saveSimResults2.c_str());
-
-                string saveSimResults3 = "cp -r " + testCaseDir + "/system* " + basePosDir + "/";
-                failure = failure || system(saveSimResults1.c_str());
-
-                string saveSimResults4 = "rm -f " + basePosDir + "/*/As";
-                failure = failure || system(saveSimResults1.c_str());
-
-                if(failure) throw std::runtime_error("Saving simulation results failed");
-
             }
 
             // Tells other processes to reenter loop

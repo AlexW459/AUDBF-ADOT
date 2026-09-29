@@ -9,7 +9,6 @@
 # Next 3 arguments are the centre of mass
 # Next argument is the bounding radius
 # Next argument is the openfoam source location
-# Next argument is the position number
 # Final argument is the test number
 
 
@@ -17,7 +16,7 @@ openfoamSource=${25}
 #. $openfoamSource
 
 #Enters case
-caseNum="Aerodynamics_Simulation_IBM_${26}_${27}"
+caseNum="Aerodynamics_Simulation_IBM_Test_${26}"
 cd $caseNum
 
 rm -f constant/polymesh/*

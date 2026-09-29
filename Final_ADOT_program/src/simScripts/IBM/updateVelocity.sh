@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # First 3 arguments are velocity in x, y and z direction
-# Next argument is the position number
-# Final argument is the test number
+# Next argument is the test number
 
 #Enters case
-caseNum="Aerodynamics_Simulation_IBM_${4}_$5"
+caseNum="Aerodynamics_Simulation_IBM_Test_$4"
 cd $caseNum
 
 #Updates inlet velocity
@@ -34,12 +33,12 @@ poutletlineNum="$(grep -n "outlet" initialValues/p | head -n 1 | cut -d: -f1)"
 
 if [[ $(echo "$3 >=  0" | bc) == "1" ]]; then
     #Set upper to outlet
-    sed -i "$((UupperlineNum+2))s/.*/        type           zeroGradient;/" initialValues/U
-    sed -i "$((UupperlineNum+3))s/.*/ /" initialValues/U
-    sed -i "$((UupperlineNum+4))s/.*/ /" initialValues/U
-    sed -i "$((pupperlineNum+2))s/.*/        type           fixedValue;/" initialValues/p
-    sed -i "$((pupperlineNum+3))s/.*/        value          uniform 0;/" initialValues/p
-    sed -i "$((pupperlineNum+4))s/.*/ /" initialValues/p
+    sed -i "$((UupperlineNum+2))s/.*/        type           inletOutlet;/" initialValues/U
+    sed -i "$((UupperlineNum+3))s/.*/        inletValue     uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((UupperlineNum+4))s/.*/        value          uniform \$flowVelocity;/" initialValues/U
+    sed -i "$((pupperlineNum+2))s/.*/        type           inletOutlet;/" initialValues/p
+    sed -i "$((pupperlineNum+3))s/.*/        inletValue     uniform 0;/" initialValues/p
+    sed -i "$((pupperlineNum+4))s/.*/        value          uniform 0;/" initialValues/p
 else
     #Set upper to inlet
     sed -i "$((UupperlineNum+2))s/.*/        type           fixedValue;/" initialValues/U
@@ -147,4 +146,4 @@ fi
 rm -r -f 0/*
 rm -r -f 0.* 1.* *e-**
 
-cp -a initialValues/. 0/
+cp -a initialValues/* 0/

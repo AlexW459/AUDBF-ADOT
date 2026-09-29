@@ -58,6 +58,10 @@ boundaryField
         inletValue     uniform 0;
         value          uniform 0;
     }
+    testModel
+    {
+        type           zeroGradient;
+    }
     "proc.*"
     {
         type              processor;

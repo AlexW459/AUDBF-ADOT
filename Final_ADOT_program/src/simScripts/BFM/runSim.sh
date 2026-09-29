@@ -13,10 +13,10 @@
 #Loads latest Openfoam version
 openfoamSource=$9
 
-. $openfoamSource
+#. $openfoamSource
 
 #Enters case
-caseNum="Aerodynamics_Simulation_BFM_${4}_$5"
+caseNum="Aerodynamics_Simulation_BFM_Test_$5"
 cd $caseNum
 
 #Gets total number of processes
@@ -33,7 +33,7 @@ cp initialValues/* 0/
 cp -r constant/polyMesh 0/
 
 #In case of parallel running
-if [$6 -gt 0] then
+if [ $6 -gt 0 ]; then
     #Updates number of processes
     sed -i "/numberOfSubdomains/c\numberOfSubdomains       $totalProcesses;" system/decomposeParDict
     decomposePar -force > decomposeLog 
@@ -43,7 +43,7 @@ fi
 rm -r -f postProcessing/*
 
 
-if [$6 -eq 2] then
+if [ $6 -eq 2 ]; then
 
     # Load the Intel oneAPI environment for the job
     #source /opt/intel/oneapi/setvars.sh
@@ -62,11 +62,11 @@ if [$6 -eq 2] then
     sbatch --wait --wait-all-nodes 1 simParallel.sh
 
     rm -r -f processor*
-elif [$5 -eq 1] then
+elif [ $5 -eq 1 ]; then
     echo "Running simulation pos=$4 test=$5 in parallel on $totalProcesses processes"
     potentialFoam -parallel -writep > potentialLog
     foamRun -solver incompressibleFluid -parallel > simLog
-elif [$5 -eq 0] then
+elif [ $5 -eq 0 ]; then
     echo "Running simulation pos=$4 test=$5"
     potentialFoam -writep > potentialLog
     foamRun -solver incompressibleFluid > simLog

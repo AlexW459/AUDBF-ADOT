@@ -27,6 +27,7 @@ boundaryField
     {
         type            fixedValue;
         value           uniform $turbulentEnergy;
+        
     }
 
     outlet

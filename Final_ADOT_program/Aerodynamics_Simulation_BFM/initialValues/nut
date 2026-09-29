@@ -25,10 +25,12 @@ boundaryField
     front
     {
         type            zeroGradient;
+
     }
     back
     {
         type            zeroGradient;
+
     }
     inlet
     {
@@ -43,11 +45,14 @@ boundaryField
     upper
     {
         type            zeroGradient;
+
     }
     lower
     {
         type            zeroGradient;
+
     }
+
     testModel
     {
         type            nutkWallFunction;
@@ -55,7 +60,6 @@ boundaryField
         Ks              $surfaceRoughnessHeight;
         Cs              0.5;
     }
-
     
     "proc.*"
     {

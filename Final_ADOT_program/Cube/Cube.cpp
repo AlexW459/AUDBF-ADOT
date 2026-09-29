@@ -25,7 +25,8 @@ extern "C" testModel constructModel(){
 
     // Describes positions at which simulations will be conducted
     double testVelocity = 10.0;
-    vector<vector<double>> positionValues = {{-testVelocity, 0.0, 0.0, 0.0, 0.0, -9.8}};
+    vector<vector<double>> positionValues = {{-testVelocity, 0.0, 0.0, 0.0, 0.0, -9.8},
+        {-testVelocity, -testVelocity, 0.0, 0.0, 0.0, -9.8}};
 
     testModel cubeModel(paramNames, paramRanges, discreteTables, calcDerivedParams, profileFunctions, 
         positionValues, rateDesign);

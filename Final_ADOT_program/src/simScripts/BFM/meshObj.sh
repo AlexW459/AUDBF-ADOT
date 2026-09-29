@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# First argument is the case number
-# Second argument is the test number
-# Third argument is the location of the OpenFOAM sourcing script
+
+# First argument is the test number
+# Second argument is the location of the OpenFOAM sourcing script
 
 openfoamSource=$3
 
-. $openfoamSource
+#. $openfoamSource
 
 #Enters case
-caseNum="Aerodynamics_Simulation_BFM_${1}_$2"
+caseNum="Aerodynamics_Simulation_BFM_Test_$2"
 cd $caseNum
 
 cat <<EOF >> system/createPatchDict
@@ -42,12 +42,18 @@ rm -r -f constant/extendedFeatureEdgeMesh/*
 blockMesh > blockLog
 surfaceFeatures > surfaceLog
 
+
 echo "Running snappyHexMesh on rank $1"
 snappyHexMesh -overwrite > meshLog
 
-createZones > zoneLog
+#cp -r constant/polyMesh 0/
 
-createPatch > patchLog
+#cp 0/polyMesh/* constant/polyMesh/*
+
+
+#createZones > zoneLog
+
+#createPatch > patchLog
 
 renumberMesh -constant > renumberLog
 

@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# First argument is the case number
+# First argument is the test number
 # Second argument is the force region number
 # Next argument is rho
 # Next 3 arguments are the centre of rotation coordinates
 # Next argument is the velocity magnitude
 
 #Enters case
-caseNum="Aerodynamics_Simulation_BFM_$1"
+caseNum="Aerodynamics_Simulation_BFM_Test_$1"
 cd $caseNum
 cd system
 

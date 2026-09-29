@@ -28,15 +28,18 @@ gradSchemes
 divSchemes
 {
     default         none;
-    div(Fs)         Gauss linear;
-    div(phi,U)      Gauss linear;
-    div(phi_0,U_0)  Gauss linear;
-    div(phi,T)      Gauss vanLeer;
+    div(phi,U)      Gauss linearUpwind grad(U);
+    turbulence      Gauss linearUpwind default;
+    div(phi,k)      $turbulence;
+    div(phi,omega)  $turbulence;
+    div(div(phi,U)) Gauss linear;
+
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
 }
 
 laplacianSchemes
 {
-    default         Gauss linear orthogonal;
+    default         Gauss linear limited 1.0;
 }
 
 interpolationSchemes
@@ -46,11 +49,10 @@ interpolationSchemes
 
 snGradSchemes
 {
-    default         orthogonal;
+    default         limited 1.0;
 }
 
-fluxRequired
+wallDist
 {
-    default no;
-    p               ;
+    method meshWave;
 }

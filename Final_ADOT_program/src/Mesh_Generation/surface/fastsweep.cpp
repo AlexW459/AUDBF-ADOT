@@ -38,7 +38,7 @@ void fastSweep(vector<double>& field, int xSize, int ySize, int zSize, double h,
     // Each sweep involves a sweep in each of 8 directions
     for(int i = 0; i < nSweeps*8; i++){
         // Whether the field was changed at all on the last iteration
-        bool changed = false;
+        //bool changed = false;
 
 
         // Gets direction of sweep

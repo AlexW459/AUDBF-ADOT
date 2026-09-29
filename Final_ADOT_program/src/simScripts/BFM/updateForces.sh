@@ -3,11 +3,10 @@
 # Next 3 arguments are the gravity vector (not normalised)
 # Next argument is the velocity magnitude
 # Next argument is the air density
-# Next argument is the position number
 # Final argument is the test number
 
 #Enters case
-caseNum="Aerodynamics_Simulation_BFM_${9}_${10}"
+caseNum="Aerodynamics_Simulation_BFM_Test_$9"
 cd $caseNum
 
 #Clear forces function file past line 18
@@ -17,10 +16,10 @@ cd $caseNum
 #sed -i '17,$d' system/velocityMagnitudes
 
 #Set force coeffs values for aeroForces
-sed -i "$((9))s/.*/    rho             $8;/" system/forces
-sed -i "$((10))s/.*/    CofR            ($1 $2 $3);/" system/forces
-sed -i "$((11))s/.*/    magUInf         $7;/" system/forces
+sed -i "/rhoInf  /c\    rhoInf             $8;" system/forces
+sed -i "/CofR/c\    CofR            ($1 $2 $3);" system/forces
+sed -i "/magUInf/c\    magUInf         $7;" system/forces
 
 #Set gravity vector
-sed -i "/value/c\value           ($4 $5 $6);/" constant/g
+sed -i "/value/c\value           ($4 $5 $6);" constant/g
 

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# First argument is the case number
+# First argument is the test number
 # Second argument is the velocity region number
 # Next 6 arguments are the bounds of the velocity region
 
 #Enters case
-caseNum="Aerodynamics_Simulation_BFM_$1"
+caseNum="Aerodynamics_Simulation_BFM_Test_$1"
 cd $caseNum
 cd system
 

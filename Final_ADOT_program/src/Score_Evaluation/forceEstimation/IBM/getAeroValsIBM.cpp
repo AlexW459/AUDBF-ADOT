@@ -9,7 +9,7 @@ glm::dmat2x3 getAeroValsIBM(int numForceRegions, int numVelRegions,
 
     vector<glm::dvec3> totalForces, totalTorques;
 
-    string caseDir = "Aerodynamics_Simulation_IBM_" + to_string(pos) + "_" + to_string(test);
+    string caseDir = "Aerodynamics_Simulation_IBM_Test_" + to_string(test);
 
     //Runs simulation
     double endTime = firstSim ? simParams["SIMULATION_LENGTH_INITIAL"] : simParams["SIMULATION_LENGTH"];

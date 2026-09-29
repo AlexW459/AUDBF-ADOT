@@ -8,7 +8,7 @@
 
 
 # Compiler flags
-CXXFLAGS="-std=c++17 -Wall -march=x86-64 -msse2 -O3 -DPROJECT_ROOT=\\\"$(pwd)\\\""
+CXXFLAGS="-std=c++23 -Wall -march=x86-64 -msse2 -O3 -DPROJECT_ROOT=\\\"$(pwd)\\\""
 #-fopt-info-vec-missed -fno-
 #-fsanitize=address
 COMPILEFLAGS="" #"-lSDL2"

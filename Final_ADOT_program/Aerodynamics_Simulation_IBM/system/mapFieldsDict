@@ -18,6 +18,7 @@ FoamFile
 patchMap ();
 
 cuttingPatches  (
+    testModel
 
 
 

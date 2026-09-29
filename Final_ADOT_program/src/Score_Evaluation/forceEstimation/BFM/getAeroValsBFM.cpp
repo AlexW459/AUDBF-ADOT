@@ -9,11 +9,8 @@ glm::dmat2x3 getAeroValsBFM(int numForceRegions, int numVelRegions,
 
     vector<glm::dvec3> totalForces, totalTorques;
 
-    string caseDir = "Aerodynamics_Simulation_BFM_" + to_string(pos) + "_" + to_string(test);
+    string caseDir = "Aerodynamics_Simulation_BFM_Test_" + to_string(test);
 
-    //MPI_Barrier(MPI_COMM_WORLD);
-    //MPI_Finalize();
-    //exit(0);
 
     //Runs simulation
     double endTime = firstSim ? simParams["SIMULATION_LENGTH_INITIAL"] : simParams["SIMULATION_LENGTH"];
@@ -26,16 +23,19 @@ glm::dmat2x3 getAeroValsBFM(int numForceRegions, int numVelRegions,
     int failure = system(simScriptCall.c_str());
     if(failure) throw std::runtime_error("Runnning simulation failed");
 
-    
+
     //Get aerodynamic forces
     pair<glm::dvec3, glm::dvec3> forceVals;
     forceVals = getForcesBFM(caseDir + "/", numForceRegions, numVelRegions, regionForces,
         regionTorques, regionAvgVels,  endTime);
 
-    /*cout << "Force and torque from simulation " << i << " on rank " << procRank << ": " << 
+    cout << "Force and torque from simulation test=" << test << ", pos= " << pos << ": " << 
         "(" << forceVals.first[0] << ", " << forceVals.first[1] << ", " <<
         forceVals.first[2] << ") (" << forceVals.second[0] << ", " << 
-        forceVals.second[1] << ", " << forceVals.second[2]] << ")" << endl;*/
+        forceVals.second[1] << ", " << forceVals.second[2] << ")" << endl;
+
+    MPI_Finalize();
+    exit(0);
 
     return glm::dmat2x3(forceVals.first, forceVals.second);
 }

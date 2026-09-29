@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# First argument is the case number
+# First argument is the test number
 # Second argument is the force region number
 # Next 6 arguments are the bounds of the force region
 
 #Enters case
-caseDir="Aerodynamics_Simulation_BFM_$1"
+caseDir="Aerodynamics_Simulation_BFM_Test_$1"
 cd $caseDir/system
 
 # Creates face zone from intersection of box and model surface

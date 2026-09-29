@@ -1,8 +1,9 @@
 
 // Resolution with which profiles are constructed
 PROFILE_RESOLUTION 50.0
-// Resolution with which the SDF is constructed
-SDF_RESOLUTION 50.0
+// Resolution with which the SDF is constructed. Is also resolution of region surrounding
+// model in simulation domain
+SDF_RESOLUTION 80.0
 
 // Distance from surface within which SDF is calculated
 SDF_BAND_WIDTH 0.2
@@ -14,13 +15,13 @@ BOUND_MULTIPLE 6.0
 CELL_GRADIENT 20.0
 
 // Whether to use IBM for the simulations
-IBM_SIMULATION 1.0
+IBM_SIMULATION 1
 
 //Length and timestep of simulations
-SIMULATION_LENGTH 0.025
-SIMULATION_LENGTH_INITIAL 0.05
+SIMULATION_LENGTH 0.015
+SIMULATION_LENGTH_INITIAL 0.01
 SIMULATION_DELTA_T 0.0005
-SIMULATION_WRITE_INTERVAL 20
+SIMULATION_WRITE_INTERVAL 10
 
 //Simulation air density
 RHO 1.225

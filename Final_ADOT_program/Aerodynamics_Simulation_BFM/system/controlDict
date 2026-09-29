@@ -16,7 +16,7 @@ FoamFile
 
 application     foamRun;
 
-solver          incompressibleFlow;
+solver          incompressibleFluid;
 
 startFrom       startTime;
 
@@ -48,7 +48,7 @@ adjustTimeStep no;
 functions
 {
 
- #include "velocityMagnitudes"
+ //#include "velocityMagnitudes"
 
   #include "forces"
 

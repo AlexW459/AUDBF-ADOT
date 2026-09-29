@@ -18,7 +18,7 @@ sdfibmPath="$9/sdfibm/src/src/sdfibm"
 #. $openfoamSource
 
 #Enters case
-caseNum="Aerodynamics_Simulation_IBM_${4}_$5"
+caseNum="Aerodynamics_Simulation_IBM_Test_$5"
 cd $caseNum
 
 #Gets total number of processes
