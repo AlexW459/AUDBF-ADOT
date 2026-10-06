@@ -7,7 +7,7 @@ pair<glm::dvec3, glm::dvec3> readForceFileBFM(string filePath, double latestTime
 
     const string forceMatchString = string("(\\d+\\.\\d+) +\\t\\(\\((-?\\d\\.\\d+e[\\+-]\\d\\d)") + 
         string(" (-?\\d\\.\\d+e[\\+-]\\d\\d) (-?\\d\\.\\d+e[\\+-]\\d\\d)\\) \\((-?\\d\\.\\d+e[\\+-]\\d\\d)") +
-        string(" (-?\\d\\.\\d+e[\\+-]\\d\\d) (-?\\d\\.\\d+e[\\+-]\\d\\d)\\)\\) \\(\\((-?\\d\\.\\d+e[\\+-]\\d\\d))")
+        string(" (-?\\d\\.\\d+e[\\+-]\\d\\d) (-?\\d\\.\\d+e[\\+-]\\d\\d)\\)\\) \\(\\((-?\\d\\.\\d+e[\\+-]\\d\\d)")
         + string(" (-?\\d\\.\\d+e[\\+-]\\d\\d) (-?\\d\\.\\d+e[\\+-]\\d\\d)\\) \\((-?\\d\\.\\d+e[\\+-]\\d\\d)")
         + string(" (-?\\d\\.\\d+e[\\+-]\\d\\d) (-?\\d\\.\\d+e[\\+-]\\d\\d)\\)\\)");
     const regex forceMatch(forceMatchString);

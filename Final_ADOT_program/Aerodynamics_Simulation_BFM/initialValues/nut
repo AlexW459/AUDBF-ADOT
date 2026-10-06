@@ -24,33 +24,33 @@ boundaryField
 {
     front
     {
-        type            zeroGradient;
-
+        type            calculated;
+        value           uniform 0.14;
     }
     back
     {
-        type            zeroGradient;
-
+        type            calculated;
+        value           uniform 0.14;
     }
     inlet
     {
         type            calculated;
-        value           uniform 0;
+        value           uniform 0.14;
     }
     outlet
     {
         type            calculated;
-        value           uniform 0;
+        value           uniform 0.14;
     }
     upper
     {
-        type            zeroGradient;
-
+        type            calculated;
+        value           uniform 0.14;
     }
     lower
     {
-        type            zeroGradient;
-
+        type            calculated;
+        value           uniform 0.14;
     }
 
     testModel

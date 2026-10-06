@@ -84,6 +84,8 @@ int main(int argc, char *argv[]) {
 
         cout << "Entering optimisation loop" << endl;
 
+        auto enterLoopTime = chrono::high_resolution_clock::now();
+
         optim::ColVec_t initialParams(nParams);
         optim::ColVec_t lowerParamBounds(nParams);
         optim::ColVec_t upperParamBounds(nParams);
@@ -109,13 +111,17 @@ int main(int argc, char *argv[]) {
             success = optim::de(initialParams, ScoreEvaluator::calculateScore, nullptr, optimSettings);
         }
 
+        auto duration = chrono::duration_cast<chrono::seconds>(
+            chrono::high_resolution_clock::now() - enterLoopTime);
+
         if(!success){
-            cout << "Optimisation failed" << endl;
+            cout << "Optimisation failed after " << duration.count() << " seconds" << endl;
         }else{
-                cout << "Final Values:" << endl;
-        for(int i = 0; i < nParams; i++){
-            cout << model.paramNames[i] << ": " << initialParams[i] << endl;
-        }
+            cout << "Optimisation finished after " << duration.count() << " seconds" << endl;
+            cout << "Final Values:" << endl;
+            for(int i = 0; i < nParams; i++){
+                cout << model.paramNames[i] << ": " << initialParams[i] << endl;
+            }
         }
 
     }else{

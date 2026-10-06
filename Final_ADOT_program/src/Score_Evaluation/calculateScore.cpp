@@ -123,19 +123,13 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         cout << "Copied simulation files to current directory" << endl;
 
 
-    }else{
-        // Checks that rank is still needed
-        //MPI_Recv(&exitFlag, 1, MPI_CXX_BOOL, 0, ENTER_CALC_FUNC, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
-
 
     // Stores previous bounding boxes for each position
     vector<glm::dmat2x3> prevDomainSizes(numPositions, glm::dmat2x3(0.0));
 
-
     for(int test = 0; test < nTests; test+=nProcs){
-        string testCaseDir = caseDir + to_string(test);
-
+        
         // Gets values from model
         vector<string> fullParamNames = model.paramNames;
         vector<double> fullParamVals(nParams);
@@ -143,6 +137,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         bool runTest;
         double score;
         if(procRank == 0){
+            // Always run test on zeroeth rank
             runTest = true;
             fullParamVals = paramMatrix[test];
 
@@ -199,14 +194,18 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             }
         }
 
-
-
+        // Sets name of directory now that the test number has been received from the head
+        string testCaseDir = caseDir + to_string(test);
 
         if(runTest){
-
-        vector<glm::dmat2x3> velRegions;
+        
+        auto startTest = chrono::high_resolution_clock::now();
+        cout << "Running test " << test << " on rank " << procRank;
+        auto startSurfaceMeshing = chrono::high_resolution_clock::now();
+        cout << "Starting surface meshing on rank " << procRank << endl;
 
         //Gets derived parameter values. Values and names are inserted onto the end of argument vectors
+        vector<glm::dmat2x3> velRegions;
         model.derivedParamsFunc(fullParamNames, fullParamVals, model.discreteTables, velRegions);
 
         // Gets part profiles
@@ -247,16 +246,14 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         vector<int> staticParts;
         vector<glm::dvec3> controlCOMs;
         vector<glm::dmat3> controlMOIs;
-
         //Stores values relating to point masses and directions
         vector<vector<glm::dvec3>> pointMassLocations(numParts);
         vector<vector<double>> pointMasses(numParts);
         vector<glm::dvec3> partDirections(numParts);
-
         //Stores force regions
         vector<glm::dmat2x3> forceRegions;
 
-        cout << "Getting vol vals on rank " << procRank << endl;
+        // Gets triangular surface meshes of each part as well as COM
         for(int p = 0; p < numParts; p++){
 
             //Get transformations applied to part
@@ -397,9 +394,6 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         glm::ivec3 extraCells = ceil(boundMultiple*boundSize/((CELL_GRADIENT+1.0)/2.0*interval));
 
 
-        //MPI_Finalize();
-        //exit(0);
-
         //Adds static parts
         for(int i = 0; i < (int)staticParts.size(); i++){
             int staticIndex = staticParts[i];
@@ -410,6 +404,9 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             SDFunion(SDF, partSDF);
         }
 
+        auto surfaceMeshingDuration = chrono::duration_cast<chrono::microseconds>(
+                chrono::high_resolution_clock::now() - startSurfaceMeshing);
+        cout << "Completed surface meshing on rank " << procRank << " in time: " << surfaceMeshingDuration.count() << " microseconds" << endl;
 
         const vector<double> staticSDF = SDF;
 
@@ -417,12 +414,8 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         // In this case, inside the mesh means inside the domain, so outside the model
         // but inside the bounding box
         glm::dvec3 pointInMesh = 0.5*(widerBoundingBox[0] + totalBoundingBox[0]);
-
-
         vector<glm::dvec3> totalCOMs(numPositions);
         vector<glm::dmat3> totalMOIs(numPositions);
-
-        cout << "Getting aerodynamic forces on rank " << procRank << endl;
 
         //Use getAeroVals to get force coefficients of each configuration (force divided by velocity squared)
         int numControl = controlParts.size();
@@ -541,17 +534,36 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 }
 
                 
+
+
+                
                 if(!IBM_SIMULATION){
                     // Generates mesh including force and velocity regions
                     glm::ivec3 innerBoxCells = ceil(boundSize / interval);
 
+                    auto beginVolMeshing = chrono::high_resolution_clock::now();
+                    cout << "Running volume meshing on rank " << procRank << endl;
                     generateOFmesh(simPositionVariables[pos], totalBoundingBox, widerBoundingBox, pointInMesh,
                         innerBoxCells, extraCells, CELL_GRADIENT, forceRegions, velRegions, pos, test);
+                    
+                    auto volMeshingDuration = chrono::duration_cast<chrono::microseconds>(
+                        chrono::high_resolution_clock::now() - beginVolMeshing);
+
+                    cout << "Completed volume meshing on rank " << procRank << " in time" << 
+                        volMeshingDuration.count() << " microseconds" << endl;
                 }else{
+                    auto beginEncodeMesh = chrono::high_resolution_clock::now();
+                    cout << "Encoding SDF on rank " << procRank << endl;
                     glm::dvec3 COMtoBound = min(abs(totalCOMs[pos]-totalBoundingBox[0]), abs(totalCOMs[pos]-totalBoundingBox[1]));
                     double boundingRadius = min(COMtoBound[0], min(COMtoBound[1], COMtoBound[2]));
                     encodeSDF(SDF, totalBoundingBox, widerBoundingBox, SDFsize, totalCOMs[pos], boundingRadius, 
                         extraCells, CELL_GRADIENT, pos, test);
+                    
+                    auto encodeMeshDuration = chrono::duration_cast<chrono::microseconds>(
+                        chrono::high_resolution_clock::now() - beginEncodeMesh);
+
+                    cout << "Finished encoding SDF on rank " << procRank << " in time" << 
+                        encodeMeshDuration.count() << " microseconds" << endl;
                 }
 
 
@@ -569,6 +581,8 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             bool cutNZ = prevDomainSizes[pos][0][2] < widerBoundingBox[0][2];
             bool cutPZ = prevDomainSizes[pos][1][2] > widerBoundingBox[1][2];
 
+            cout << "Running simulation on rank " << procRank << " position " << pos << endl;
+            auto beginSimulation = chrono::high_resolution_clock::now();
 
             if(!IBM_SIMULATION){
                 int failure;
@@ -577,10 +591,22 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 glm::dvec3 gVec(simPositionVariables[pos][3], simPositionVariables[pos][4], simPositionVariables[pos][5]);
                 double RHO = simParams.at("RHO");
                 double flowVelocityMag = glm::length(flowVelocity);
+                
+                //Gets turbulent dissipation rate
+                //https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions
+                double TURBULENCE_INTENSITY = simParams["TURBULENCE_INTENSITY"];
+                double TURBULENCE_LENGTH_SCALE = simParams["TURBULENCE_LENGTH_SCALE"];
+                double SURFACE_ROUGHNESS_HEIGHT = simParams["SURFACE_ROUGHNESS_HEIGHT"];
+                double turbulentEnergy = 1.5*(flowVelocityMag*TURBULENCE_INTENSITY)*(flowVelocityMag*TURBULENCE_INTENSITY);
+                double turbulentDissipationRate = pow(0.09, 0.75)*pow(turbulentEnergy, 1.5)/TURBULENCE_LENGTH_SCALE;
+                double specificTurbulenceDissipationRate = turbulentDissipationRate/(0.09*turbulentEnergy);
+
                 string forceScriptCall =  string(projectRoot) + "/src/simScripts/BFM/updateForces.sh " + to_string(totalCOMs[pos][0]) +
                     " " + to_string(totalCOMs[pos][1]) + " " + to_string(totalCOMs[pos][2]) + " " +
                     to_string(gVec[0]) + " " + to_string(gVec[1]) + " " + to_string(gVec[2]) +
-                    " " + to_string(flowVelocityMag) + " " + to_string(RHO) + " " + to_string(test);
+                    " " + to_string(flowVelocityMag) + " " + to_string(RHO) + " " + to_string(SURFACE_ROUGHNESS_HEIGHT)
+                    + " " + to_string(turbulentEnergy) + " " + to_string(specificTurbulenceDissipationRate) + " " +
+                    to_string(test);
                 failure = system(forceScriptCall.c_str());
                 if(failure) throw std::runtime_error("Setting force details failed");
 
@@ -621,6 +647,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                     failure = system(velFunctionScriptCall.c_str());
                     if(failure) throw runtime_error("Adding velocity region " + to_string(v) + " failed in case " + to_string(pos));
                 }*/
+                
 
                 string velocityScriptCall = string(projectRoot) + "/src/simScripts/BFM/updateVelocity.sh " + to_string(flowVelocity[0]) +
                     " " + to_string(flowVelocity[1]) + " " + to_string(flowVelocity[2]) + " " + 
@@ -680,6 +707,12 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 //cout << "Force: " << aeroForces[0][0] << " " << aeroForces[0][1] << " " << aeroForces[0][2] << endl;
             }
 
+            auto simulationDuration = chrono::duration_cast<chrono::microseconds>(
+                chrono::high_resolution_clock::now() - beginSimulation);
+
+            cout << "Finished encoding SDF on rank " << procRank << " position " << 
+                pos << " in time" << simulationDuration.count() << " microseconds" << endl;
+
             
             if(procRank == 0){
                 // Saves bounding boxes
@@ -699,18 +732,23 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 failure = failure || system(saveSimResults1.c_str());
 
                 if(failure) throw std::runtime_error("Saving simulation results failed");
-                cout << "Saved simulation data from iteration " << modelNum << ", test " << test << ", pos " << pos << endl;
+                //cout << "Saved simulation data from iteration " << modelNum << ", test " << test << ", pos " << pos << endl;
 
             }
             
 
         }
 
+        
+
         double totalMass = staticMass + controlMass;
         score = scoreFunc(fullParamNames, fullParamVals,
             simPositionVariables, totalMass, totalCOMs, totalMOIs, aeroForcesList, aeroTorquesList, 
             regionForces, regionTorques, regionVelMags, pointMassLocations, partDirections);
 
+        auto testDuration = chrono::duration_cast<chrono::microseconds>(
+            chrono::high_resolution_clock::now() - startTest);
+        cout << "Completed test " << test << " on rank " << procRank << " in time: " << testDuration.count() << " microseconds" << endl;
         
         cout << "score on rank " + to_string(procRank) + ": " << score << endl;
 

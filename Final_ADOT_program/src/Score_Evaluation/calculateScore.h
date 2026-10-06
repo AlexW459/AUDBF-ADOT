@@ -4,6 +4,7 @@
 #include <array>
 #include <iostream>
 #include <mpi/mpi.h>
+#include <chrono>
 
 #include "testModel/testModel.h"
 #include "../Mesh_Generation/extrusion/extrusion.h"

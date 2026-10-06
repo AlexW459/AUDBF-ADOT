@@ -117,6 +117,8 @@ inline std::vector<glm::dvec2> generateNACAairfoil(double maxCamberPercent, doub
         //std::cout << "x: " << airfoilPoints[i][0] << " y: " << airfoilPoints[i][1] << std::endl;
     }
 
+    airfoilPoints[numX][0] = airfoilPoints[numX-1][0];
+
     return airfoilPoints;
 }
 
@@ -125,5 +127,5 @@ inline std::vector<glm::dvec2> generateNACAairfoil(double maxCamberPercent, doub
     double maxThicknessPercent, double airfoilChord, double meshRes){
         // Adds a small flap radius to avoid a very thin edge at the end of the airfoil
         return generateNACAairfoil(maxCamberPercent, maxCamberPosDecile, maxThicknessPercent, 
-            airfoilChord, airfoilChord*0.1, meshRes);
+            airfoilChord, airfoilChord*0.2, meshRes);
 }

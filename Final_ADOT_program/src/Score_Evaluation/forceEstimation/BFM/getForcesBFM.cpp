@@ -27,7 +27,7 @@ pair<glm::dvec3, glm::dvec3> getForcesBFM(string filePath, int numForceRegions,
     regionTorques.resize(numForceRegions);
     for(int i = 0; i < numForceRegions; i++){
         string forceFileName = "postProcessing/aeroForces_ " +  to_string(i) + "/0/forces.dat";
-        pair<glm::dvec3, glm::dvec3> localForces = readForceFileBFM(filePath + forceFileName, latestTime);
+        pair<glm::dvec3, glm::dvec3> localForces = {glm::dvec3(0.0), glm::dvec3(0.0)};//readForceFileBFM(filePath + forceFileName, latestTime);
         totalForce += localForces.first;
         totalTorque += localForces.second;
 
@@ -38,7 +38,7 @@ pair<glm::dvec3, glm::dvec3> getForcesBFM(string filePath, int numForceRegions,
     //Gets velocity magnitudes from each region
     for(int i = 0; i < numVelRegions; i++){
         string velMagFileName = "postProcessing/velocity_" + to_string(i) + "/0/volFieldValue.dat";
-        double localVelMag = readVelMagFileBFM(filePath + velMagFileName, latestTime);
+        double localVelMag = 0.0;//readVelMagFileBFM(filePath + velMagFileName, latestTime);
         velRegionMags[i] = localVelMag;
     }
 

@@ -9,12 +9,12 @@ noseconeOffset,-0.02,0
 wingLength,0.4,0.8
 wingVerticalPosition,0.05,1
 wingHorizontalPosition,0,1
-wingRootChord,0.15,0.4
+wingRootChord,0.3,0.4
 wingScale,0.2,1
 wingSweep,0,0.5
 wingAirfoilMaxCamber,5,9
 wingAirfoilMaxCamberPos,3,7
-wingAirfoilMaxThickness,10,20
+wingAirfoilMaxThickness,15,20
 tailconeLength,0.2,0.5
 tailconeTipScale,0.1,0.9
 batteryPos,0,1

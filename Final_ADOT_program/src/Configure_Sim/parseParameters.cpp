@@ -106,11 +106,12 @@ void parseParameters(int argc, char *argv[], string parameterFileName, int& mesh
     smatch lineInfo;
     smatch lineWhitespace;
 
-    int nParams = 18;
-    array<string, 18> paramNames = {"PROFILE_RESOLUTION", "SDF_RESOLUTION",
+    int nParams = 21;
+    array<string, 21> paramNames = {"PROFILE_RESOLUTION", "SDF_RESOLUTION",
         "SDF_BAND_WIDTH", "BOUND_MULTIPLE", "CELL_GRADIENT", "IBM_SIMULATION", 
         "SIMULATION_LENGTH", "SIMULATION_LENGTH_INITIAL", "SIMULATION_DELTA_T",
-        "SIMULATION_WRITE_INTERVAL", "RHO", "GEN_OPTIM", "OPTIM_PRINT_OPT",
+        "SIMULATION_WRITE_INTERVAL", "RHO", "SURFACE_ROUGHNESS_HEIGHT",
+        "TURBULENCE_INTENSITY", "TURBULENCE_LENGTH_SCALE", "GEN_OPTIM", "OPTIM_PRINT_OPT",
         "CONV_FAILURE_SWITCH", "MAX_OPTIM_ITER", "GRAD_ERR_TOL", "REL_SOL_CHANGE_TOL",
         "REL_OBJFN_CHANGE_TOL"};
     for(int i = 0; i < nParams; i++){simParameters.insert({paramNames[i], NAN});}

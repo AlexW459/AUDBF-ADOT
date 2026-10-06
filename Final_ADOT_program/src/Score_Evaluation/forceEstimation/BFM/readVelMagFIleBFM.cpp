@@ -4,7 +4,8 @@ using namespace std;
 
 double readVelMagFileBFM(string filePath, double latestTime){
     ifstream velMagFile;
-    
+
+
     const regex velMagMatch("(\\d\\.\\d+) +\\t?(\\-?\\d+\\.\\d+e[\\+\\-]\\d\\d)");
 
     velMagFile.open(filePath);
