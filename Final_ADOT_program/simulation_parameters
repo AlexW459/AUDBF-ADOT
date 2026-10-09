@@ -1,10 +1,10 @@
 // Meshing Settings
 
 // Resolution with which profiles are constructed
-PROFILE_RESOLUTION 50.0
+PROFILE_RESOLUTION 10.0
 // Resolution with which the SDF is constructed. Is also resolution of region surrounding
 // model in simulation domain
-SDF_RESOLUTION 80.0
+SDF_RESOLUTION 20.0
 
 // Distance from surface within which SDF is calculated
 SDF_BAND_WIDTH 0.2
@@ -13,28 +13,22 @@ SDF_BAND_WIDTH 0.2
 BOUND_MULTIPLE 6.0
 
 // Variation in size between cells closest to body and cells at edge of domain
-CELL_GRADIENT 20.0
+CELL_GRADIENT 30.0
 
 // Whether to use IBM for the simulations
-IBM_SIMULATION 0
+IBM_SIMULATION 1
 
 
 // Simulation Settings
 
 //Length and timestep of simulations
 SIMULATION_LENGTH 0.015
-SIMULATION_LENGTH_INITIAL 0.01
-SIMULATION_DELTA_T 0.0005
+SIMULATION_LENGTH_INITIAL 0.03
+SIMULATION_DELTA_T 0.001
 SIMULATION_WRITE_INTERVAL 10
 
 //Simulation air density
 RHO 1.225
-
-//BFM sim settings
-SURFACE_ROUGHNESS_HEIGHT  1.0e-3
-TURBULENCE_INTENSITY    0.003
-TURBULENCE_LENGTH_SCALE   0.5
-
 
 // Optimisation Settings
 
@@ -63,10 +57,10 @@ REL_OBJFN_CHANGE_TOL 1e-8
 // Gradient descent parameters
 
 // Spacing between finite difference points (percentage of value)
-FINITE_DIFFERENCE_H 10.0
+FINITE_DIFFERENCE_H 5.0
 
 // Step size
-PAR_STEP_SIZE 0.1
+PAR_STEP_SIZE 10000000.0
 
 // Whether or not to include step decay
 STEP_DECAY 0.0

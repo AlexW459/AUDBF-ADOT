@@ -29,13 +29,10 @@ glm::dmat2x3 getAeroValsBFM(int numForceRegions, int numVelRegions,
     forceVals = getForcesBFM(caseDir + "/", numForceRegions, numVelRegions, regionForces,
         regionTorques, regionAvgVels,  endTime);
 
-    cout << "Force and torque from simulation test=" << test << ", pos= " << pos << ": " << 
+    /*cout << "Force and torque from simulation test=" << test << ", pos= " << pos << ": " << 
         "(" << forceVals.first[0] << ", " << forceVals.first[1] << ", " <<
         forceVals.first[2] << ") (" << forceVals.second[0] << ", " << 
-        forceVals.second[1] << ", " << forceVals.second[2] << ")" << endl;
-
-    MPI_Finalize();
-    exit(0);
+        forceVals.second[1] << ", " << forceVals.second[2] << ")" << endl;*/
 
     return glm::dmat2x3(forceVals.first, forceVals.second);
 }

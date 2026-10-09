@@ -1,0 +1,207 @@
+Cleaned old directories
+Entering optimisation loop
+
+Values for iteration 0: 
+curvature: 0.32
+
+Copied simulation files to current directory
+Running test 0 on rank 0
+Starting surface meshing on rank 0
+Entering score func on rank 2
+Running test 2 on rank 2
+Starting surface meshing on rank 2
+Entering score func on rank 1
+Running test 1 on rank 1
+Starting surface meshing on rank 1
+Completed surface meshing on rank 2 in time: 14641 microseconds
+Completed surface meshing on rank 0 in time: 15173 microseconds
+Completed surface meshing on rank 1 in time: 14111 microseconds
+Encoding SDF on rank 1
+Encoding SDF on rank 2
+Encoding SDF on rank 0
+Finished encoding SDF on rank 0, in time 9394192 microseconds
+Running simulation on rank 0, test 0, position 0
+Finished encoding SDF on rank 1, in time 9481374 microseconds
+Running simulation on rank 1, test 1, position 0
+Running foamRun pos=0 test=0
+Running foamRun pos=0 test=1
+Finished encoding SDF on rank 2, in time 9760742 microseconds
+Running simulation on rank 2, test 2, position 0
+Running foamRun pos=0 test=2
+Finished simulation on rank 1, test1, position 0, in time 521259279 microseconds
+Completed test 1 on rank 1 in time: 530759165 microseconds
+score on rank 1: 7.7692
+
+Finished simulation on rank 2, test2, position 0, in time 521690961 microseconds
+Completed test 2 on rank 2 in time: 531470660 microseconds
+score on rank 2: 7.41346
+
+Finished simulation on rank 0, test0, position 0, in time 536077038 microseconds
+Completed test 0 on rank 0 in time: 546898561 microseconds
+score on rank 0: 7.69032
+
+Partial derivative 0: -4.5902
+
+  - Iteration:                   -1
+    Gradient error:              0.0907239
+    Relative change in solution: 0
+
+    Current values:
+-4.43082
+
+    Direction:
+0
+    Gradient:
+-0.0907239
+
+Values for iteration 1: 
+curvature: 0.32018
+
+Entering score func on rank 1
+Running test 1 on rank 1
+Starting surface meshing on rank 1
+Entering score func on rank 2
+Running test 2 on rank 2
+Starting surface meshing on rank 2
+Copied simulation files to current directory
+Running test 0 on rank 0
+Starting surface meshing on rank 0
+Completed surface meshing on rank 2 in time: 24304 microseconds
+Encoding SDF on rank 2
+Completed surface meshing on rank 1 in time: 28747 microseconds
+Completed surface meshing on rank 0 in time: 33273 microseconds
+Encoding SDF on rank 0
+Encoding SDF on rank 1
+Finished encoding SDF on rank 1, in time 10801993 microseconds
+Running simulation on rank 1, test 1, position 0
+Finished encoding SDF on rank 0, in time 10832717 microseconds
+Running simulation on rank 0, test 0, position 0
+Finished encoding SDF on rank 2, in time 10990850 microseconds
+Running simulation on rank 2, test 2, position 0
+Mapping fields on rank 1, test 1, position 0
+Mapping fields on rank 0, test 0, position 0
+Mapping fields on rank 2, test 2, position 0
+Finished mapping fields on rank 0, test0, position 0, in time 18356207 microseconds
+Running foamRun pos=0 test=0
+Finished mapping fields on rank 2, test2, position 0, in time 18316332 microseconds
+Running foamRun pos=0 test=2
+Finished mapping fields on rank 1, test1, position 0, in time 18565764 microseconds
+Running foamRun pos=0 test=1
+Finished simulation on rank 0, test0, position 0, in time 328239563 microseconds
+Completed test 0 on rank 0 in time: 340728798 microseconds
+score on rank 0: 6.00255
+
+Finished simulation on rank 2, test2, position 0, in time 331237652 microseconds
+Completed test 2 on rank 2 in time: 342256476 microseconds
+score on rank 2: 4.8439
+
+Finished simulation on rank 1, test1, position 0, in time 332581047 microseconds
+Completed test 1 on rank 1 in time: 343421062 microseconds
+score on rank 1: 6.83294
+
+Partial derivative 0: -25.6055
+
+  - Iteration:                   0
+    Gradient error:              0.510588
+    Relative change in solution: 0.00204756
+
+    Current values:
+-4.42174
+
+    Direction:
+-0.00907239
+    Gradient:
+-0.510588
+
+Values for iteration 2: 
+curvature: 0.321224
+
+Entering score func on rank 2
+Running test 2 on rank 2
+Starting surface meshing on rank 2
+Entering score func on rank 1
+Running test 1 on rank 1
+Starting surface meshing on rank 1
+Copied simulation files to current directory
+Running test 0 on rank 0
+Starting surface meshing on rank 0
+Completed surface meshing on rank 2 in time: 14189 microseconds
+Completed surface meshing on rank 0 in time: 17309 microseconds
+Completed surface meshing on rank 1 in time: 19255 microseconds
+Encoding SDF on rank 2
+Encoding SDF on rank 0
+Encoding SDF on rank 1
+Finished encoding SDF on rank 2, in time 12246030 microseconds
+Running simulation on rank 2, test 2, position 0
+Finished encoding SDF on rank 1, in time 12462526 microseconds
+Running simulation on rank 1, test 1, position 0
+Finished encoding SDF on rank 0, in time 12475883 microseconds
+Running simulation on rank 0, test 0, position 0
+Mapping fields on rank 1, test 1, position 0
+Mapping fields on rank 2, test 2, position 0
+Mapping fields on rank 0, test 0, position 0
+Finished mapping fields on rank 2, test2, position 0, in time 22626229 microseconds
+Running foamRun pos=0 test=2
+Finished mapping fields on rank 1, test1, position 0, in time 22763756 microseconds
+Running foamRun pos=0 test=1
+Finished mapping fields on rank 0, test0, position 0, in time 22811315 microseconds
+Running foamRun pos=0 test=0
+Finished simulation on rank 1, test1, position 0, in time 354060735 microseconds
+Completed test 1 on rank 1 in time: 366545658 microseconds
+score on rank 1: 6.63795
+
+Finished simulation on rank 2, test2, position 0, in time 357075782 microseconds
+Completed test 2 on rank 2 in time: 369340569 microseconds
+score on rank 2: 5.45619
+
+Finished simulation on rank 0, test0, position 0, in time 367434416 microseconds
+Completed test 0 on rank 0 in time: 381311033 microseconds
+score on rank 0: 6.94531
+
+Partial derivative 0: -15.0115
+
+  - Iteration:                   1
+    Gradient error:              0.314627
+    Relative change in solution: 0.0115472
+
+    Current values:
+-4.37069
+
+    Direction:
+-0.0510588
+    Gradient:
+-0.314627
+
+Values for iteration 3: 
+curvature: 0.321894
+
+Entering score func on rank 1
+Running test 1 on rank 1
+Starting surface meshing on rank 1
+Entering score func on rank 2
+Copied simulation files to current directory
+Running test 0 on rank 0
+Starting surface meshing on rank 0
+Running test 2 on rank 2
+Starting surface meshing on rank 2
+Completed surface meshing on rank 1 in time: 13012 microseconds
+Encoding SDF on rank 1
+Completed surface meshing on rank 2 in time: 16502 microseconds
+Encoding SDF on rank 2
+Completed surface meshing on rank 0 in time: 19276 microseconds
+Encoding SDF on rank 0
+Finished encoding SDF on rank 2, in time 9861174 microseconds
+Running simulation on rank 2, test 2, position 0
+Finished encoding SDF on rank 1, in time 10012720 microseconds
+Running simulation on rank 1, test 1, position 0
+Finished encoding SDF on rank 0, in time 10028797 microseconds
+Running simulation on rank 0, test 0, position 0
+Mapping fields on rank 2, test 2, position 0
+Mapping fields on rank 1, test 1, position 0
+Mapping fields on rank 0, test 0, position 0
+Finished mapping fields on rank 0, test0, position 0, in time 18605261 microseconds
+Running foamRun pos=0 test=0
+Finished mapping fields on rank 2, test2, position 0, in time 18840553 microseconds
+Running foamRun pos=0 test=2
+Finished mapping fields on rank 1, test1, position 0, in time 19020541 microseconds
+Running foamRun pos=0 test=1

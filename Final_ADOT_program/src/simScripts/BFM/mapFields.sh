@@ -13,7 +13,7 @@ openfoamSource=$1
 #. $openfoamSource
 
 #Enters case
-caseNum="Aerodynamics_Simulation_IBM_Test_$3"
+caseNum="Aerodynamics_Simulation_BFM_Test_$3"
 cd $caseNum
 
 cpLineNum="$(grep -n "cuttingPatches" system/mapFieldsDict | head -n 1 | cut -d: -f1)"
@@ -60,4 +60,4 @@ else
     sed -i "$((cpLineNum+7))s/.*/ /" system/mapFieldsDict
 fi
 
-mapFields ../Aerodynamics_Simulation_IBM_$2 -sourceTime ${10} > mapLog
+mapFields ../Aerodynamics_Simulation_BFM_$2 -sourceTime ${10} > mapLog

@@ -12,9 +12,11 @@ int ScoreEvaluator::simParallelOpt;
 int ScoreEvaluator::nSimTasksPerNode;  
 int ScoreEvaluator::modelNum;
 int ScoreEvaluator::nProcs;
+vector<double> ScoreEvaluator::h_vals;
+std::vector<glm::dvec2> ScoreEvaluator::paramBounds;
 
-void ScoreEvaluator::setSimParams(testModel _model, std::map<std::string, double> _simParams, 
-    bool _writeObjs, int _nSimNodes, int _simParallelOpt, int _nSimTasksPerNode, int _procRank,
+void ScoreEvaluator::setSimParams(testModel _model, std::map<std::string, double> _simParams, optim::ColVec_t _upperBounds,
+    optim::ColVec_t _lowerBounds, bool _writeObjs, int _nSimNodes, int _simParallelOpt, int _nSimTasksPerNode, int _procRank,
     int _nProcs){
 
     model = _model;
@@ -26,6 +28,16 @@ void ScoreEvaluator::setSimParams(testModel _model, std::map<std::string, double
     modelNum = 0;
     procRank = _procRank;
     nProcs = _nProcs;
+
+    double FINITE_DIFFERENCE_H = simParams["FINITE_DIFFERENCE_H"]/100.0;
+    int nParams = _upperBounds.rows();
+    h_vals = vector<double>(nParams);
+    paramBounds = vector<glm::dvec2>(nParams);
+    for(int i = 0; i < nParams; i++){
+        paramBounds[i][0] = _lowerBounds[i];
+        paramBounds[i][1] = _upperBounds[i];
+        h_vals[i] = (_upperBounds[i] + _lowerBounds[i])/2.0*FINITE_DIFFERENCE_H;
+    }
 }
 
 void ScoreEvaluator::dealloc(){
@@ -62,8 +74,6 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
     double SDF_RESOLUTION = simParams["SDF_RESOLUTION"];
     double SDF_BAND_WIDTH = simParams["SDF_BAND_WIDTH"];
 
-    double H_PERCENT = simParams["FINITE_DIFFERENCE_H"];
-
     //Creates a unique case directory for each position and test
     string originalCaseDir;
     string caseDir;
@@ -93,6 +103,12 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
 
     if(procRank == 0){
 
+        cout << endl << "Values for iteration " << modelNum << ": " << endl;
+        for(int i = 0; i < nParams; i++){
+            cout << model.paramNames[i] << ": " << paramVals[i] << endl;
+        }
+        cout << endl;
+
         // Fills parameter matrix with values
 
         // Fills first row of matrix with point values
@@ -106,9 +122,8 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
 
                 // Adds finite difference points
                 double val = paramMatrix[0][i];
-                double h = val*H_PERCENT/100.0;
-                paramMatrix[2*i+1][i] = val - h;
-                paramMatrix[2*i+2][i] = val + h;
+                paramMatrix[2*i+1][i] = max(val - h_vals[i], paramBounds[i][0]+1e-8);
+                paramMatrix[2*i+2][i] = min(val + h_vals[i], paramBounds[i][1]-1e-8);
 
             }
         }
@@ -123,6 +138,11 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         cout << "Copied simulation files to current directory" << endl;
 
 
+        // Tells other processes to enter loop
+        bool falseVal = false;
+        for(int i = 0; i < nProcs; i++){
+            MPI_Send(&falseVal, 1, MPI_CXX_BOOL, i, EXIT_PROGRAM, MPI_COMM_WORLD);
+        }
     }
 
     // Stores previous bounding boxes for each position
@@ -200,7 +220,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         if(runTest){
         
         auto startTest = chrono::high_resolution_clock::now();
-        cout << "Running test " << test << " on rank " << procRank;
+        cout << "Running test " << test << " on rank " << procRank << endl;
         auto startSurfaceMeshing = chrono::high_resolution_clock::now();
         cout << "Starting surface meshing on rank " << procRank << endl;
 
@@ -383,7 +403,10 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
         glm::ivec3 SDFsize = initSDF(SDF, xVals, yVals, zVals, totalBoundingBox, SDF_RESOLUTION);
         int totalSDFsize = SDFsize[0]*SDFsize[1]*SDFsize[2];
         //cout << "total SDF size: " << totalSDFsize << endl;
+        //cout << "res: " << SDF_RESOLUTION << endl;
 
+        //cout << "boundsize: " << boundSize[0] << ", " << boundSize[1] << ", " << boundSize[2] << endl;
+        
         // Gets bounding box of total domain
         double CELL_GRADIENT = simParams["CELL_GRADIENT"];
         double boundMultiple = (simParams["BOUND_MULTIPLE"]-1.0)/2.0;
@@ -549,7 +572,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                     auto volMeshingDuration = chrono::duration_cast<chrono::microseconds>(
                         chrono::high_resolution_clock::now() - beginVolMeshing);
 
-                    cout << "Completed volume meshing on rank " << procRank << " in time" << 
+                    cout << "Completed volume meshing on rank " << procRank << " in time " << 
                         volMeshingDuration.count() << " microseconds" << endl;
                 }else{
                     auto beginEncodeMesh = chrono::high_resolution_clock::now();
@@ -562,7 +585,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                     auto encodeMeshDuration = chrono::duration_cast<chrono::microseconds>(
                         chrono::high_resolution_clock::now() - beginEncodeMesh);
 
-                    cout << "Finished encoding SDF on rank " << procRank << " in time" << 
+                    cout << "Finished encoding SDF on rank " << procRank << ", in time " << 
                         encodeMeshDuration.count() << " microseconds" << endl;
                 }
 
@@ -581,7 +604,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             bool cutNZ = prevDomainSizes[pos][0][2] < widerBoundingBox[0][2];
             bool cutPZ = prevDomainSizes[pos][1][2] > widerBoundingBox[1][2];
 
-            cout << "Running simulation on rank " << procRank << " position " << pos << endl;
+            cout << "Running simulation on rank " << procRank << ", test " << test << ", position " << pos << endl;
             auto beginSimulation = chrono::high_resolution_clock::now();
 
             if(!IBM_SIMULATION){
@@ -594,38 +617,19 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 
                 //Gets turbulent dissipation rate
                 //https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions
-                double TURBULENCE_INTENSITY = simParams["TURBULENCE_INTENSITY"];
-                double TURBULENCE_LENGTH_SCALE = simParams["TURBULENCE_LENGTH_SCALE"];
-                double SURFACE_ROUGHNESS_HEIGHT = simParams["SURFACE_ROUGHNESS_HEIGHT"];
-                double turbulentEnergy = 1.5*(flowVelocityMag*TURBULENCE_INTENSITY)*(flowVelocityMag*TURBULENCE_INTENSITY);
-                double turbulentDissipationRate = pow(0.09, 0.75)*pow(turbulentEnergy, 1.5)/TURBULENCE_LENGTH_SCALE;
-                double specificTurbulenceDissipationRate = turbulentDissipationRate/(0.09*turbulentEnergy);
+                //double TURBULENCE_INTENSITY = simParams["TURBULENCE_INTENSITY"];
+                //double TURBULENCE_LENGTH_SCALE = simParams["TURBULENCE_LENGTH_SCALE"];
+                //double SURFACE_ROUGHNESS_HEIGHT = simParams["SURFACE_ROUGHNESS_HEIGHT"];
+                //double turbulentEnergy = 1.5*(flowVelocityMag*TURBULENCE_INTENSITY)*(flowVelocityMag*TURBULENCE_INTENSITY);
+                //double turbulentDissipationRate = pow(0.09, 0.75)*pow(turbulentEnergy, 1.5)/TURBULENCE_LENGTH_SCALE;
+                //double specificTurbulenceDissipationRate = turbulentDissipationRate/(0.09*turbulentEnergy);
 
                 string forceScriptCall =  string(projectRoot) + "/src/simScripts/BFM/updateForces.sh " + to_string(totalCOMs[pos][0]) +
                     " " + to_string(totalCOMs[pos][1]) + " " + to_string(totalCOMs[pos][2]) + " " +
                     to_string(gVec[0]) + " " + to_string(gVec[1]) + " " + to_string(gVec[2]) +
-                    " " + to_string(flowVelocityMag) + " " + to_string(RHO) + " " + to_string(SURFACE_ROUGHNESS_HEIGHT)
-                    + " " + to_string(turbulentEnergy) + " " + to_string(specificTurbulenceDissipationRate) + " " +
-                    to_string(test);
+                    " " + to_string(flowVelocityMag) + " " + to_string(RHO) + " " + to_string(test);
                 failure = system(forceScriptCall.c_str());
-                if(failure) throw std::runtime_error("Setting force details failed");
-
-                // Copies over fields from previous simulation
-                if(modelNum != 0){
-                    double lastTime = modelNum < 2 ? simParams["SIMULATION_LENGTH_INITIAL"] : 
-                        simParams["SIMULATION_LENGTH"];
-
-                    string mapFieldsScriptCall = string(projectRoot) + "/src/simScripts/BFM/mapFields.sh "
-                    + OPENFOAM_SOURCE + " " + to_string(pos) + " " + to_string(test) + " "
-                    + to_string(cutNX) + " " +  to_string(cutPX) + " " + to_string(cutNY) + " " +
-                    to_string(cutPY) + " " + to_string(cutNZ) + " " + to_string(cutPZ) + " " +
-                    to_string(lastTime);
-
-                    failure = system(mapFieldsScriptCall.c_str());
-                    if(failure) throw std::runtime_error("Mapping fields failed"s);
-
-                }
-
+                if(failure) throw std::runtime_error("Setting force details failed on rank " + to_string(procRank));
 
                 // Adds force and velocity function objects
 
@@ -654,7 +658,33 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                      + " " + to_string(test);
                 failure = system(velocityScriptCall.c_str());
                 if(failure) throw runtime_error("Setting air velocity failed on position " + to_string(pos));
-                
+
+                // Copies over fields from previous simulation
+                if(modelNum != 0){
+                    cout << "Mapping fields on rank " << procRank << ", test " << test << ", position " << pos << endl;
+                    auto beginSimulation = chrono::high_resolution_clock::now();
+
+                    double lastTime = modelNum < 2 ? simParams["SIMULATION_LENGTH_INITIAL"] : 
+                        simParams["SIMULATION_LENGTH"];
+
+                    string mapFieldsScriptCall = string(projectRoot) + "/src/simScripts/BFM/mapFields.sh "
+                    + OPENFOAM_SOURCE + " " + to_string(pos) + " " + to_string(test) + " "
+                    + to_string(cutNX) + " " +  to_string(cutPX) + " " + to_string(cutNY) + " " +
+                    to_string(cutPY) + " " + to_string(cutNZ) + " " + to_string(cutPZ) + " " +
+                    to_string(lastTime);
+
+                    failure = system(mapFieldsScriptCall.c_str());
+                    if(failure) throw std::runtime_error("Mapping fields failed"s);
+
+                    auto mappingDuration = chrono::duration_cast<chrono::microseconds>(
+                    chrono::high_resolution_clock::now() - beginSimulation);
+
+                    cout << "Finished mapping fields on rank " << procRank << ", test" << test << ", position " << 
+                    pos << ", in time " << mappingDuration.count() << " microseconds" << endl;
+
+                }
+
+
                 // Runs simulation
                 glm::dmat2x3 aeroForces = getAeroValsBFM(forceRegions.size(), velRegions.size(),
                     regionForces[pos], regionTorques[pos], regionVelMags[pos], simParams, 
@@ -681,6 +711,9 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
 
                 // Maps fields if this is not the first simulation
                 if(modelNum != 0){
+                    cout << "Mapping fields on rank " << procRank << ", test " << test << ", position " << pos << endl;
+                    auto beginSimulation = chrono::high_resolution_clock::now();
+
                     // If target bounds are smaller than source bounds, add to cutting patches
                     // all patches that are either cut or no longer present
 
@@ -694,7 +727,13 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                     to_string(lastTime);
 
                     failure = system(mapFieldsScriptCall.c_str());
-                    if(failure) throw std::runtime_error("Mapping fields failed"s);
+                    if(failure) throw std::runtime_error("Mapping fields failed");
+
+                    auto mappingDuration = chrono::duration_cast<chrono::microseconds>(
+                    chrono::high_resolution_clock::now() - beginSimulation);
+
+                    cout << "Finished mapping fields on rank " << procRank << ", test" << test << ", position " << 
+                    pos << ", in time " << mappingDuration.count() << " microseconds" << endl;
                 }
 
                 // Runs simulation
@@ -710,8 +749,8 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             auto simulationDuration = chrono::duration_cast<chrono::microseconds>(
                 chrono::high_resolution_clock::now() - beginSimulation);
 
-            cout << "Finished encoding SDF on rank " << procRank << " position " << 
-                pos << " in time" << simulationDuration.count() << " microseconds" << endl;
+            cout << "Finished simulation on rank " << procRank << ", test" << test << ", position " << 
+                pos << ", in time " << simulationDuration.count() << " microseconds" << endl;
 
             
             if(procRank == 0){
@@ -750,7 +789,7 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             chrono::high_resolution_clock::now() - startTest);
         cout << "Completed test " << test << " on rank " << procRank << " in time: " << testDuration.count() << " microseconds" << endl;
         
-        cout << "score on rank " + to_string(procRank) + ": " << score << endl;
+        cout << "score on rank " + to_string(procRank) + ": " << score << endl << endl;
 
         }
 
@@ -764,12 +803,6 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
             int nRemainingTests = min(nTests - test, nProcs);
             for(int i = 1; i < nRemainingTests; i++){
                 MPI_Recv(&(testScores[test + i]), 1, MPI_DOUBLE, i, DATA_TO_HEAD, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            }
-
-            // Tells other processes to reenter loop
-            bool falseVal = false;
-            for(int i = 0; i < nProcs; i++){
-                MPI_Send(&falseVal, 1, MPI_CXX_BOOL, i, EXIT_PROGRAM, MPI_COMM_WORLD);
             }
 
         }else if (runTest){
@@ -797,10 +830,15 @@ double ScoreEvaluator::calculateScore(const optim::ColVec_t& paramVals, optim::C
                 double lowerParam = paramMatrix[2*i+1][i];
                 double upperParam = paramMatrix[2*i+2][i];
 
+                //cout << "lower param: " << lowerParam;
+                //cout << "upper param: " << upperParam;
+                //cout << "lower score: " << lowerScore;
+                //cout << "upper score: " << upperScore;
+                
                 double parDerivative = (upperScore - lowerScore)/(upperParam - lowerParam);
 
                 (*gradOut)[i] = parDerivative;
-                //cout << "Partial derivative " << i << ": " << parDerivative << endl;
+                cout << "Partial derivative " << i << ": " << parDerivative << endl;
             }
         }
 

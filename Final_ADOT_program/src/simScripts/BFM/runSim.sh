@@ -27,11 +27,6 @@ sed -i "/endTime /c\endTime         $1;" system/controlDict
 sed -i "/deltaT/c\deltaT          $2;" system/controlDict
 sed -i "/writeInterval/c\writeInterval   $3;" system/controlDict
 
-#Replaces files in zero directory
-rm -r -f 0/*
-cp initialValues/* 0/
-cp -r constant/polyMesh 0/
-
 #In case of parallel running
 if [ $6 -gt 0 ]; then
     #Updates number of processes
@@ -51,7 +46,7 @@ if [ $6 -eq 2 ]; then
     # Set the PMI library path for Slurm-MPI integration
     #export I_MPI_PMI_LIBRARY=/opt/slurm/lib/libpmi.so
 
-    echo "Running simulation pos=$4 test=$5 in parallel on $totalProcesses processes across $7 nodes"
+    echo "Running foamRun pos=$4 test=$5 in parallel on $totalProcesses processes across $7 nodes"
 
     #Sets up slurm script
     sed -i "$((2))s/.*/#SBATCH --job-name=ADOT-Meshing_$3/" simParallel.sh
@@ -62,12 +57,12 @@ if [ $6 -eq 2 ]; then
     sbatch --wait --wait-all-nodes 1 simParallel.sh
 
     rm -r -f processor*
-elif [ $5 -eq 1 ]; then
-    echo "Running simulation pos=$4 test=$5 in parallel on $totalProcesses processes"
+elif [ $6 -eq 1 ]; then
+    echo "Running foamRun pos=$4 test=$5 in parallel on $totalProcesses processes"
     potentialFoam -parallel -writep > potentialLog
     foamRun -solver incompressibleFluid -parallel > simLog
-elif [ $5 -eq 0 ]; then
-    echo "Running simulation pos=$4 test=$5"
+else
+    echo "Running foamRun pos=$4 test=$5"
     potentialFoam -writep > potentialLog
     foamRun -solver incompressibleFluid > simLog
 fi

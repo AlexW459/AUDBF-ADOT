@@ -47,14 +47,23 @@ int main(int argc, char *argv[]) {
     testModel (*constructModelFunc)() =  reinterpret_cast<testModel(*)()>(constructModelPointer);
     testModel model = constructModelFunc();
 
-    ScoreEvaluator::setSimParams(model, simParameters, writeObjs, nSimNodes, simParallelOpt, 
-        nSimTasksPerNode, procRank, nProcs);
+    
     
     int nParams = model.paramRanges.size();
     vector<double> paramVals(nParams);
+
+    optim::ColVec_t lowerParamBounds(nParams);
+    optim::ColVec_t upperParamBounds(nParams);
+
+    for(int i = 0; i < nParams; i++){
+        lowerParamBounds[i] = model.paramRanges[i][0];
+        upperParamBounds[i] = model.paramRanges[i][1];
+    }
+
+    ScoreEvaluator::setSimParams(model, simParameters, upperParamBounds, lowerParamBounds, writeObjs, nSimNodes, simParallelOpt, 
+        nSimTasksPerNode, procRank, nProcs);
     
     if(procRank == 0){
-
 
 
         string deleteDirBash = "rm -r -f Aerodynamics_Simulation_BFM_* Aerodynamics_Simulation_IBM_*";
@@ -87,18 +96,15 @@ int main(int argc, char *argv[]) {
         auto enterLoopTime = chrono::high_resolution_clock::now();
 
         optim::ColVec_t initialParams(nParams);
-        optim::ColVec_t lowerParamBounds(nParams);
-        optim::ColVec_t upperParamBounds(nParams);
-
-        for(int i = 0; i < nParams; i++){
-            lowerParamBounds[i] = model.paramRanges[i][0];
-            upperParamBounds[i] = model.paramRanges[i][1];
-            initialParams[i] = model.paramRanges[i][0] + (rand() / (double)RAND_MAX)  * (model.paramRanges[i][1] - model.paramRanges[i][0]);
-        }
-
+        
         optimSettings.vals_bound = true;
         optimSettings.lower_bounds = lowerParamBounds;
         optimSettings.upper_bounds = upperParamBounds;
+
+
+        for(int i = 0; i < nParams; i++){
+            initialParams[i] = model.paramRanges[i][0] + 1e-1;//model.paramRanges[i][0] + (rand() / (double)RAND_MAX)  * (model.paramRanges[i][1] - model.paramRanges[i][0]);
+        }
 
         //Optimisation loop
         bool success;
@@ -126,11 +132,12 @@ int main(int argc, char *argv[]) {
 
     }else{
 
-        // Checks that rank is still needed
         bool exitFlag = false;
+        MPI_Recv(&exitFlag, 1, MPI_CXX_BOOL, 0, EXIT_PROGRAM, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         while (!exitFlag){
-
             optim::ColVec_t paramVec(nParams);
+
+            cout << "Entering score func on rank " << procRank << endl;
             
             ScoreEvaluator::calculateScore(paramVec, nullptr, nullptr);
 

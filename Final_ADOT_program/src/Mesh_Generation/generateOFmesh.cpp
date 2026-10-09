@@ -62,12 +62,12 @@ void generateOFmesh(vector<double> posVals, glm::dmat2x3 boundingBox, glm::dmat2
     }*/
     
 
-    cout << "Meshing on position " << position << " and test " << test << endl;
+    //cout << "Meshing on position " << position << " and test " << test << endl;
 
     string meshScriptCall = string(projectRoot) + "/src/simScripts/BFM/meshObj.sh " +
         " " + to_string(test) + " \"" + OPENFOAM_SOURCE + "\"";
     failure = system(meshScriptCall.c_str());
     if(failure) throw runtime_error("Meshing failed in case " + to_string(position));
 
-    cout << "Completed meshing on position " << position << endl;
+    //cout << "Completed meshing on position " << position << endl;
 }

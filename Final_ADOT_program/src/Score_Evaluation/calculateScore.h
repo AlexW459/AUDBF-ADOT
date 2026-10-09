@@ -35,8 +35,8 @@ class ScoreEvaluator{
     /*ScoreFunc parameters are: configuration variables (AOA, elevator, throttle), 
   aerodynamic forces, velocity, oscillation frequency, damping coefficient, 
   dMdalpha, mass, paramNames, paramVals*/
-  static void setSimParams(testModel _model, std::map<std::string, double> _simParams, 
-    bool _writeObjs, int _simParallelOpt, int _nSimNodes, int _nSimTasksPerNode, int _procRank,
+  static void setSimParams(testModel _model, std::map<std::string, double> _simParams, optim::ColVec_t _upperBounds,
+    optim::ColVec_t _lowerBounds, bool _writeObjs, int _simParallelOpt, int _nSimNodes, int _nSimTasksPerNode, int _procRank,
     int _nProcs);
 
   static double calculateScore(const optim::ColVec_t& paramVals, optim::ColVec_t *gradOut,
@@ -56,7 +56,8 @@ class ScoreEvaluator{
     static int nSimNodes;
     static int simParallelOpt;
     static int nSimTasksPerNode;  
-    //static bool runTest; // Set to true when rank has finished all tasksx
+    static std::vector<double> h_vals;
+    static std::vector<glm::dvec2> paramBounds;
         
 };
 

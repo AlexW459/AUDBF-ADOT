@@ -143,7 +143,8 @@ else
     sed -i "$((poutletlineNum+4))s/.*/ /" initialValues/p
 fi
 
-rm -r -f 0/*
+rm -r -f 0/
 rm -r -f 0.* 1.* *e-**
 
+mkdir 0/
 cp -a initialValues/* 0/

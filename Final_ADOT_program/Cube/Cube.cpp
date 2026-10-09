@@ -24,9 +24,8 @@ extern "C" testModel constructModel(){
     }
 
     // Describes positions at which simulations will be conducted
-    double testVelocity = 10.0;
-    vector<vector<double>> positionValues = {{-testVelocity, 0.0, 0.0, 0.0, 0.0, -9.8},
-        {-testVelocity, -testVelocity, 0.0, 0.0, 0.0, -9.8}};
+    double testVelocity = 1.0;
+    vector<vector<double>> positionValues = {{-testVelocity, 0.0, 0.0, 0.0, 0.0, -9.8}};
 
     testModel cubeModel(paramNames, paramRanges, discreteTables, calcDerivedParams, profileFunctions, 
         positionValues, rateDesign);
@@ -43,12 +42,20 @@ void calcDerivedParams(vector<string>& paramNames, vector<double>& paramVals,
 }
 
 profile cubeProfile(vector<string> paramNames, vector<double> paramVals, double meshRes){
-    double sideLength = getParam("sideLength", paramVals, paramNames);
+    double curvature = getParam("curvature", paramVals, paramNames);
 
-    vector<glm::dvec2> points = {glm::dvec2(-0.5*sideLength, -0.5*sideLength), 
-        glm::dvec2(-0.5*sideLength, 0.5*sideLength), 
-        glm::dvec2(0.5*sideLength, 0.5*sideLength), 
-        glm::dvec2(0.5*sideLength, -0.5*sideLength)};
+    double sideLength = 2.0;
+
+    int numPoints = M_PI*sideLength*meshRes;
+
+    vector<glm::dvec2> points(numPoints);
+
+    for(int i = 0; i < numPoints; i++){
+        double angle = (double)i/numPoints*2.0*M_PI;
+        int signX = cos(angle) > 0 ? 1 : -1;
+        int signY = sin(angle) > 0 ? 1 : -1;
+        points[i] = 0.5*sideLength*glm::dvec2(signX*pow(abs(cos(angle)), curvature), signY*pow(abs(sin(angle)), curvature));
+    }
 
     //vector<glm::dvec2> points = {glm::dvec2(-0.5, -0.5), glm::dvec2(0.5, -0.5), 
     //    glm::dvec2(0.5, 0.5), glm::dvec2(-0.5, 0.5)};
@@ -59,14 +66,14 @@ profile cubeProfile(vector<string> paramNames, vector<double> paramVals, double 
 }
 
 extrusionData extrudeCube(vector<string> paramNames, vector<double> paramVals, double meshRes){
-    double sideLength = getParam("sideLength", paramVals, paramNames);
+    double sideLength = 2.0;
 
-    vector<double> zSampleVals = {-0.5*sideLength, 0.5*sideLength};
+    vector<double> zSampleVals = {-2.0*0.5*sideLength, 2.0*0.5*sideLength};
     vector<glm::dvec2> posVals = {glm::dvec2(0.0), glm::dvec2(0.0)};
     vector<glm::dvec2> scaleVals = {glm::dvec2(1.0), glm::dvec2(1.0)};
 
     glm::dvec3 translation(0.0);
-    glm::dquat rotation(glm::dvec3(M_PI/4.0, 0.0, 0.0));
+    glm::dquat rotation(glm::dvec3(0.0, 0.0, 0.0));
     glm::dvec3 pivotPoint(0.0);
 
     extrusionData cubeExtrusion(zSampleVals, posVals, scaleVals, rotation, translation, pivotPoint);
@@ -83,5 +90,5 @@ double rateDesign(vector<string> fullParamNames, vector<double> fullParamVals, v
 
     //cout << totalForces[0][2] << endl;
 
-    return abs(totalForces[0][2]);
+    return abs(totalForces[0][0]);
 }
